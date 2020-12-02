@@ -126,16 +126,31 @@ sub run($) {
 	}
 }
 
+# ; n 1
+# : WHILE < n 100
+# 	; IF > 1 (% n 15)
+# 		: OUTPUT "FizzBuzz"
+# 	: IF > 1 (% n 3)
+# 		: OUTPUT "Fizz"
+# 	: IF > 1 (% n 5)
+# 		: OUTPUT "Buzz" 
+# 		# <ELSE>
+# 		: OUTPUT n
+	
+# run parse tokenize <<EOS
+# ; = fib BLOCK
+# 	; = a 0
+# 	; = b 1
+# 	; WHILE n
+# 		; = b + a = tmp b
+# 		; = a tmp
+# 		: = n - n 1
+# 	: a
+# ; = n 10
+# ; OUTPUT +++ 'fib(' n ')=' CALL fib
+# : O < 0 NULL
+# EOS
+
 run parse tokenize <<EOS
-; = fib BLOCK
-	; = a 0
-	; = b 1
-	; WHILE n
-		; = b + a = tmp b
-		; = a tmp
-		: = n - n 1
-	: a
-; = n 10
-; OUTPUT +++ 'fib(' n ')=' CALL fib
-: O < 0 NULL
+
 EOS

@@ -15,7 +15,7 @@ newtype Parser a = Parser { parse :: String -> (String, Maybe a) }
 instance Functor Parser where
   fmap f (Parser p) = Parser $ \s ->
     let (s', mf) = p s
-    in (s', fx <$> mf)
+    in (s', f <$> mf)
 
 instance Applicative Parser where
   pure x = Parser $ \s -> (s, Just x)
