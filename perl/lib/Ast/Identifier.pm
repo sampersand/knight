@@ -5,8 +5,14 @@ use warnings;
 use lib '..';
 use parent 'Ast::Value';
 
-sub parse {
-	$_[1] =~ s/\AN[A-Z]*//p and Ast::Null->new();
+sub parse($$) {
+	my ($class, $stream) = @_;
+
+	$$stream =~ s/\A[a-z_][a-z0-9_]*//p and $class->new(${^MATCH});
+}
+
+sub run($$) {
+	$_[1]->{$_[0]}
 }
 
 1;

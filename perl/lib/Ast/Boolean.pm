@@ -5,6 +5,10 @@ use warnings;
 use lib '..';
 use parent 'Ast::Value';
 
+use overload
+	'0+' => sub { shift->{value} },
+	'""' => sub { shift->{value} ? 'TRUE' : 'FALSE' };
+
 # ANDs both operands.
 sub band() {
 	Ast::Boolean->new(shift->{value} & shift->to_boolean()->{value});
@@ -22,18 +26,14 @@ sub cmp() {
 	Ast::Boolean->new(shift->{value} <=> shift->to_boolean()->{value});
 }
 
-sub to_number {
-	shift;
-}
-
-sub to_boolean {
-	Ast::Boolean->new(shift->{value} != 0);
-}
-
 sub parse($$) {
 	my ($class, $stream) = @_;
 
-	$class->new($1) if $$stream =~ s/\A([TF])[A-Z]*//p;
+	 $$stream =~ s/\A([TF])[A-Z]*//p and $class->new($1 eq 'T');
+}
+
+sub run($$) {
+	shift;
 }
 
 1;

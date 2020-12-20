@@ -5,25 +5,22 @@ use warnings;
 use lib '..';
 use parent 'Ast::Value';
 
+use overload
+	'0+' => sub { 0 },
+	'""' => sub { 'NULL' };
 
 sub new() {
 	bless {}, shift
 }
 
-sub to_number {
-	Ast::Number->new(0);
+sub parse($$) {
+	my ($class, $stream) = @_;
+
+	$$stream =~ s/\AN[A-Z]*//p and $class->new();
 }
 
-sub to_boolean {
-	shift->to_number()->to_boolean()
-}
-
-sub to_string {
-	Ast::String->new("null");
-}
-
-sub parse {
-	$_[1] =~ s/\AN[A-Z]*//p and Ast::Null->new();
+sub run($$) {
+	shift;
 }
 
 1;

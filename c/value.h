@@ -7,7 +7,7 @@ typedef char * kn_string_t;
 typedef __int128_t kn_integer_t;
 typedef bool kn_boolean_t;
 
-struct kn_ast_t;
+typedef struct kn_ast_t kn_ast_t;
 
 typedef enum {
 	KN_VT_STRING,
@@ -24,9 +24,12 @@ typedef struct {
 		kn_boolean_t boolean;
 		kn_integer_t integer;
 		kn_string_t string;
+		kn_ast_t *ast;
 	};
 
 } kn_value_t;
+
+#define kn_string_free(t) xfree(t)
 
 kn_value_t kn_value_new_ast(kn_ast_t *);
 kn_value_t kn_value_new_string(kn_string_t);
@@ -37,6 +40,8 @@ kn_value_t kn_value_new_null(void);
 kn_string_t  kn_value_to_string(const kn_value_t *);
 kn_boolean_t kn_value_to_boolean(const kn_value_t *);
 kn_integer_t kn_value_to_integer(const kn_value_t *);
+
+int kn_value_cmp(const kn_value_t *, const kn_value_t *);
 
 kn_value_t kn_value_clone(const kn_value_t *);
 void kn_value_free(kn_value_t *);

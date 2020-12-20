@@ -1,3 +1,4 @@
+#!/usr/local/bin/shellcheck
 #!/bin/sh
 
 # Aborts execution after printing the message to stderr.
@@ -6,16 +7,6 @@ abort () { echo $@ >&2; exit 1; }
 car () { printf %s "$1" | head -c1; }
 cdr () { printf %s "$1" | tail -c $(( ${#1} - 2)); }
 
-
-print_while='
-while [ -n "$1" ]; do 
-	case "$(car $1)" in
-		%s) printf %%s "$(car "$1")" ;;
-		*) break ;;
-	esac
-	set -- "$(cdr "$1")"
-done
-'
 
 # The function that tokenizes all the tokens. It takes a single argument, and
 # prints out tokens separated by `\0`.

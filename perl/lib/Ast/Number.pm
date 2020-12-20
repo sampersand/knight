@@ -6,9 +6,7 @@ use lib '..';
 use parent 'Ast::Value';
 
 use overload
-	'bool' => sub { shift->{value} != 0 },
-	'.' => sub { " a " };
-
+	'0+' => sub { shift->{value} };
 
 sub add() { Ast::Number->new(shift->{value} + shift->to_number()->{value}); }
 sub sub() { Ast::Number->new(shift->{value} - shift->to_number()->{value}); }
@@ -24,17 +22,14 @@ sub shl() { Ast::Number->new(shift->{value}<<(shift->to_number()->{value}));}
 sub shr() { Ast::Number->new(shift->{value} >>shift->to_number()->{value}); }
 sub cmp() { Ast::Number->new(shift->{value}<=>shift->to_number()->{value}); }
 
-sub to_number {
-	shift;
-}
-
-sub to_boolean{
-	Ast::Boolean->new(shift->{value} != 0);
-}
-
 sub parse($$) {
 	my ($class, $stream) = @_;
-	$class->new($1) if $$stream =~ s/\A\s*(\d+)//p
+
+	$$stream =~ s/\A\d+//p and $class->new(${^MATCH});
+}
+
+sub run($$) {
+	shift;
 }
 
 1;

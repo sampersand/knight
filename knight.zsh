@@ -25,7 +25,7 @@ tokenize () {
 		fi
 	}; do
 		case $REPLY in
-			[$'()\ \n\t\f']);;
+			[$'()\ \n\t\f:']);;
 			\#) read;;
 			[a-z_]) printf i%s "$REPLY" && printwhile '[a-z_0-9]';;
 			[0-9])  printf 0%s "$REPLY" && printwhile '[0-9]';;
@@ -237,6 +237,6 @@ knight '
   ; = tmp b
   ; = b (+ b a)
   ; = a tmp
-  = n (- n 1)
-OUTPUT b
+  : = n (- n 1)
+: OUTPUT b
 '

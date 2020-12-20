@@ -6,26 +6,27 @@ use lib '..';
 use parent 'Ast::Value';
 
 use overload
+	'0+' => sub { shift->{value} },
 	'""' => \&interpolate;
 
 # Adds the RHS to this value.
-sub add($$) {
+sub add {
 	Ast::String->new(shift->{value} . shift->to_string()->{value});
 }
 
 # Duplicates `$self` by `rhs` times
-sub mul($$) {
+sub mul {
 	Ast::String->new(shift->{value} x shift->to_number()->{value});
 }
 
 
 # Performs a single printf substitution.
-sub mod() {
+sub mod {
 	Ast::String->new(sprintf shift->{value}, shift->{value});
 }
 
 # Compares the two strings lexicographically.
-sub cmp() {
+sub cmp {
 	Ast::Number->new(shift->{value} cmp shift->to_string()->{value});
 }
 
@@ -47,9 +48,16 @@ sub interpolate {
 	'"' . quotemeta(shift->{value}) . '"';
 }
 
-sub parse {
-	my $stream = $_[1];
-	
+sub parse($$) {
+	my ($class, $stream) = @_;
+
+	return unless $$stream =~ s/\A(["'])([^\1]*)(\1)//p;
+	die "missing closing quote" unless $3;
+	$class->new($2)
+}
+
+sub run($$) {
+	shift;
 }
 
 1;

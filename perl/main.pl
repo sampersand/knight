@@ -4,10 +4,13 @@ use lib 'lib';
 
 use Parser;
 
-# # my $str = Ast::String->new("3");
-# # print 'a' . $$str;
-# my $stream = "123 abc 44";
-# print Ast::Number->parse(\$stream), "\n";
-# # print $stream
-# # print(Ast::Number->new("0") || Ast::Number->new("fl"));
+my $parser = Parser->new("L 'a'");
+# my $parser = Parser->new(" 'abc' 12 ae N T F 3");
 
+$\="\n";
+my $env = { a => 3 };
+
+print $parser->next();
+my $res = $parser->next()->run($env);
+
+print $res;
