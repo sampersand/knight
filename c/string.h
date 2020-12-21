@@ -1,12 +1,20 @@
 #ifndef KN_STRING_H
 #define KN_STRING_H
+#include <stdint.h>
 
-typedef struct kn_string_t kn_string_t;
+struct kn_string_t {
+	const char *str;
+	unsigned *rc;
+};
 
-kn_string_t *kn_string_intern(char const *);
-kn_string_t *kn_string_alloced(char const *);
-kn_string_t *kn_string_clone(kn_string_t const *);
-char const *kn_string_deref(kn_string_t const *);
-void kn_string_free(kn_string_t *);
+typedef intmax_t kn_integer_t;
+
+struct kn_string_t kn_string_intern(const char *);
+struct kn_string_t kn_string_new(const char *);
+struct kn_string_t kn_string_clone(const struct kn_string_t *);
+struct kn_string_t kn_string_from_integer(kn_integer_t);
+kn_integer_t kn_string_to_integer(const struct kn_string_t *);
+
+void kn_string_free(struct kn_string_t *);
 
 #endif /* KN_STRING_H */

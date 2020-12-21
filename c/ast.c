@@ -1,12 +1,14 @@
-#include "ast.h"
-#include "shared.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+#include "ast.h"
+#include "shared.h"
 
 static const unsigned ARITY_INCR = 0x20;
 
-typedef enum {
+enum kn_token_kind {
 	// arity zero
 	KN_TT_VALUE = 0x00,
 	KN_TT_IDENT,
@@ -35,8 +37,8 @@ typedef enum {
 	KN_TT_MOD,
 	KN_TT_POW,
 	KN_TT_LTH,
-	KN_TT_GTH,
 	KN_TT_EQL,
+	KN_TT_GTH,
 	KN_TT_THEN,
 	KN_TT_AND,
 	KN_TT_OR,
@@ -49,18 +51,20 @@ typedef enum {
 	// arity four
 	KN_TT_SET = 4 * ARITY_INCR,
 	KN_TT_LAST__
-} kn_token_kind;
+};
 
-typedef struct kn_ast_t {
-	kn_token_kind kind;
+#define MAX_ARITY (KN_TT_LAST__ / ARITY_INCR)
+
+struct kn_ast_t {
+	enum kn_token_kind kind;
 	union {
-		kn_value_t value;
+		struct kn_value_t value;
 		const char *ident;
-		kn_ast_t *args[KN_TT_LAST__ / ARITY_INCR];
+		struct kn_ast_t *args[MAX_ARITY];
 	};
-} kn_ast_t;
+};
 
-unsigned arity(const kn_ast_t *ast) {
+unsigned arity(const struct kn_ast_t *ast) {
 	return ast->kind / ARITY_INCR;
 }
 
@@ -82,22 +86,27 @@ bool is_eof(stream_t stream) {
 
 void strip_stream(stream_t stream) {
 	char c = peek(stream);
+
 	switch (c) {
-		case '(': case ')':
-		case '[': case ']':
-		case '{': case '}':
-		case ':':
+	case '(':
+	case ')':
+	case '[':
+	case ']':
+	case '{':
+	case '}':
+	case ':':
+		break;
+
+	case '#':
+		while (!is_eof(stream) && peek(stream) != '\n') {
 			advance(stream);
-			break;
-		case '#':
-			while (!is_eof(stream) && peek(stream) != '\n') {
-				advance(stream);
-			}
-			// fall through, as we'll either be at EOF or `\n`.
-		default:
-			if (!isspace(c)) {
-				return;
-			}
+		}
+		// fall through, as we'll either be at EOF or `\n`.
+
+	default:
+		if (!isspace(c)) {
+			return;
+		}
 	}
 
 	advance(stream);
@@ -105,44 +114,45 @@ void strip_stream(stream_t stream) {
 }
 
 
-kn_ast_t *kn_ast_parse_integer(stream_t stream) {
+struct kn_ast_t kn_ast_parse_integer(stream_t stream) {
 	kn_integer_t integer = 0;
 
-	while(isdigit(peek(stream))) {
+	while (isdigit(peek(stream))) {
 		integer = integer * 10 + next(stream) - '0';
 	}
 
-	kn_ast_t *ast = xmalloc(sizeof(kn_ast_t));
-	ast->kind = KN_TT_VALUE;
-	ast->value = kn_value_new_integer(integer);
-
-	return ast;
+	return (struct kn_ast_t) {
+		.kind = KN_TT_VALUE,
+		.value = kn_value_new_integer(integer)
+	};
 }
 
-kn_ast_t *kn_ast_parse_identifier(const char **stream) {
-	static char identifier[1024];
+struct kn_ast_t kn_ast_parse_identifier(stream_t stream) {
+	size_t capacity = 8;
 	size_t length = 0;
+	char *identifier = xmalloc(capacity);
 	char c;
 
 	while (islower(c = peek(stream)) || isdigit(c) || c == '_') {
 		identifier[length++] = c;
 		advance(stream);
 
-		if (length == sizeof(identifier)) {
-			die("Too large of an identifier encountered: %s", identifier);
+		if (length == capacity) {
+			capacity *= 2;
+			identifier = xrealloc(identifier, capacity);
 		}
 	}
 
-	identifier[length] = '\0';
+	identifier[length++] = '\0';
+	identifier = xrealloc(identifier, length);
 
-	kn_ast_t *ast = xmalloc(sizeof(kn_ast_t));
-	ast->kind = KN_TT_IDENT;
-	ast->ident = strdup(identifier);
-
-	return ast;
+	return (struct kn_ast_t) {
+		.kind = KN_TT_IDENT,
+		.ident = identifier
+	};
 }
 
-kn_ast_t *kn_ast_parse_string(const char **stream) {
+struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 	size_t length = 0;
 	size_t capacity = 1024;
 	char *string = xmalloc(capacity * sizeof(char));
@@ -164,382 +174,405 @@ kn_ast_t *kn_ast_parse_string(const char **stream) {
 		die("unterminated quote encountered: %c%s\n", quote, string);
 	}
 
-
 	string = xrealloc(string, length); // remove unused capacity
-	kn_ast_t *ast = xmalloc(sizeof(kn_ast_t));
-	ast->kind = KN_TT_VALUE;
-	ast->value = kn_value_new_string(xrealloc(string, length));
 
-	return ast;
+	return (struct kn_ast_t) {
+		.kind = KN_TT_VALUE,
+		.value = kn_value_new_string(kn_string_new(string))
+	};
 }
 
-kn_ast_t *kn_ast_parse_keyword_symbol(stream_t stream) {
+struct kn_ast_t kn_ast_parse_keyword(stream_t stream) {
 	char c = next(stream);
-	kn_ast_t *ast = xmalloc(sizeof(kn_ast_t));
+	struct kn_ast_t ast;
 
 	switch (c) {
-		case '`': ast->kind = KN_TT_SYS; break;
-		case '+': ast->kind = KN_TT_ADD; break;
-		case '-': ast->kind = KN_TT_SUB; break;
-		case '*': ast->kind = KN_TT_MUL; break;
-		case '/': ast->kind = KN_TT_DIV; break;
-		case '%': ast->kind = KN_TT_MOD; break;
-		case '^': ast->kind = KN_TT_POW; break;
-		case '<': ast->kind = KN_TT_LTH; break;
-		case '>': ast->kind = KN_TT_GTH; break;
-		case '?': ast->kind = KN_TT_EQL; break;
-		case ';': ast->kind = KN_TT_THEN; break;
-		case '&': ast->kind = KN_TT_AND; break;
-		case '|': ast->kind = KN_TT_OR; break;
-		case '=': ast->kind = KN_TT_ASSIGN; break;
-		default: die("unknown keyword start '%c'", c);
+	// Symbol keywords: only parse a single char, then stop.
+	case '`': ast.kind = KN_TT_SYS; goto parse_arguments;
+	case '+': ast.kind = KN_TT_ADD; goto parse_arguments;
+	case '-': ast.kind = KN_TT_SUB; goto parse_arguments;
+	case '*': ast.kind = KN_TT_MUL; goto parse_arguments;
+	case '/': ast.kind = KN_TT_DIV; goto parse_arguments;
+	case '%': ast.kind = KN_TT_MOD; goto parse_arguments;
+	case '^': ast.kind = KN_TT_POW; goto parse_arguments;
+	case '<': ast.kind = KN_TT_LTH; goto parse_arguments;
+	case '?': ast.kind = KN_TT_EQL; goto parse_arguments;
+	case '>': ast.kind = KN_TT_GTH; goto parse_arguments;
+	case ';': ast.kind = KN_TT_THEN; goto parse_arguments;
+	case '&': ast.kind = KN_TT_AND; goto parse_arguments;
+	case '|': ast.kind = KN_TT_OR; goto parse_arguments;
+	case '=': ast.kind = KN_TT_ASSIGN; goto parse_arguments;
+
+	// Word keywords: only the first upper case letter is a function.
+	case 'T': ast.kind = KN_TT_TRUE; break;
+	case 'F': ast.kind = KN_TT_FALSE; break;
+	case 'N': ast.kind = KN_TT_NULL; break;
+	case 'P': ast.kind = KN_TT_PROMPT; break;
+	case 'E': ast.kind = KN_TT_EVAL; break;
+	case 'B': ast.kind = KN_TT_BLOCK; break;
+	case 'C': ast.kind = KN_TT_CALL; break;
+	case 'Q': ast.kind = KN_TT_QUIT; break;
+	case 'L': ast.kind = KN_TT_LENGTH; break;
+	case 'G': ast.kind = KN_TT_GET; break;
+	case 'S': ast.kind = KN_TT_SET; break;
+	case 'O': ast.kind = KN_TT_OUPTUT; break;
+	case 'W': ast.kind = KN_TT_WHILE; break;
+	case 'R': ast.kind = KN_TT_RAND; break;
+	case 'I': ast.kind = KN_TT_IF; break;
+
+	default: die("unknown ast keyword start '%c'.", c);
 	}
 
-	if(arity(ast) == 0)
-		return ast;
+	// ignore remaining keyword symbols
+	while (isupper(peek(stream))) {
+		advance(stream);
+	}
 
-	ast->args[0] = kn_ast_parse(stream);
-	if (arity(ast) == 1)
-		return ast;
+parse_arguments:
 
-	ast->args[1] = kn_ast_parse(stream);
+	for (int i = 0; i < arity(&ast); ++i) {
+		ast.args[i] = kn_ast_parse_nonnull(stream);
+	}
 
-	if (ast->kind == KN_TT_ASSIGN && ast->args[0]->kind != KN_TT_IDENT) {
-		kn_ast_dump(ast->args[0]);
+	if (ast.kind == KN_TT_ASSIGN && ast.args[0]->kind != KN_TT_IDENT) {
 		die("attempted to assign to a non-identifier");
 	}
 
-	if (arity(ast) == 2)
-		return ast;
-
-	ast->args[2] = kn_ast_parse(stream);
 	return ast;
 }
 
-kn_ast_t *kn_ast_parse_keyword(stream_t stream) {
-	char c = next(stream);
-	kn_ast_t *ast = xmalloc(sizeof(kn_ast_t));
-	switch (c) {
-		case 'T': ast->kind = KN_TT_TRUE; break;
-		case 'F': ast->kind = KN_TT_FALSE; break;
-		case 'N': ast->kind = KN_TT_NULL; break;
-		case 'P': ast->kind = KN_TT_PROMPT; break;
-		case 'E': ast->kind = KN_TT_EVAL; break;
-		case 'B': ast->kind = KN_TT_BLOCK; break;
-		case 'C': ast->kind = KN_TT_CALL; break;
-		case 'Q': ast->kind = KN_TT_QUIT; break;
-		case 'L': ast->kind = KN_TT_LENGTH; break;
-		case 'G': ast->kind = KN_TT_GET; break;
-		case 'S': ast->kind = KN_TT_SET; break;
-		case 'O': ast->kind = KN_TT_OUPTUT; break;
-		case 'W': ast->kind = KN_TT_WHILE; break;
-		case 'R': ast->kind = KN_TT_RAND; break;
-		case 'I': ast->kind = KN_TT_IF; break;
-		default: die("unknown ast keyword start '%c'.", c);
-	}
-
-	while (isupper(peek(stream)))
-		advance(stream);
-
-	for (int i = 0; i < arity(ast); ++i) {
-		ast->args[i] = kn_ast_parse(stream);
-	}
-
-	return ast;
-}
-
-kn_ast_t *kn_ast_parse(stream_t stream) {
+struct kn_ast_t *kn_ast_parse(stream_t stream) {
 	strip_stream(stream);
 	char peeked = peek(stream);
 
 	if (peeked == '\0') {
 		return NULL;
-	} else if (isdigit(peeked)) {
-		return kn_ast_parse_integer(stream);
+	}
+
+	struct kn_ast_t *ast = xmalloc(sizeof(struct kn_ast_t));
+
+	if (isdigit(peeked)) {
+		*ast = kn_ast_parse_integer(stream);
 	} else if (islower(peeked) || peeked == '_') {
-		return kn_ast_parse_identifier(stream);
+		*ast = kn_ast_parse_identifier(stream);
 	} else if (peeked == '\'' || peeked == '"') {
-		return kn_ast_parse_string(stream);
-	} else if (isupper(peeked)) {
-		return kn_ast_parse_keyword(stream);
-	} else if (ispunct(peeked)) {
-		return kn_ast_parse_keyword_symbol(stream);
+		*ast = kn_ast_parse_string(stream);
+	} else if (isupper(peeked) || ispunct(peeked)) {
+		*ast = kn_ast_parse_keyword(stream);
 	} else {
 		die("unknown token start '%c'", peeked);
 	}
+
+	return ast;
 }
 
-kn_value_t kn_ast_run_arity_0(const kn_ast_t *ast) {
-	switch(ast->kind) {
-		case KN_TT_VALUE:
-			return kn_value_clone(&ast->value);
+struct kn_ast_t *kn_ast_parse_nonnull(stream_t stream) {
+	struct kn_ast_t *ast = kn_ast_parse(stream);
 
-		case KN_TT_IDENT:
-			{
-				const kn_value_t *ret = kn_env_get(ast->ident);
-
-				if (ret == NULL) {
-					die("unknown identifier '%s' encountered", ast->ident);
-				}
-
-				return kn_value_clone(ret);
-			}
-
-		case KN_TT_PROMPT:
-			die("todo: prompt");
-
-		case KN_TT_RAND:
-			return kn_value_new_integer((kn_integer_t) rand());
-
-		case KN_TT_TRUE:
-			return kn_value_new_boolean(1);
-
-		case KN_TT_FALSE:
-			return kn_value_new_boolean(0);
-
-		case KN_TT_NULL:
-			return kn_value_new_null();
-
-		default:
-			bug("unknown nullary function '%d'", ast->kind);
+	if (ast == NULL) {
+		die("expected an expression");
 	}
+
+	return ast;
 }
 
-kn_value_t kn_ast_run_arity_1(const kn_ast_t *ast) {
-	kn_value_t arg1 = kn_ast_run(ast->args[0]);
-	kn_value_t ret;
+struct kn_ast_t *kn_ast_clone(const struct kn_ast_t *ast) {
+	struct kn_ast_t *ret = xmalloc(sizeof(struct kn_ast_t));
+	ret->kind = ast->kind;
 
-	switch(ast->kind) {
-		case KN_TT_EVAL:
-			{
-				kn_string_t string_to_parse = kn_value_to_string(&arg1);
-				kn_ast_t *parsed_ast = kn_ast_parse((stream_t) &string_to_parse);
+	if (ret->kind == KN_TT_VALUE) {
+		ret->value = kn_value_clone(&ast->value);
+	} else if (ret->kind == KN_TT_IDENT) {
+		char *ident = strdup((char *) ast->ident);
 
-				if (parsed_ast == NULL) {
-					ret = kn_value_new_null();
-				} else {
-					ret = kn_ast_run(parsed_ast);
-					kn_ast_free(parsed_ast);
-				}
+		VERIFY_NOT_NULL(ident, "unable to duplicate an identifier");
 
-				kn_string_free((kn_ast_t *) string_to_parse);
-			}
-
-		case KN_TT_CALL:
-			if (arg1.kind != KN_VT_AST) {
-				die("cannot call non-ast type '%d'", arg1.kind);
-			}
-
-			ret = kn_ast_run(arg1.ast);
-			break;
-
-		case KN_TT_SYS:
-			die("todo: KN_TT_SYS");
-
-		case KN_TT_QUIT:
-			exit((int) kn_value_to_integer(&arg1));
-
-		case KN_TT_NOT:
-			ret = kn_value_new_boolean(!kn_value_to_boolean(&arg1));
-			break;
-
-		case KN_TT_LENGTH:
-			{
-				kn_string_t string = kn_value_to_string(&arg1);
-				ret = kn_value_new_integer(strlen(string));
-				kn_string_free(string);
-			}
-			break;
-
-		case KN_TT_OUPTUT:
-			{
-				kn_string_t string = kn_value_to_string(&arg1);
-				size_t len = strlen(string);
-
-				if (len != 0 && string[len - 2] != '\\') {
-					printf("%s\n", string);
-				} else {
-					string[len - 2] = '\0';
-					printf("%s", string);
-				}
-
-				kn_string_free(string);
-			}
-
-			return arg1; // we `return` so we don't `free` it.
-
-		case KN_TT_BLOCK:
-			bug("KN_TT_BLOCK not meant to be called from kn_ast_run_arity_1");
-
-		default:
-			bug("unknown unary operator '%d'", ast->kind);
+		ret->ident = ident;
+	} else {
+		for (int i = 0; i < arity(ret); ++i)  {
+			ret->args[i] = kn_ast_clone(ast->args[i]);
+		}
 	}
-
-	kn_value_free(&arg1);
 	return ret;
 }
 
-kn_value_t kn_ast_run_arity_2(const kn_ast_t *ast) {
-	kn_value_t arg1 = kn_ast_run(ast->args[0]);
-	kn_value_t arg2 = kn_ast_run(ast->args[1]);
-	kn_value_t ret;
-
-	switch(ast->kind) {
-		case KN_TT_ADD:
-			if (arg1.kind == KN_VT_STRING) {
-				kn_string_t rhs = kn_value_to_string(&arg2);
-				char *allocated = xmalloc(strlen(arg1.string) + strlen(rhs) + 1);
-
-				strcpy(allocated, arg1.string);
-				strcat(allocated, rhs);
-
-				xfree(rhs);
-				ret = kn_value_new_string(allocated);
-			} else {
-				ret = kn_value_new_integer(kn_value_to_integer(&arg1) + kn_value_to_integer(&arg2));
-			}
-			break;
-
-		case KN_TT_SUB:
-			ret = kn_value_new_integer(kn_value_to_integer(&arg1) - kn_value_to_integer(&arg2));
-			break;
-
-		case KN_TT_MUL:
-			ret = kn_value_new_integer(kn_value_to_integer(&arg1) * kn_value_to_integer(&arg2));
-			break;
-
-		case KN_TT_DIV:
-			ret = kn_value_new_integer(kn_value_to_integer(&arg1) / kn_value_to_integer(&arg2));
-			break;
-
-		case KN_TT_MOD:
-			ret = kn_value_new_integer(kn_value_to_integer(&arg1) % kn_value_to_integer(&arg2));
-			break;
-
-		case KN_TT_POW:
-			ret = kn_value_pow(&arg1, &arg2);
-			break;
-
-		case KN_TT_LTH: 
-			ret = kn_value_new_boolean(kn_value_cmp(&arg1, &arg2) == -1);
-			break;
-
-		case KN_TT_GTH: 
-			ret = kn_value_new_boolean(kn_value_cmp(&arg1, &arg2) == 1);
-			break;
-
-		case KN_TT_EQL: 
-			ret = kn_value_new_boolean(kn_value_cmp(&arg1, &arg2) == 0);
-			break;
-
-		case KN_TT_AND:
-			// notably it runs both arguments.
-			ret = kn_value_to_boolean(&arg1) ? arg2 : arg1;
-			break;
-
-		case KN_TT_AND:
-			// notably it runs both arguments.
-			ret = kn_value_to_boolean(&arg1) ? arg1 : arg2;
-			break;
-
-		case KN_TT_THEN:
-			kn_value_free(&arg1);
-			return arg2; // the return value is the RHS.
-
-		case KN_TT_ASSIGN:
-			bug("KN_TT_WHILE not meant to be called from kn_ast_run_arity_2");
-		case KN_TT_WHILE:
-			bug("KN_TT_WHILE not meant to be called from kn_ast_run_arity_2");
-		default:
-			bug("unknown binary operator '%d'", ast->kind);
-
-
-	}
-
-	kn_value_free(&arg1);
-	kn_value_free(&arg2);
-	return ret;
-}
-
-kn_value_t kn_ast_run_arity_3(const kn_ast_t *ast) {
-	die("");
-}
-
-kn_ast_t kn_ast_clone(const kn_ast_t *ast) {
-	die("Todo colone ast");
-}
-
-kn_value_t kn_ast_run(const kn_ast_t *ast) {
-	kn_value_t ret;
+struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
+	struct kn_value_t ret;
 
 	// only assign and block don't eval their parameters.
 	switch (ast->kind) {
-		case KN_TT_ASSIGN:
+	case KN_TT_ASSIGN:
+		ret = kn_ast_run(ast->args[1]);
+		kn_env_set(ast->args[0]->ident, kn_value_clone(&ret));
+		return ret;
+
+	case KN_TT_BLOCK: {
+		struct kn_ast_t *ptr = xmalloc(sizeof(struct kn_ast_t));
+		ptr = kn_ast_clone(ast->args[0]);
+		ret = kn_value_new_ast(ptr);
+		return ret;
+	}
+
+	case KN_TT_WHILE: {
+		ret = kn_value_new_null();
+		struct kn_value_t condition = kn_ast_run(ast->args[0]);
+
+		while (kn_value_to_boolean(&condition)) {
+			kn_value_free(&condition);
+			kn_value_free(&ret);
 			ret = kn_ast_run(ast->args[1]);
-			kn_env_set(ast->args[0]->ident, kn_value_clone(&ret));
-			break;
+			condition = kn_ast_run(ast->args[0]);
+		}
 
-		case KN_TT_BLOCK:
-			{
-				kn_ast_t *ptr = xmalloc(sizeof(kn_ast_t));
-				*ptr = kn_ast_clone(ast->args[0]);
-				ret = kn_value_new_ast(ptr);
-			}
+		kn_value_free(&condition);
+		return ret;
+	}
 
-			break;
+	case KN_TT_IF: {
+		struct kn_value_t condition = kn_ast_run(ast->args[0]);
 
-		case KN_TT_WHILE:
+		int which_arg = kn_value_to_boolean(&condition) ? 2 : 1;
+		ret = kn_ast_run(ast->args[which_arg]);
+
+		kn_value_free(&condition);
+		return ret;
+	}
+
+	default:
+		; // fallthrough
+	}
+
+	struct kn_value_t args[MAX_ARITY];
+	for (int i = 0; i < arity(ast); ++i) {
+		args[i] = kn_ast_run(ast->args[i]);
+	}
+
+	switch (ast->kind) {
+	case KN_TT_VALUE:
+		ret = kn_value_clone(&ast->value);
+		break;
+
+	case KN_TT_IDENT: {
+		const struct kn_value_t *tmp = kn_env_get(ast->ident);
+
+		if (tmp == NULL) {
+			die("undefined identifier '%s' encountered.",
+				ast->ident);
+		}
+
+		ret = kn_value_clone(tmp);
+		break;
+	}
+
+	case KN_TT_PROMPT:{
+		// size_t linelen;
+		// char *nextline = fgetln(stdin, &linelen);
+		// if (nextline == NULL && feof(stdin)) {
+			// ret = kn_value_new(kn_string_intern())
+		// }
+		die("todo: prompt");
+	}
+
+	case KN_TT_RAND:
+		ret = kn_value_new_integer((kn_integer_t) rand());
+		break;
+
+	case KN_TT_TRUE:
+		ret = kn_value_new_boolean(1);
+		break;
+
+	case KN_TT_FALSE:
+		ret = kn_value_new_boolean(0);
+		break;
+
+	case KN_TT_NULL:
+		ret = kn_value_new_null();
+		break;
+
+	case KN_TT_EVAL: {
+		struct kn_string_t string = kn_value_to_string(&args[0]);
+		struct kn_ast_t *parsed_ast = kn_ast_parse(&string.str);
+
+		if (parsed_ast == NULL) {
 			ret = kn_value_new_null();
-			{
-				kn_value_t condition = kn_ast_run(ast->args[0]);
+		} else {
+			ret = kn_ast_run(parsed_ast);
+			kn_ast_free(parsed_ast);
+		}
 
-				while (kn_value_to_boolean(&condition)) {
-					kn_value_free(&condition);
-					kn_value_free(&ret);
-					ret = kn_ast_run(ast->args[1]);
-					condition	= kn_ast_run(ast->args[0]);
-				}
+		kn_string_free(&string);
+		break;
+	}
 
-				kn_value_free(&condition);
-			}
-			break;
+	case KN_TT_CALL:
+		if (args[0].kind == KN_VT_AST) {
+			ret = kn_ast_run(args[0].ast);
+		} else {
+			return args[0]; // return early 
+		}
 
-		case KN_TT_IF:
-			{
-				kn_value_t condition = kn_ast_run(ast->args[0]);
-				ret = kn_ast_run(ast->args[kn_value_to_boolean(&condition) ? 2 : 1]);
-				kn_value_free(&condition);
-			}
-			break;
+		break;
 
-		default:
-			switch(arity(ast)) {
-				case 0:
-					ret = kn_ast_run_arity_0(ast);
-					break;
+	case KN_TT_SYS:
+		die("todo: KN_TT_SYS");
 
-				case 1:
-					ret = kn_ast_run_arity_1(ast);
-					break;
+	case KN_TT_QUIT: {
+		int exit_code = (int) kn_value_to_integer(&args[0]);
+		exit(exit_code);
+	}
 
-				case 2:
-					ret = kn_ast_run_arity_2(ast);
-					break;
+	case KN_TT_NOT:
+		ret = kn_value_new_boolean(!kn_value_to_boolean(&args[0]));
+		break;
 
-				case 3:
-					ret = kn_ast_run_arity_3(ast);
-					break;
+	case KN_TT_LENGTH: {
+		struct kn_string_t string = kn_value_to_string(&args[0]);
+	
+		ret = kn_value_new_integer(strlen(string.str));
+	
+		kn_string_free(&string);
+		break;
+	}
 
-				default:
-					bug("unknown arity '%d'", arity(ast));
-			}
+	case KN_TT_OUPTUT: {
+		struct kn_string_t string = kn_value_to_string(&args[0]);
+
+		// right here we're casting away the const.
+		// this is because we might need to replace the penult character
+		// with a `\0` if it's a backslash to prevent the printing of a
+		// newline. however, we replace it on the next line, so it's ok.
+		char *str = (char *) string.str;
+		size_t len = strlen(str);
+		char *penult = str + len - 1;
+
+		if (len != 0 && *penult == '\\') {
+			*penult = '\0'; // replace the trailing `\`
+			printf("%s", str);
+			*penult = '\\'; // and then restore it.
+		} else {
+			printf("%s\n", str);
+		}
+
+		kn_string_free(&string);
+		return args[0]; // we `return` so we don't free the arg.
+	}
+
+
+	case KN_TT_ADD:
+		ret = kn_value_add(&args[0], &args[1]);
+		break;
+
+	case KN_TT_SUB:
+		ret = kn_value_sub(&args[0], &args[1]);
+		break;
+
+	case KN_TT_MUL:
+		ret = kn_value_mul(&args[0], &args[1]);
+		break;
+
+	case KN_TT_DIV:
+		ret = kn_value_div(&args[0], &args[1]);
+		break;
+
+	case KN_TT_MOD:
+		ret = kn_value_mod(&args[0], &args[1]);
+		break;
+
+	case KN_TT_POW:
+		ret = kn_value_pow(&args[0], &args[1]);
+		break;
+
+	case KN_TT_LTH: 
+	case KN_TT_EQL:
+	case KN_TT_GTH: {
+		int cmp = kn_value_cmp(&args[0], &args[1]);
+		ret = kn_value_new_boolean(cmp == ast->kind - KN_TT_EQL);
+		break;
+	}
+
+	case KN_TT_AND:
+	case KN_TT_OR: {
+		bool is_or = ast->kind - KN_TT_AND;
+
+		// notably it runs both arguments.
+		if (kn_value_to_boolean(&args[0])) {
+			kn_value_free(&args[is_or]);
+			return args[!is_or];
+		} else {
+			kn_value_free(&args[!is_or]);
+			return args[is_or];
+		}
+	}
+
+	case KN_TT_THEN:
+		kn_value_free(&args[0]);
+		return args[1]; // the return value is the RHS.
+
+	case KN_TT_GET: {
+		struct kn_string_t string = kn_value_to_string(&args[0]);
+		size_t start = (size_t) kn_value_to_integer(&args[1]);
+		size_t amnt = (size_t) kn_value_to_integer(&args[2]);
+		size_t length = strlen(string.str);
+
+		if (length - 1 <= start) {
+			ret = kn_value_new_string(kn_string_intern(""));
+		} else {
+			char *substr = strndup(string.str + start, amnt);
+
+			VERIFY_NOT_NULL(substr, "substring creation failed");
+
+			ret = kn_value_new_string(kn_string_new(substr));
+		}
+
+		kn_string_free(&string);
+	}
+
+	case KN_TT_SET: {
+		struct kn_string_t string = kn_value_to_string(&args[0]);
+		size_t start = (size_t) kn_value_to_integer(&args[1]);
+		size_t amnt = (size_t) kn_value_to_integer(&args[2]);
+		size_t length = strlen(string.str);
+		struct kn_string_t substr = kn_value_to_string(&args[3]);
+
+		if (length - 1 <= start) {
+			ret  = kn_value_new_string(string);
+			goto after_freeing_string;
+		}
+
+		char *dup = strdup(string.str);
+		dup += amnt;
+
+		VERIFY_NOT_NULL(dup, "unable to duplicate string.");
+
+		die("todo: set");
+
+		ret = kn_value_new_string(kn_string_new(dup));
+
+		kn_string_free(&string);
+	after_freeing_string:
+		kn_string_free(&substr);
+		break;
+	}
+
+	case KN_TT_ASSIGN:
+	case KN_TT_BLOCK:
+	case KN_TT_WHILE:
+	case KN_TT_IF:
+		bug("function '%d' should have been handled.", ast->kind);
+	default:
+		bug("unknown function kind '%d'", ast->kind);
+
+	}
+
+	for (int i = 0; i < arity(ast); ++i) {
+		kn_value_free(&args[i]);
 	}
 
 	return ret;
 
 }
 
-void kn_ast_free(kn_ast_t *ast) {
+void kn_ast_free(struct kn_ast_t *ast) {
 	for (int i = 0; i < arity(ast); ++i) {
 		kn_ast_free(ast->args[i]);
 	}
@@ -551,47 +584,47 @@ void kn_ast_free(kn_ast_t *ast) {
 	}
 }
 
-void kn_ast_dump_indent(const kn_ast_t *ast, int indent) {
-	kn_string_t string;
+void kn_ast_dump_indent(const struct kn_ast_t *ast, int indent) {
 	switch(ast->kind) {
-		case KN_TT_VALUE:
-			string = kn_value_to_string(&ast->value);
-			printf("v:%s\n", string);
-			xfree(string);
-			break;
-		case KN_TT_IDENT: printf("%s\n", ast->ident); break;
-		case KN_TT_PROMPT: printf("PROMPT\n"); break;
-		case KN_TT_TRUE: printf("TRUE\n"); break;
-		case KN_TT_FALSE: printf("FALSE\n"); break;
-		case KN_TT_NULL: printf("NULL\n"); break;
-		case KN_TT_EVAL: printf("EVAL\n"); break;
-		case KN_TT_BLOCK: printf("BLOCK\n"); break;
-		case KN_TT_CALL: printf("CALL\n"); break;
-		case KN_TT_SYS: printf("SYS\n"); break;
-		case KN_TT_QUIT: printf("QUIT\n"); break;
-		case KN_TT_NOT: printf("NOT\n"); break;
-		case KN_TT_LENGTH: printf("LENGTH\n"); break;
-		case KN_TT_GET: printf("GET\n"); break;
-		case KN_TT_SET: printf("SET\n"); break;
-		case KN_TT_OUPTUT: printf("OUPTUT\n"); break;
-		case KN_TT_WHILE: printf("WHILE\n"); break;
-		case KN_TT_RAND: printf("RANDOM\n"); break;
-		case KN_TT_ADD: printf("ADD\n"); break;
-		case KN_TT_SUB: printf("SUB\n"); break;
-		case KN_TT_MUL: printf("MUL\n"); break;
-		case KN_TT_DIV: printf("DIV\n"); break;
-		case KN_TT_MOD: printf("MOD\n"); break;
-		case KN_TT_POW: printf("POW\n"); break;
-		case KN_TT_LTH: printf("LTH\n"); break;
-		case KN_TT_GTH: printf("GTH\n"); break;
-		case KN_TT_EQL: printf("EQL\n"); break;
-		case KN_TT_THEN: printf("THEN\n"); break;
-		case KN_TT_AND: printf("AND\n"); break;
-		case KN_TT_OR: printf("OR\n"); break;
-		case KN_TT_ASSIGN: printf("ASSIGN\n"); break;
-		case KN_TT_IF: printf("IF\n"); break;
-		default:
-			bug("unknown kind '%d'", ast->kind);
+	case KN_TT_VALUE: {
+		struct kn_string_t string = kn_value_to_string(&ast->value);
+		printf("v:%s\n", string.str);
+		kn_string_free(&string);
+		break;
+	}
+	case KN_TT_IDENT: printf("%s\n", ast->ident); break;
+	case KN_TT_PROMPT: printf("PROMPT\n"); break;
+	case KN_TT_TRUE: printf("TRUE\n"); break;
+	case KN_TT_FALSE: printf("FALSE\n"); break;
+	case KN_TT_NULL: printf("NULL\n"); break;
+	case KN_TT_EVAL: printf("EVAL\n"); break;
+	case KN_TT_BLOCK: printf("BLOCK\n"); break;
+	case KN_TT_CALL: printf("CALL\n"); break;
+	case KN_TT_SYS: printf("SYS\n"); break;
+	case KN_TT_QUIT: printf("QUIT\n"); break;
+	case KN_TT_NOT: printf("NOT\n"); break;
+	case KN_TT_LENGTH: printf("LENGTH\n"); break;
+	case KN_TT_GET: printf("GET\n"); break;
+	case KN_TT_SET: printf("SET\n"); break;
+	case KN_TT_OUPTUT: printf("OUPTUT\n"); break;
+	case KN_TT_WHILE: printf("WHILE\n"); break;
+	case KN_TT_RAND: printf("RANDOM\n"); break;
+	case KN_TT_ADD: printf("ADD\n"); break;
+	case KN_TT_SUB: printf("SUB\n"); break;
+	case KN_TT_MUL: printf("MUL\n"); break;
+	case KN_TT_DIV: printf("DIV\n"); break;
+	case KN_TT_MOD: printf("MOD\n"); break;
+	case KN_TT_POW: printf("POW\n"); break;
+	case KN_TT_LTH: printf("LTH\n"); break;
+	case KN_TT_GTH: printf("GTH\n"); break;
+	case KN_TT_EQL: printf("EQL\n"); break;
+	case KN_TT_THEN: printf("THEN\n"); break;
+	case KN_TT_AND: printf("AND\n"); break;
+	case KN_TT_OR: printf("OR\n"); break;
+	case KN_TT_ASSIGN: printf("ASSIGN\n"); break;
+	case KN_TT_IF: printf("IF\n"); break;
+	default:
+		bug("unknown kind '%d'", ast->kind);
 	}
 
 	if (arity(ast) == 0)
@@ -617,6 +650,6 @@ void kn_ast_dump_indent(const kn_ast_t *ast, int indent) {
 
 }
 
-void kn_ast_dump(const kn_ast_t *ast) {
+void kn_ast_dump(const struct kn_ast_t *ast) {
 	kn_ast_dump_indent(ast, 0);
 }
