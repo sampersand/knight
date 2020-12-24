@@ -5,8 +5,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "string.h"
+#include "integer.h"
 
-typedef intmax_t kn_integer_t;
+
 typedef bool kn_boolean_t;
 struct kn_ast_t;
 

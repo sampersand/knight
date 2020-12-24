@@ -155,7 +155,7 @@ struct kn_ast_t kn_ast_parse_identifier(stream_t stream) {
 struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 	size_t length = 0;
 	size_t capacity = 1024;
-	char *string = xmalloc(capacity * sizeof(char));
+	char *string = xmalloc(capacity);
 	char quote = next(stream);
 	char c;
 
@@ -182,6 +182,7 @@ struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 	};
 }
 
+struct kn_ast_t *kn_ast_parse_nonnull(stream_t);
 struct kn_ast_t kn_ast_parse_keyword(stream_t stream) {
 	char c = next(stream);
 	struct kn_ast_t ast;
@@ -339,7 +340,7 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 	}
 
 	default:
-		; // fallthrough
+		; // continue onwards
 	}
 
 	struct kn_value_t args[MAX_ARITY];
@@ -365,12 +366,19 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 	}
 
 	case KN_TT_PROMPT:{
-		// size_t linelen;
-		// char *nextline = fgetln(stdin, &linelen);
-		// if (nextline == NULL && feof(stdin)) {
-			// ret = kn_value_new(kn_string_intern())
-		// }
-		die("todo: prompt");
+		size_t linelen;
+		char *nextline = fgetln(stdin, &linelen);
+
+		if (nextline == NULL) {
+			if (feof(stdin)) {
+				ret = kn_value_new_string(kn_string_intern(""));
+			} else {
+				perror("unable to read line");
+			}
+		} else {
+			ret = kn_value_new_string(kn_string_new(nextline));
+		}
+		break;
 	}
 
 	case KN_TT_RAND:
@@ -413,8 +421,25 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 
 		break;
 
-	case KN_TT_SYS:
+	case KN_TT_SYS: {
+		struct kn_string_t command = kn_value_to_string(&args[0]);
+		FILE *cmd_stream = popen(command.str, "r");
+
+		if (cmd_stream == NULL) {
+			die("unable to execute command");
+		}
+
+		char *result = "";
 		die("todo: KN_TT_SYS");
+
+		if (pclose(cmd_stream) == -1) {
+			die("unable to close command stream");
+		}
+
+		kn_string_free(&command);
+		ret = kn_value_new_string(kn_string_new(result));
+		break;
+	}
 
 	case KN_TT_QUIT: {
 		int exit_code = (int) kn_value_to_integer(&args[0]);
@@ -559,9 +584,9 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 	case KN_TT_WHILE:
 	case KN_TT_IF:
 		bug("function '%d' should have been handled.", ast->kind);
+
 	default:
 		bug("unknown function kind '%d'", ast->kind);
-
 	}
 
 	for (int i = 0; i < arity(ast); ++i) {
@@ -592,6 +617,7 @@ void kn_ast_dump_indent(const struct kn_ast_t *ast, int indent) {
 		kn_string_free(&string);
 		break;
 	}
+
 	case KN_TT_IDENT: printf("%s\n", ast->ident); break;
 	case KN_TT_PROMPT: printf("PROMPT\n"); break;
 	case KN_TT_TRUE: printf("TRUE\n"); break;
@@ -627,26 +653,13 @@ void kn_ast_dump_indent(const struct kn_ast_t *ast, int indent) {
 		bug("unknown kind '%d'", ast->kind);
 	}
 
-	if (arity(ast) == 0)
-		return;
 	++indent;
 
-	for(int i = 0; i < indent; ++i)
-		printf("| ");
-	kn_ast_dump_indent(ast->args[0], indent);
-
-	if (arity(ast) == 1)
-		return;
-	for(int i = 0; i < indent; ++i)
-		printf("| ");
-	// printf("%d", ast);
-	kn_ast_dump_indent(ast->args[1], indent);
-
-	if (arity(ast) == 2)
-		return;
-	for(int i = 0; i < indent; ++i)
-		printf("| ");
-	kn_ast_dump_indent(ast->args[2], indent);
+	for(int i = 0; i < arity(ast); ++i) {
+		for(int i = 0; i < indent; ++i)
+			printf("| ");
+		kn_ast_dump_indent(ast->args[i], indent);
+	}
 
 }
 

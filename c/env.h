@@ -3,14 +3,30 @@
 
 #include "value.h"
 
-
-// initializes the env with the starting capacity.
+/*
+ * Initialize the environment with the starting capacity.
+ *
+ * This must be run before any Knight code is executed.
+ */
 void kn_env_initialize(size_t);
 
-// get the value, return `NULL` if it doesnt exist
+/*
+ * Gets the value associated with the given identifier.
+ *
+ * If the identifier is unknown, `NULL` is returned.
+ *
+ * The identifier must not be `NULL`. Additionally, the caller must not call
+ * `kn_value_free` on the returned value.
+ */
 struct kn_value_t *kn_env_get(const char *);
 
-// return a ref to the original one.
+/*
+ * Assigns an identifier to a value.
+ *
+ * The identifier must not be `NULL`. The value passed to this function
+ * must not be freed by anyone else---it's "ownership" is passed to the
+ * environment.
+ */
 void kn_env_set(const char *, struct kn_value_t);
 
 #endif /* KN_ENV_H */

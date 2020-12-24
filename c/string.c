@@ -76,6 +76,11 @@ kn_integer_t kn_string_to_integer(const struct kn_string_t *string) {
 	kn_integer_t ret = 0;
 	const char *ptr = string->str;
 
+	// strip leading whitespace.
+	while (isspace(ptr)) {
+		ptr++;
+	}
+
 	bool is_neg = *ptr == '-';
 	unsigned char cur;
 

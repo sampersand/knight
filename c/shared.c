@@ -1,5 +1,14 @@
 #include "shared.h"
 
+void die(const char *fmt, ...) {
+	va_list args;
+
+	vfprintf(stderr, fmt, args);
+	fprintf(stderr, "\n");
+
+	exit(1);
+}
+
 void *xmalloc(size_t size) {
 	void *ptr = malloc(size);
 
@@ -17,7 +26,7 @@ void *xrealloc(void *ptr, size_t size) {
 }
 
 void xfree(void *ptr) {
-	if (ptr == NULL) { // not `VERIFY_NOT_NULL` b/c that dies.
+	if (ptr == NULL) { // not `VERIFY_NOT_NULL` b/c that `dies`, not `bug`.
 		bug("Attempted to free a null pointer!");
 	}
 
