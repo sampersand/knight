@@ -1,10 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "knight.h"
 #include "shared.h"
-#include "env.h"
-#include "ast.h"
-#include "value.h"
 
 
 void usage(const char *program_name) {
@@ -12,7 +10,7 @@ void usage(const char *program_name) {
 }
 
 int main(int argc, const char **argv) {
-	if (argc != 3 || strlen(argv[1]) != 2) {
+	if (argc == 1 || argc > 3 || strlen(argv[1]) != 2) {
 		usage(argv[0]);
 	}
 
@@ -28,11 +26,11 @@ int main(int argc, const char **argv) {
 		usage(argv[0]);
 	}
 
-	kn_env_initialize(128);
+	kn_init();
 
-	struct kn_ast_t *ast = kn_ast_parse(&string);
-	struct kn_value_t ret = kn_ast_run(ast);
+	struct kn_value_t ret = kn_run(string);
 
 	kn_value_free(&ret);
-	kn_ast_free(ast);
+
+	return 0;
 }

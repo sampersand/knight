@@ -22,7 +22,7 @@ struct kn_env_t {
 // The singleton value of `kn_env_t`.
 static struct kn_env_t KN_ENV;
 
-void kn_env_initialize(size_t capacity) {
+void kn_env_init(size_t capacity) {
 	KN_ENV = (struct kn_env_t) {
 		.length = 0,
 		.capacity = capacity,

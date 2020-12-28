@@ -6,37 +6,23 @@
 #include "shared.h"
 
 struct kn_value_t kn_value_new_ast(struct kn_ast_t *ast) {
-	return (struct kn_value_t) {
-		.kind = KN_VT_AST,
-		.ast = ast
-	};
+	return (struct kn_value_t) {.kind = KN_VT_AST, .ast = ast };
 }
 
 struct kn_value_t kn_value_new_string(struct kn_string_t string) {
-	return (struct kn_value_t) {
-		.kind = KN_VT_STRING,
-		.string = string
-	};
+	return (struct kn_value_t) {.kind = KN_VT_STRING, .string = string };
 }
 
 struct kn_value_t kn_value_new_integer(kn_integer_t integer) {
-	return (struct kn_value_t) {
-		.kind = KN_VT_INTEGER,
-		.integer = integer
-	};
+	return (struct kn_value_t) {.kind = KN_VT_INTEGER, .integer = integer };
 }
 
 struct kn_value_t kn_value_new_boolean(kn_boolean_t boolean) {
-	return (struct kn_value_t) {
-		.kind = KN_VT_BOOLEAN,
-		.boolean = boolean
-	};
+	return (struct kn_value_t) {.kind = KN_VT_BOOLEAN, .boolean = boolean };
 }
 
 struct kn_value_t kn_value_new_null(void) {
-	return (struct kn_value_t) {
-		.kind = KN_VT_NULL
-	};
+	return (struct kn_value_t) {.kind = KN_VT_NULL };
 }
 
 struct kn_string_t kn_value_to_string(const struct kn_value_t *value) {
@@ -250,6 +236,31 @@ struct kn_value_t kn_value_pow(
 	return kn_value_new_integer(result);
 }
 
+bool kn_value_eql(const struct kn_value_t *lhs, const struct kn_value_t *rhs) {
+	if (lhs->kind != rhs->kind) {
+		return false;
+	}
+
+	switch(lhs->kind) {
+	case KN_VT_NULL:
+		return true;
+
+	case KN_VT_BOOLEAN:
+		return lhs->boolean == rhs->boolean;
+	case KN_VT_INTEGER:
+		return lhs->integer == rhs->integer;
+
+	case KN_VT_STRING:
+		return strcmp(lhs->string.str, rhs->string.str) == 0;
+
+	// ASTs are only equal if theyre the _exact same_ object.
+	case KN_VT_AST:
+		return lhs->ast == rhs->ast;
+
+	default:
+		bug("unknown kind '%d'", lhs->kind);
+	}
+}
 
 int kn_value_cmp(const struct kn_value_t *lhs, const struct kn_value_t *rhs) {
 	// return early if the pointers are idetnical.
@@ -257,32 +268,25 @@ int kn_value_cmp(const struct kn_value_t *lhs, const struct kn_value_t *rhs) {
 		return 0;
 	}
 
-	int ret;
-
 	// comparison is based on whatever the RHS is.
 	switch (lhs->kind) {
 	case KN_VT_STRING: {
 		struct kn_string_t rstring = kn_value_to_string(rhs);
 
-		ret = strcmp(lhs->string.str, rstring.str);
+		int ret = strcmp(lhs->string.str, rstring.str);
 
 		kn_string_free(&rstring);
-		break;
+		return ret;
 	}
 
 	case KN_VT_INTEGER: {
 		kn_integer_t cmp = kn_value_to_integer(rhs);
 
-		ret = lhs->integer == cmp ? 0 : lhs->integer < cmp ? -1 : 1;
-		break;
+		return lhs->integer - rhs->integer;
 	}
 
-	case KN_VT_BOOLEAN: {
-		kn_boolean_t rboolean = kn_value_to_boolean(rhs);
-
-		ret = (int) ((int) lhs->boolean - (int) rboolean);
-		break;
-	}
+	case KN_VT_BOOLEAN:
+		return (int) lhs->boolean - (int) kn_value_to_boolean(rhs);
 
 	case KN_VT_NULL:
 		die("can't compare NULL");
@@ -290,17 +294,15 @@ int kn_value_cmp(const struct kn_value_t *lhs, const struct kn_value_t *rhs) {
 	case KN_VT_AST: {
 		struct kn_value_t evaluated = kn_ast_run(lhs->ast);
 
-		ret = kn_value_cmp(&evaluated, rhs);
+		int ret = kn_value_cmp(&evaluated, rhs);
 
 		kn_value_free(&evaluated);
-		break;
+		return ret;
 	}
 
 	default:
 		bug("unknown kind '%d'", lhs->kind);
 	}
-
-	return ret < 0 ? -1 : ret > 0 ? 1 : 0;
 }
 
 struct kn_value_t kn_value_clone(const struct kn_value_t *value) {

@@ -3,10 +3,16 @@
 void die(const char *fmt, ...) {
 	va_list args;
 
-	vfprintf(stderr, fmt, args);
-	fprintf(stderr, "\n");
+	warn(fmt, args);
 
 	exit(1);
+}
+
+void warn(const char *fmt, ...) {
+	va_list args;
+
+	vfprintf(stderr, fmt, args);
+	fprintf(stderr, "\n");
 }
 
 void *xmalloc(size_t size) {

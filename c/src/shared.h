@@ -6,6 +6,20 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#ifdef DEBUG
+#define DEBUG_ASSERT(cond, msg, ...) \
+	do { \
+		if (!(cond)) { \
+			bug("assertion failed: " msg, ##__VA_ARGS__); \
+		} \
+	} while (0)
+#else
+#define DEBUG_ASSERT(cond, msg, ...) \
+	do { \
+		/* nothing */ \
+	} while(0)
+#endif /* DEBUG */
+
 /*
  * A function that's used to halt the execution of the program, writing the
  * given message to stderr before exiting with code 1.
@@ -13,6 +27,13 @@
  * Since this aborts the program, it's marked both `noreturn` and `cold`.
  */
 void die(const char *, ...) __attribute__((noreturn,cold));
+
+/*
+ * A function that's used to warn the user about something.
+ *
+ * This function writes out to stderr.
+ */
+void warn(const char *, ...);
 
 /* 
  * A macro that's used to indicate an internal bug occurred. This macro

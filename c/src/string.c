@@ -2,6 +2,7 @@
 #include "shared.h"
 
 #include <string.h>
+#include <ctype.h>
 #include <stdbool.h>
 
 static inline bool is_malloced(const struct kn_string_t *string) {
@@ -77,7 +78,7 @@ kn_integer_t kn_string_to_integer(const struct kn_string_t *string) {
 	const char *ptr = string->str;
 
 	// strip leading whitespace.
-	while (isspace(ptr)) {
+	while (isspace(*ptr)) {
 		ptr++;
 	}
 
