@@ -1,63 +1,72 @@
-#include "../knight.h"
+#include <string.h>
+#include <time.h>
+#include "ast.h"
+#include "knight.h"
+#include "shared.h"
+#include "function.h"
 
-struct kn_value_t kn_fn_assign(const struct kn_ast_t *ast) {
-	struct kn_value_t ret = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
+	struct kn_value_t ret = kn_ast_run(&args[1]);
 
-	kn_env_set(ast->args[0]->ident, kn_value_clone(&ret));
+	if (args[0].kind != KN_TT_IDENT) {
+		die("attempted to assign to a non-identifier");
+	}
+
+	kn_env_set(args[0].ident, kn_value_clone(&ret));
 
 	return ret;
 }
 
-struct kn_value_t kn_fn_block(const struct kn_ast_t *ast) {
+struct kn_value_t kn_fn_block(const struct kn_ast_t *args) {
 	struct kn_ast_t *ptr = xmalloc(sizeof(struct kn_ast_t));
 
-	ptr = kn_ast_clone(ast->args[0]);
+	*ptr = kn_ast_clone(&args[0]);
 
 	return kn_value_new_ast(ptr);
 }
 
-struct kn_value_t kn_fn_while(const struct kn_ast_t *ast) {
+struct kn_value_t kn_fn_while(const struct kn_ast_t *args) {
 	struct kn_value_t ret = kn_value_new_null();
-	struct kn_value_t condition = kn_ast_run(ast->args[0]);
+	struct kn_value_t condition = kn_ast_run(&args[0]);
 
 	while (kn_value_to_boolean(&condition)) {
 		kn_value_free(&condition);
 		kn_value_free(&ret);
-		ret = kn_ast_run(ast->args[1]);
-		condition = kn_ast_run(ast->args[0]);
+		ret = kn_ast_run(&args[1]);
+		condition = kn_ast_run(&args[0]);
 	}
 
 	kn_value_free(&condition);
 	return ret;
 }
 
-struct kn_value_t kn_fn_if(const struct kn_ast_t *ast) {
-	struct kn_value_t condition = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_if(const struct kn_ast_t *args) {
+	struct kn_value_t condition = kn_ast_run(&args[0]);
 
 	int which_arg = kn_value_to_boolean(&condition) ? 2 : 1;
-	struct kn_value_t ret = kn_ast_run(ast->args[which_arg]);
+	struct kn_value_t ret = kn_ast_run(&args[which_arg]);
 
 	kn_value_free(&condition);
 	return ret;
 }
 
-struct kn_value_t kn_fn_and(const struct kn_ast_t *ast) {
-	struct kn_value_t ret = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_and(const struct kn_ast_t *args) {
+	struct kn_value_t ret = kn_ast_run(&args[0]);
 
 	if (kn_value_to_boolean(&ret)) {
 		kn_value_free(&ret);
-		ret = kn_ast_run(ast->args[1]);
+		ret = kn_ast_run(&args[1]);
 	}
 
 	return ret;
 }
 
-struct kn_value_t kn_fn_or(const struct kn_ast_t *ast) {
-	struct kn_value_t ret = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_or(const struct kn_ast_t *args) {
+	struct kn_value_t ret = kn_ast_run(&args[0]);
 
 	if (!kn_value_to_boolean(&ret)) {
 		kn_value_free(&ret);
-		ret = kn_ast_run(ast->args[1]);
+		ret = kn_ast_run(&args[1]);
 	}
 
 	return ret;
@@ -66,7 +75,7 @@ struct kn_value_t kn_fn_or(const struct kn_ast_t *ast) {
 struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_ast) {
 	size_t linelen;
 	char *lineptr = fgetln(stdin, &linelen);
-	char *nextline;
+	char *nextline = "";
 
 	if (nextline == NULL) {
 		if (feof(stdin)) {
@@ -84,6 +93,7 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_ast) {
 }
 
 struct kn_value_t kn_fn_rand(const struct kn_ast_t *_ast) {
+	srand(time(NULL));
 	return kn_value_new_integer((kn_integer_t) rand());
 }
 
@@ -99,8 +109,9 @@ struct kn_value_t kn_fn_null(const struct kn_ast_t *_ast) {
 	return kn_value_new_null();
 }
 
-struct kn_value_t kn_fn_eval(const struct kn_ast_t *ast) {
-	struct kn_value_t arg = kn_ast_run(ast->args[0]);
+// bugged
+struct kn_value_t kn_fn_eval(const struct kn_ast_t *args) {
+	struct kn_value_t arg = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&arg);
 
 	struct kn_value_t ret = kn_run(string.str);
@@ -111,8 +122,8 @@ struct kn_value_t kn_fn_eval(const struct kn_ast_t *ast) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_call(const struct kn_ast_t *ast) {
-	struct kn_value_t arg = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
+	struct kn_value_t arg = kn_ast_run(&args[0]);
 
 	if (arg.kind != KN_VT_AST) {
 		die("Unable to call '%d's; only block ssupported", arg.kind);
@@ -125,7 +136,7 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *ast) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_system(const struct kn_ast_t *ast) {
+struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
 	// 	struct kn_string_t command = kn_value_to_string(&args[0]);
 	// 	FILE *cmd_stream = popen(command.str, "r");
 
@@ -146,14 +157,14 @@ struct kn_value_t kn_fn_system(const struct kn_ast_t *ast) {
 	die("");
 }
 
-struct kn_value_t kn_fn_quit(const struct kn_ast_t *ast) {
-	struct kn_value_t arg = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_quit(const struct kn_ast_t *args) {
+	struct kn_value_t arg = kn_ast_run(&args[0]);
 
 	exit((int) kn_value_to_integer(&arg));
 }
 
-struct kn_value_t kn_fn_not(const struct kn_ast_t *ast) {
-	struct kn_value_t arg = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_not(const struct kn_ast_t *args) {
+	struct kn_value_t arg = kn_ast_run(&args[0]);
 
 	struct kn_value_t ret = kn_value_new_boolean(
 		!kn_value_to_boolean(&arg));
@@ -163,8 +174,8 @@ struct kn_value_t kn_fn_not(const struct kn_ast_t *ast) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_length(const struct kn_ast_t *ast) {
-	struct kn_value_t arg = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_length(const struct kn_ast_t *args) {
+	struct kn_value_t arg = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&arg);
 
 	struct kn_value_t ret = kn_value_new_integer(strlen(string.str));
@@ -175,8 +186,8 @@ struct kn_value_t kn_fn_length(const struct kn_ast_t *ast) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_output(const struct kn_ast_t *ast) {
-	struct kn_value_t arg = kn_ast_run(ast->args[0]);
+struct kn_value_t kn_fn_output(const struct kn_ast_t *args) {
+	struct kn_value_t arg = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&arg);
 
 	// right here we're casting away the const.
@@ -246,9 +257,9 @@ static struct kn_value_t kn_fn_add_string(
 	return kn_value_new_string(kn_string_new(ret));
 }
 
-struct kn_value_t kn_fn_add(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_add(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	// If lhs is a string, convert both to a string and concat
 	if (lhs.kind == KN_VT_STRING) {
@@ -264,9 +275,9 @@ struct kn_value_t kn_fn_add(const struct kn_ast_t *ast) {
 	return kn_value_new_integer(augend + addend);
 }
 
-struct kn_value_t kn_fn_sub(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_sub(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	kn_integer_t minuend = kn_value_to_integer(&lhs);
 	kn_integer_t subtrahend = kn_value_to_integer(&rhs);
@@ -317,9 +328,9 @@ static struct kn_value_t kn_fn_mul_string(
 	return kn_value_new_string(kn_string_new(string));
 }
 
-struct kn_value_t kn_fn_mul(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_mul(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	if (lhs.kind == KN_VT_STRING) {
 		return kn_fn_mul_string(lhs, rhs);
@@ -334,9 +345,9 @@ struct kn_value_t kn_fn_mul(const struct kn_ast_t *ast) {
 	return kn_value_new_integer(multiplier * multiplicand);
 }
 
-struct kn_value_t kn_fn_div(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_div(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	kn_integer_t dividend = kn_value_to_integer(&lhs);
 	kn_integer_t divisor = kn_value_to_integer(&rhs);
@@ -351,9 +362,9 @@ struct kn_value_t kn_fn_div(const struct kn_ast_t *ast) {
 	return kn_value_new_integer(dividend / divisor);
 }
 
-struct kn_value_t kn_fn_mod(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_mod(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	kn_integer_t number = kn_value_to_integer(&lhs);
 	kn_integer_t base = kn_value_to_integer(&rhs);
@@ -368,9 +379,9 @@ struct kn_value_t kn_fn_mod(const struct kn_ast_t *ast) {
 	return kn_value_new_integer(number % base);
 }
 
-struct kn_value_t kn_fn_pow(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	kn_integer_t result = 1;
 	kn_integer_t base = kn_value_to_integer(&lhs);
@@ -386,9 +397,9 @@ struct kn_value_t kn_fn_pow(const struct kn_ast_t *ast) {
 	return kn_value_new_integer(result);
 }
 
-struct kn_value_t kn_fn_eql(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_eql(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 	bool is_eql;
 
 	if (lhs.kind != rhs.kind) {
@@ -462,9 +473,9 @@ static int kn_value_cmp(
 	}
 }
 
-struct kn_value_t kn_fn_lth(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_lth(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	struct kn_value_t ret = kn_value_new_boolean(
 		kn_value_cmp(lhs, rhs) < 0);
@@ -476,9 +487,9 @@ struct kn_value_t kn_fn_lth(const struct kn_ast_t *ast) {
 }
 
 
-struct kn_value_t kn_fn_gth(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_gth(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	struct kn_value_t ret = kn_value_new_boolean(
 		kn_value_cmp(lhs, rhs) > 0);
@@ -489,19 +500,19 @@ struct kn_value_t kn_fn_gth(const struct kn_ast_t *ast) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_then(const struct kn_ast_t *ast) {
-	struct kn_value_t lhs = kn_ast_run(ast->args[0]);
-	struct kn_value_t rhs = kn_ast_run(ast->args[1]);
+struct kn_value_t kn_fn_then(const struct kn_ast_t *args) {
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
+	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
 	kn_value_free(&lhs);
 
 	return rhs;
 }
 
-struct kn_value_t kn_fn_get(const struct kn_ast_t *ast) {
-	struct kn_value_t arg0 = kn_ast_run(ast->args[0]);
-	struct kn_value_t arg1 = kn_ast_run(ast->args[1]);
-	struct kn_value_t arg2 = kn_ast_run(ast->args[2]);
+struct kn_value_t kn_fn_get(const struct kn_ast_t *args) {
+	struct kn_value_t arg0 = kn_ast_run(&args[0]);
+	struct kn_value_t arg1 = kn_ast_run(&args[1]);
+	struct kn_value_t arg2 = kn_ast_run(&args[2]);
 	struct kn_value_t ret;
 
 	struct kn_string_t string = kn_value_to_string(&arg0);
@@ -528,7 +539,7 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *ast) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_set(const struct kn_ast_t *ast) {
+struct kn_value_t kn_fn_set(const struct kn_ast_t *args) {
 		// struct kn_string_t string = kn_value_to_string(&args[0]);
 		// size_t start = (size_t) kn_value_to_integer(&args[1]);
 		// size_t amnt = (size_t) kn_value_to_integer(&args[2]);
@@ -550,11 +561,11 @@ struct kn_value_t kn_fn_set(const struct kn_ast_t *ast) {
 		// ret = kn_value_new_string(kn_string_new(dup));
 
 		// kn_string_free(&string);
-	die("todo: set %p", ast);
-	// struct kn_value_t arg0 = kn_ast_run(ast->args[0]);
-	// struct kn_value_t arg1 = kn_ast_run(ast->args[1]);
-	// struct kn_value_t arg2 = kn_ast_run(ast->args[2]);
-	// struct kn_value_t arg3 = kn_ast_run(ast->args[3]);
+	die("todo: set %p", args);
+	// struct kn_value_t arg0 = kn_ast_run(&args[0]);
+	// struct kn_value_t arg1 = kn_ast_run(&args[1]);
+	// struct kn_value_t arg2 = kn_ast_run(&args[2]);
+	// struct kn_value_t arg3 = kn_ast_run(&args[3]);
 	// struct kn_value_t ret;
 
 	// struct kn_string_t string = kn_value_to_string(arg0);
@@ -581,18 +592,6 @@ struct kn_value_t kn_fn_set(const struct kn_ast_t *ast) {
 
 	// return ret;
 }
-
-struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
-	// const struct kn_function_t *fn = &FUNCTIONS[ast->kind];
-
-	die("todo");
-	// if (fn->func == NULL) {
-	// 	die("unknown function '%d'", ast->kind);
-	// }
-
-	// return (fn->func)(ast);
-}
-
 
 static struct kn_function_t FUNCTIONS[0xff] = {
 	['P'] = { 0, kn_fn_prompt },
@@ -632,9 +631,9 @@ static struct kn_function_t FUNCTIONS[0xff] = {
 };
 
 const struct kn_function_t *kn_fn_fetch(char name) {
-	return FUNCTIONS[name].func == NULL ? NULL : &FUNCTIONS[name];
+	return FUNCTIONS[(int) name].func == NULL ? NULL : &FUNCTIONS[(int) name];
 }
 
 void kn_fn_register_func(char name, struct kn_function_t func) {
-	FUNCTIONS[name] = func;
+	FUNCTIONS[(int) name] = func;
 }

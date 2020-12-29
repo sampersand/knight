@@ -6,15 +6,16 @@
  */
 struct kn_function_t {
 	size_t arity;
-	struct kn_value_t (*func)(const struct kn_ast_t *ast);
+	struct kn_value_t (*func)(const struct kn_ast_t *args);
 };
 
 /*
  * Gets the function associated with `name`, returning `NULL` if no function
  * is registered.
  *
- * The returned pointer will be valid until the function with the given name
- * is overwritten via `kn_fn_register_func`.
+ * The returned pointer is valid for the lifetime of the program. However, it
+ * will always point to the current function associated with `name`. This can
+ * be overwritten via `kn_fn_register_func`.
  */
 const struct kn_function_t *kn_fn_fetch(char name);
 

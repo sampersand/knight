@@ -27,11 +27,11 @@ void kn_env_init(size_t capacity) {
 		.length = 0,
 		.capacity = capacity,
 		.keys = xmalloc(sizeof(const char *) * capacity),
-		.vals = xmalloc(sizeof(struct kn_value_t *) * capacity)
+		.vals = xmalloc(sizeof(struct kn_value_t) * capacity)
 	};
 }
 
-struct kn_value_t *kn_env_get(const char *identifier) {
+const struct kn_value_t *kn_env_get(const char *identifier) {
 	for (size_t idx = 0; idx < KN_ENV.length; ++idx) {
 		if (strcmp(KN_ENV.keys[idx], identifier) == 0) {
 			return &KN_ENV.vals[idx];
@@ -42,7 +42,7 @@ struct kn_value_t *kn_env_get(const char *identifier) {
 }
 
 void kn_env_set(const char *identifier, struct kn_value_t value) {
-	struct kn_value_t *prev = kn_env_get(identifier);
+	struct kn_value_t *prev = (struct kn_value_t *) kn_env_get(identifier);
 
 	if (prev != NULL) {
 		*prev = value;

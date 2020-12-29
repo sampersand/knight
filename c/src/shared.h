@@ -32,6 +32,9 @@ void die(const char *, ...) __attribute__((noreturn,cold));
  * A function that's used to warn the user about something.
  *
  * This function writes out to stderr.
+ *
+ * If `KN_RT_NO_WARN` is defined when this program is compiled, no warnings will
+ * ever be printed.
  */
 void warn(const char *, ...);
 

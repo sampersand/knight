@@ -3,16 +3,22 @@
 void die(const char *fmt, ...) {
 	va_list args;
 
-	warn(fmt, args);
+	// don't call warn, as that is able to be toggled.
+	vfprintf(stderr, fmt, args);
+	fprintf(stderr, "\n");
 
 	exit(1);
 }
 
 void warn(const char *fmt, ...) {
+#ifndef KN_RT_NO_WARN
 	va_list args;
 
 	vfprintf(stderr, fmt, args);
 	fprintf(stderr, "\n");
+#else
+	(void) fmt;
+#endif
 }
 
 void *xmalloc(size_t size) {
