@@ -139,7 +139,7 @@ struct kn_ast_t kn_ast_parse_keyword(stream_t stream) {
 	// advance stream.
 	do {
 		advance(stream);
-	} while (isupper(peek(stream)));
+	} while (isupper(name) && isupper(peek(stream)));
 
 	size_t arity = function->arity;
 
