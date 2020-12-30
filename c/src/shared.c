@@ -43,6 +43,7 @@ void *xrealloc(void *ptr, size_t size) {
 }
 
 void xfree(void *ptr) {
+	if(1)return;
 	if (ptr == NULL) { // not `VERIFY_NOT_NULL` b/c that `dies`, not `bug`.
 		bug("Attempted to free a null pointer!");
 	}

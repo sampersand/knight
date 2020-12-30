@@ -72,7 +72,9 @@ struct kn_value_t kn_fn_or(const struct kn_ast_t *args) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_ast) {
+struct kn_value_t kn_fn_prompt(const struct kn_ast_t *args) {
+	(void) args;
+
 	size_t linelen;
 	char *lineptr = fgetln(stdin, &linelen);
 	char *nextline;
@@ -92,7 +94,9 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_ast) {
 	return kn_value_new_string(kn_string_new(nextline));
 }
 
-struct kn_value_t kn_fn_rand(const struct kn_ast_t *_ast) {
+struct kn_value_t kn_fn_rand(const struct kn_ast_t *args) {
+	(void) args;
+
 	static int SEEDED = 0;
 
 	if (!SEEDED) {
@@ -103,15 +107,21 @@ struct kn_value_t kn_fn_rand(const struct kn_ast_t *_ast) {
 	return kn_value_new_integer((kn_integer_t) rand());
 }
 
-struct kn_value_t kn_fn_true(const struct kn_ast_t *_ast) {
+struct kn_value_t kn_fn_true(const struct kn_ast_t *args) {
+	(void) args;
+
 	return kn_value_new_boolean(true);
 }
 
-struct kn_value_t kn_fn_false(const struct kn_ast_t *_ast) {
+struct kn_value_t kn_fn_false(const struct kn_ast_t *args) {
+	(void) args;
+
 	return kn_value_new_boolean(false);
 }
 
-struct kn_value_t kn_fn_null(const struct kn_ast_t *_ast) {
+struct kn_value_t kn_fn_null(const struct kn_ast_t *args) {
+	(void) args;
+
 	return kn_value_new_null();
 }
 
@@ -143,24 +153,28 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
 
 // TODO
 struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
-	// 	struct kn_string_t command = kn_value_to_string(&args[0]);
-	// 	FILE *cmd_stream = popen(command.str, "r");
+	(void) args;
+	// struct kn_value_t arg0 = kn_ast_run(&args[0]);
+	// struct kn_string_t command = kn_value_to_string(arg0);
+	// FILE *cmd_stream = popen(command.str, "r");
 
-	// 	if (cmd_stream == NULL) {
-	// 		warn("unable to execute command '%s'.", command.str);
-	// 		ret = kn_value_new_null();
-	// 		goto kn_tt_sys_free_command;
-	// 	}
+	// if (cmd_stream == NULL) {
+	// 	warn("unable to execute command '%s'.", command.str);
+	// 	ret = kn_value_new_null();
+	// 	goto kn_tt_sys_free_command;
+	// } else {
+		
+	// // 	if (pclose(cmd_stream) == -1) {
+	// // 		warn("unable to close command stream.");
+	// // 	}
+	// }
 
 	// 	char *result = "";
 	// 	die("todo: KN_TT_SYS");
 
-	// 	if (pclose(cmd_stream) == -1) {
-	// 		warn("unable to close command stream.");
-	// 	}
 
 	// 	ret = kn_value_new_string(kn_string_new(result));
-	die("");
+	die("todo: `");
 }
 
 struct kn_value_t kn_fn_quit(const struct kn_ast_t *args) {
@@ -552,7 +566,6 @@ struct kn_value_t kn_fn_set(const struct kn_ast_t *args) {
 	struct kn_value_t arg2 = kn_ast_run(&args[2]);
 	struct kn_value_t arg3 = kn_ast_run(&args[3]);
 	struct kn_value_t ret;
-
 
 	struct kn_string_t string = kn_value_to_string(&arg0);
 	size_t start = (size_t) kn_value_to_integer(&arg1);

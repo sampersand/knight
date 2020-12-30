@@ -44,7 +44,8 @@ static void strip_stream(stream_t stream) {
 			// do nothing until we hit EOF or EOL.
 		}
 
-		return strip_stream(stream);
+		strip_stream(stream);
+		return;
 
 		// fall through, as will be immediately after a comment.
 	default:
@@ -222,7 +223,7 @@ struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 
 		ret.args = xmalloc(arity * sizeof(struct kn_ast_t));
 
-		for (int i = 0; i < arity; i++) {
+		for (size_t i = 0; i < arity; i++) {
 			ret.args[i] = kn_ast_clone(&ast->args[i]);
 		}
 
@@ -247,7 +248,7 @@ void kn_ast_free(struct kn_ast_t *ast) {
 		break;
 
 	case KN_TT_FUNCTION:
-		for (int i = 0; i < ast->function->arity; ++i) {
+		for (size_t i = 0; i < ast->function->arity; ++i) {
 			kn_ast_free(&ast->args[i]);
 		}
 
