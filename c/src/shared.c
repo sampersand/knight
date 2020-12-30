@@ -3,8 +3,10 @@
 void die(const char *fmt, ...) {
 	va_list args;
 
+	va_start(args, fmt);
 	// don't call warn, as that is able to be toggled.
 	vfprintf(stderr, fmt, args);
+	va_end(args);
 	fprintf(stderr, "\n");
 
 	exit(1);
@@ -14,7 +16,10 @@ void warn(const char *fmt, ...) {
 #ifndef KN_RT_NO_WARN
 	va_list args;
 
+	va_start(args, fmt);
+	// don't call warn, as that is able to be toggled.
 	vfprintf(stderr, fmt, args);
+	va_end(args);
 	fprintf(stderr, "\n");
 #else
 	(void) fmt;

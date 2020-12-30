@@ -43,7 +43,7 @@ struct kn_value_t kn_fn_while(const struct kn_ast_t *args) {
 struct kn_value_t kn_fn_if(const struct kn_ast_t *args) {
 	struct kn_value_t condition = kn_ast_run(&args[0]);
 
-	int which_arg = kn_value_to_boolean(&condition) ? 2 : 1;
+	int which_arg = kn_value_to_boolean(&condition) ? 1 : 2;
 	struct kn_value_t ret = kn_ast_run(&args[which_arg]);
 
 	kn_value_free(&condition);
@@ -75,9 +75,9 @@ struct kn_value_t kn_fn_or(const struct kn_ast_t *args) {
 struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_ast) {
 	size_t linelen;
 	char *lineptr = fgetln(stdin, &linelen);
-	char *nextline = "";
+	char *nextline;
 
-	if (nextline == NULL) {
+	if (lineptr == NULL) {
 		if (feof(stdin)) {
 			return kn_value_new_string(kn_string_intern(""));
 		} else {
@@ -93,7 +93,13 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_ast) {
 }
 
 struct kn_value_t kn_fn_rand(const struct kn_ast_t *_ast) {
-	srand(time(NULL));
+	static int SEEDED = 0;
+
+	if (!SEEDED) {
+		SEEDED = 1;
+		srand(time(NULL));
+	}
+
 	return kn_value_new_integer((kn_integer_t) rand());
 }
 
@@ -109,7 +115,6 @@ struct kn_value_t kn_fn_null(const struct kn_ast_t *_ast) {
 	return kn_value_new_null();
 }
 
-// bugged
 struct kn_value_t kn_fn_eval(const struct kn_ast_t *args) {
 	struct kn_value_t arg = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&arg);
@@ -136,6 +141,7 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
 	return ret;
 }
 
+// TODO
 struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
 	// 	struct kn_string_t command = kn_value_to_string(&args[0]);
 	// 	FILE *cmd_stream = popen(command.str, "r");
@@ -387,8 +393,10 @@ struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
 	kn_integer_t base = kn_value_to_integer(&lhs);
 	kn_integer_t exponent = kn_value_to_integer(&rhs);
 
-	for (; exponent != 0; --exponent) {
-		result *= base;
+	if (base != 0) {
+		for (; exponent != 0; --exponent) {
+			result *= base;
+		}
 	}
 
 	kn_value_free(&lhs);
@@ -486,7 +494,6 @@ struct kn_value_t kn_fn_lth(const struct kn_ast_t *args) {
 	return ret;
 }
 
-
 struct kn_value_t kn_fn_gth(const struct kn_ast_t *args) {
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
@@ -521,7 +528,7 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *args) {
 
 	size_t length = strlen(string.str);
 
-	if (length - 1 <= start) {
+	if (length - 1 < start) {
 		ret = kn_value_new_string(kn_string_intern(""));
 	} else {
 		char *substr = strndup(string.str + start, amnt);
@@ -540,57 +547,43 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_set(const struct kn_ast_t *args) {
-		// struct kn_string_t string = kn_value_to_string(&args[0]);
-		// size_t start = (size_t) kn_value_to_integer(&args[1]);
-		// size_t amnt = (size_t) kn_value_to_integer(&args[2]);
-		// size_t length = strlen(string.str);
-		// struct kn_string_t substr = kn_value_to_string(&args[3]);
+	struct kn_value_t arg0 = kn_ast_run(&args[0]);
+	struct kn_value_t arg1 = kn_ast_run(&args[1]);
+	struct kn_value_t arg2 = kn_ast_run(&args[2]);
+	struct kn_value_t arg3 = kn_ast_run(&args[3]);
+	struct kn_value_t ret;
 
-		// if (length - 1 <= start) {
-		// 	ret  = kn_value_new_string(string);
-		// 	goto after_freeing_string;
-		// }
 
-		// char *dup = strdup(string.str);
-		// dup += amnt;
+	struct kn_string_t string = kn_value_to_string(&arg0);
+	size_t start = (size_t) kn_value_to_integer(&arg1);
+	size_t amnt = (size_t) kn_value_to_integer(&arg2);
+	size_t length = strlen(string.str);
+	struct kn_string_t substr = kn_value_to_string(&arg3);
 
-		// VERIFY_NOT_NULL(dup, "unable to duplicate string.");
+	// if it's out of bounds, die.
+	if (length < start) {
+		die("index '%zu' out of bounds (length=%zu)", start, length);
+	}
 
-		// die("todo: set");
+	// this could be made more efficient.
+	char *retstr = xmalloc(length + strlen(substr.str));
+	memcpy(retstr, string.str, start);
+	printf("1: %s\n", retstr);
+	strcat(retstr + start, substr.str);
+	printf("2: %s\n", retstr);
+	strcat(retstr + start + strlen(substr.str), string.str + start + amnt);
+	printf("3: %s\n", retstr);
 
-		// ret = kn_value_new_string(kn_string_new(dup));
+	ret = kn_value_new_string(kn_string_new(retstr));
 
-		// kn_string_free(&string);
-	die("todo: set %p", args);
-	// struct kn_value_t arg0 = kn_ast_run(&args[0]);
-	// struct kn_value_t arg1 = kn_ast_run(&args[1]);
-	// struct kn_value_t arg2 = kn_ast_run(&args[2]);
-	// struct kn_value_t arg3 = kn_ast_run(&args[3]);
-	// struct kn_value_t ret;
+	kn_string_free(&substr);
+	kn_string_free(&string);
+	kn_value_free(&arg3);
+	kn_value_free(&arg2);
+	kn_value_free(&arg1);
+	kn_value_free(&arg0);
 
-	// struct kn_string_t string = kn_value_to_string(arg0);
-	// size_t start = (size_t) kn_value_to_integer(arg1);
-	// size_t amnt = (size_t) kn_value_to_integer(arg2);
-	// struct kn_string_t substr = (size_t) kn_value_to_integer(arg2);
-
-	// size_t length = strlen(string.str);
-
-	// if (length - 1 <= start) {
-	// 	ret = kn_value_new_string(kn_string_intern(""));
-	// } else {
-	// 	char *substr = strndup(string.str + start, amnt);
-
-	// 	VERIFY_NOT_NULL(substr, "substring creation failed");
-
-	// 	ret = kn_value_new_string(kn_string_new(substr));
-	// }
-
-	// kn_string_free(&string);
-	// kn_value_free(&arg2);
-	// kn_value_free(&arg1);
-	// kn_value_free(&arg0);
-
-	// return ret;
+	return ret;
 }
 
 static struct kn_function_t FUNCTIONS[0xff] = {

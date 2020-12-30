@@ -44,6 +44,8 @@ static void strip_stream(stream_t stream) {
 			// do nothing until we hit EOF or EOL.
 		}
 
+		return strip_stream(stream);
+
 		// fall through, as will be immediately after a comment.
 	default:
 		if (!isspace(c)) {
@@ -130,7 +132,7 @@ struct kn_ast_t kn_ast_parse_keyword(stream_t stream) {
 	const struct kn_function_t *function = kn_fn_fetch(name);
 
 	if (function == NULL) {
-		die("unknown function '%c' encountered.", function);
+		die("unknown function '%c' encountered.", name);
 	}
 
 	// advance stream.
@@ -166,7 +168,7 @@ struct kn_ast_t kn_ast_parse(stream_t stream) {
 	} else if (isupper(peeked) || ispunct(peeked)) {
 		return kn_ast_parse_keyword(stream);
 	} else if (peeked == '\0') {
-		die("unexpected eof; expected an expression..");
+		die("unexpected eof; expected an expression.");
 	} else {
 		die("unknown token start '%c'", peeked);
 	}
@@ -194,8 +196,6 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 		bug("unknown kind '%d'");
 	}
 }
-
-
 
 struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 	struct kn_ast_t ret = (struct kn_ast_t) {

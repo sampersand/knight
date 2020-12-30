@@ -55,7 +55,7 @@ void kn_env_set(const char *identifier, struct kn_value_t value) {
 		KN_ENV.vals = xrealloc(KN_ENV.vals, KN_ENV.capacity);
 	}
 
-	KN_ENV.keys[KN_ENV.length] = identifier;
+	KN_ENV.keys[KN_ENV.length] = strdup(identifier);
 	KN_ENV.vals[KN_ENV.length] = value;
 
 	++KN_ENV.length;

@@ -1,0 +1,6 @@
+; = fact BLOCK
+	: IF < n 2
+		: 1
+		: * n CALL (; = n - n 1 : fact)
+; = n 10
+: OUTPUT +++"fact(" n ")=" CALL fact
