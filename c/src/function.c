@@ -568,11 +568,8 @@ struct kn_value_t kn_fn_set(const struct kn_ast_t *args) {
 	// this could be made more efficient.
 	char *retstr = xmalloc(length + strlen(substr.str));
 	memcpy(retstr, string.str, start);
-	printf("1: %s\n", retstr);
 	strcat(retstr + start, substr.str);
-	printf("2: %s\n", retstr);
 	strcat(retstr + start + strlen(substr.str), string.str + start + amnt);
-	printf("3: %s\n", retstr);
 
 	ret = kn_value_new_string(kn_string_new(retstr));
 
