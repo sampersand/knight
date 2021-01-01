@@ -6,13 +6,20 @@
 #include "function.h"
 
 struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
-	struct kn_value_t ret = kn_ast_run(&args[1]);
+	struct kn_value_t ret;
+	if (args[0].kind == KN_TT_IDENT) {
+		ret = kn_ast_run(&args[1]);
+		kn_env_set(args[0].ident, kn_value_clone(&ret));
+	} else {
+		struct kn_value_t var = kn_ast_run(&args[0]);
+		struct kn_string_t ident = kn_value_to_string(&var);
 
-	if (args[0].kind != KN_TT_IDENT) {
-		die("attempted to assign to a non-identifier");
+		ret = kn_ast_run(&args[1]);
+		kn_env_set(ident.str, kn_value_clone(&ret));
+
+		kn_string_free(&ident);
+		kn_value_free(&var);
 	}
-
-	kn_env_set(args[0].ident, kn_value_clone(&ret));
 
 	return ret;
 }
@@ -77,7 +84,6 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *args) {
 
 	size_t linelen;
 	char *lineptr = fgetln(stdin, &linelen);
-	char *nextline;
 
 	if (lineptr == NULL) {
 		if (feof(stdin)) {
@@ -87,11 +93,10 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *args) {
 		}
 	}
 
-	nextline = xmalloc(linelen + 1);
-	memcpy(nextline, lineptr, linelen + 1);
-	nextline[linelen] = '\0';
+	lineptr = xrealloc(lineptr, linelen + 1);
+	lineptr[linelen + 1] = '\0';
 
-	return kn_value_new_string(kn_string_new(nextline));
+	return kn_value_new_string(kn_string_new(lineptr));
 }
 
 struct kn_value_t kn_fn_rand(const struct kn_ast_t *args) {
@@ -141,7 +146,7 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
 	struct kn_value_t arg = kn_ast_run(&args[0]);
 
 	if (arg.kind != KN_VT_AST) {
-		die("Unable to call '%d's; only block ssupported", arg.kind);
+		die("Unable to call '%d's; only block supported", arg.kind);
 	}
 
 	struct kn_value_t ret = kn_ast_run(arg.ast);
@@ -151,30 +156,47 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
 	return ret;
 }
 
-// TODO
 struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
-	(void) args;
-	// struct kn_value_t arg0 = kn_ast_run(&args[0]);
-	// struct kn_string_t command = kn_value_to_string(arg0);
-	// FILE *cmd_stream = popen(command.str, "r");
+	struct kn_value_t arg0 = kn_ast_run(&args[0]);
+	struct kn_string_t command = kn_value_to_string(&arg0);
+	struct kn_value_t ret;
 
-	// if (cmd_stream == NULL) {
-	// 	warn("unable to execute command '%s'.", command.str);
-	// 	ret = kn_value_new_null();
-	// 	goto kn_tt_sys_free_command;
-	// } else {
-		
-	// // 	if (pclose(cmd_stream) == -1) {
-	// // 		warn("unable to close command stream.");
-	// // 	}
-	// }
+	FILE *stream = popen(command.str, "r");
 
-	// 	char *result = "";
-	// 	die("todo: KN_TT_SYS");
+	if (stream == NULL) {
+		die("unable to execute command '%s'.", command.str);
+	}
 
+	size_t cap = 2048;
+	size_t len = 0;
+	size_t tmp;
+	char *result = xmalloc(cap);
 
-	// 	ret = kn_value_new_string(kn_string_new(result));
-	die("todo: `");
+	while ((tmp = fread(result + len, 1, cap - len, stream))) {
+		len += tmp;
+		if (len == cap) {
+			cap *= 2;
+			result = xrealloc(result, cap);
+		}
+	}
+
+	if (ferror(stream)) {
+		die("unable to read command stream");
+	}
+
+	result = xrealloc(result, len + 1);
+	result[len] = '\0';
+
+	if (pclose(stream) == -1) {
+		die("unable to close command stream.");
+	}
+
+	ret = kn_value_new_string(kn_string_new(result));
+
+	kn_string_free(&command);
+	kn_value_free(&arg0);
+
+	return ret;
 }
 
 struct kn_value_t kn_fn_quit(const struct kn_ast_t *args) {

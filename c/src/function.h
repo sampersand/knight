@@ -95,8 +95,8 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *ast);
  * `` ` str ``: Executes `str` as a system command, returning the
  * stdout of that function.
  *
- * If there are problems during the opening of the command, a warning
- * is logged, and `null` is returned.
+ * If there are problems during the opening of the command, the program is
+ * aborted. (ie the Knight program.)
  */
 struct kn_value_t kn_fn_system(const struct kn_ast_t *ast);
 
