@@ -1,6 +1,6 @@
 ; = fizzbuzz BLOCK
 	; = n 0
-	: WHILE < (= n + 1 n) max
+	: WHILE < (= n + 1 n) (+ max 1)
 		: OUTPUT
 			: IF ! (% n 15)
 				: "FizzBuzz"
