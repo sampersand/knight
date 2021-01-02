@@ -23,15 +23,20 @@ static char next(stream_t stream) {
 	return *((*stream)++);
 }
 
-static int is_eof(stream_t stream) {
-	return peek(stream) == '\0';
-}
-
 static void strip_stream(stream_t stream) {
+	char c;
+
 	while (1) {
-		char c = peek(stream);
+		c = peek(stream);
 
 		switch (c) {
+		case '#':
+			do {
+				c = next(stream);
+			} while (c != '\0' && c != '\n');
+
+			continue;
+
 		case '(':
 		case ')':
 		case '[':
@@ -40,13 +45,6 @@ static void strip_stream(stream_t stream) {
 		case '}':
 		case ':':
 			break;
-
-		case '#':
-			while (!is_eof(stream) && next(stream) != '\n') {
-				// do nothing until we hit EOF or EOL.
-			}
-
-			continue;
 
 		default:
 			if (!isspace(c)) {
@@ -109,8 +107,9 @@ static struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 	size_t length = 0;
 	size_t capacity = 16;
 	char *string = xmalloc(capacity);
+	char c;
 
-	for (char c, quote = next(stream); quote != (c = next(stream));) {
+	for (char quote = next(stream); quote != (c = next(stream));) {
 		string[length++] = c;
 
 		if (c == '\0') {
@@ -133,11 +132,13 @@ static struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 }
 
 static struct kn_ast_t kn_ast_parse_function(stream_t stream) {
-	char name = peek(stream);
+	char name = next(stream);
 
 	// strip trailing keywords.
-	while (isupper(peek(stream))) {
-		advance(stream);
+	if (isupper(name)) {
+		while (isupper(peek(stream))) {
+			advance(stream);
+		}
 	}
 
 	const struct kn_function_t *function = kn_fn_fetch(name);
@@ -151,11 +152,11 @@ static struct kn_ast_t kn_ast_parse_function(stream_t stream) {
 	struct kn_ast_t ast = (struct kn_ast_t) {
 		.kind = KN_TT_FUNCTION,
 		.function = function,
-		.args = xmalloc(arity * sizeof(struct kn_ast_t))
+		.arguments = xmalloc(arity * sizeof(struct kn_ast_t))
 	};
 
 	for (size_t i = 0; i < arity; ++i) {
-		ast.args[i] = kn_ast_parse(stream);
+		ast.arguments[i] = kn_ast_parse(stream);
 	}
 
 	return ast;
@@ -204,7 +205,7 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 	}
 
 	case KN_TT_FUNCTION:
-		return (ast->function->func)(ast->args);
+		return (ast->function->func)(ast->arguments);
 
 	default:
 		bug("unknown kind '%d'");
@@ -234,10 +235,10 @@ struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 		ret.function = ast->function;
 		size_t arity = ret.function->arity;
 
-		ret.args = xmalloc(arity * sizeof(struct kn_ast_t));
+		ret.arguments = xmalloc(arity * sizeof(struct kn_ast_t));
 
 		for (size_t i = 0; i < arity; i++) {
-			ret.args[i] = kn_ast_clone(&ast->args[i]);
+			ret.arguments[i] = kn_ast_clone(&ast->arguments[i]);
 		}
 
 		break;
@@ -262,11 +263,12 @@ void kn_ast_free(struct kn_ast_t *ast) {
 
 	case KN_TT_FUNCTION:
 		for (size_t i = 0; i < ast->function->arity; ++i) {
-			kn_ast_free(&ast->args[i]);
+			kn_ast_free(&ast->arguments[i]);
 		}
 
-		xfree((void *) ast->args);
+		xfree((void *) ast->arguments);
 		break;
+
 	default:
 		bug("unknown kind '%d'", ast->kind);
 	}

@@ -1,5 +1,8 @@
 #include "knight.h"
 #include "env.h"
+#include <time.h>
+#include <stdlib.h>
+
 
 #ifndef KNIGHT_ENV_INIT_SIZE
 #define KNIGHT_ENV_INIT_SIZE 128
@@ -15,6 +18,7 @@ void kn_init(void) {
 	INITIALIZED = true;
 
 	kn_env_init(KNIGHT_ENV_INIT_SIZE);
+	srand(time(NULL));
 }
 
 struct kn_value_t kn_run(const char *stream) {

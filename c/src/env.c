@@ -26,8 +26,8 @@ void kn_env_init(size_t capacity) {
 	KN_ENV = (struct kn_env_t) {
 		.length = 0,
 		.capacity = capacity,
-		.keys = xmalloc(sizeof(const char *) * capacity),
-		.vals = xmalloc(sizeof(struct kn_value_t) * capacity)
+		.keys = xmalloc(capacity * sizeof(const char *)),
+		.vals = xmalloc(capacity * sizeof(struct kn_value_t))
 	};
 }
 
