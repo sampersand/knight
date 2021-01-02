@@ -6,10 +6,12 @@ module Kn
 			self[tt || name[0]] = new(name, &block)
 		end
 
-		def self.[](name) = @functions[name]
+		def self.[](name)
+			@functions[name]
+		end
+
 		def self.[]=(name, func)
 			@functions[name] = func
-			func
 		end
 
 		attr_reader :name
@@ -22,9 +24,7 @@ module Kn
 		def inspect = "#{self.class}::#@name"
 		alias to_s name
 
-		def call(...)
-			Value.new super(...)
-		end
+		def call(*) = Value.new(super)
 
 		alias run call
 

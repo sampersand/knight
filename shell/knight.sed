@@ -1,5 +1,7 @@
 #n
 
+# this program isn't done at all.
+
 s/^$/foobar/;h;s/.*/baz/;H
 
 

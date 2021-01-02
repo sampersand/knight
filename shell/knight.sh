@@ -1,12 +1,11 @@
-#!/usr/local/bin/shellcheck
 #!/bin/sh
+#!/usr/local/bin/shellcheck
 
 # Aborts execution after printing the message to stderr.
 abort () { echo $@ >&2; exit 1; }
 
 car () { printf %s "$1" | head -c1; }
 cdr () { printf %s "$1" | tail -c $(( ${#1} - 2)); }
-
 
 # The function that tokenizes all the tokens. It takes a single argument, and
 # prints out tokens separated by `\0`.
