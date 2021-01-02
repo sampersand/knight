@@ -7,17 +7,18 @@
 
 struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
 	struct kn_value_t ret;
-	if (args[0].kind == KN_TT_IDENT) {
+
+	if (args[0].kind == KN_TT_IDENTIFIER) {
 		ret = kn_ast_run(&args[1]);
-		kn_env_set(args[0].ident, kn_value_clone(&ret));
+		kn_env_set(args[0].identifier, kn_value_clone(&ret));
 	} else {
 		struct kn_value_t var = kn_ast_run(&args[0]);
-		struct kn_string_t ident = kn_value_to_string(&var);
+		struct kn_string_t identifier = kn_value_to_string(&var);
 
 		ret = kn_ast_run(&args[1]);
-		kn_env_set(ident.str, kn_value_clone(&ret));
+		kn_env_set(identifier.str, kn_value_clone(&ret));
 
-		kn_string_free(&ident);
+		kn_string_free(&identifier);
 		kn_value_free(&var);
 	}
 
@@ -25,11 +26,11 @@ struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_block(const struct kn_ast_t *args) {
-	struct kn_ast_t *ptr = xmalloc(sizeof(struct kn_ast_t));
+	struct kn_ast_t *ret = xmalloc(sizeof(struct kn_ast_t));
 
-	*ptr = kn_ast_clone(&args[0]);
+	*ret = kn_ast_clone(&args[0]);
 
-	return kn_value_new_ast(ptr);
+	return kn_value_new_ast(ret);
 }
 
 struct kn_value_t kn_fn_while(const struct kn_ast_t *args) {
@@ -39,6 +40,7 @@ struct kn_value_t kn_fn_while(const struct kn_ast_t *args) {
 	while (kn_value_to_boolean(&condition)) {
 		kn_value_free(&condition);
 		kn_value_free(&ret);
+
 		ret = kn_ast_run(&args[1]);
 		condition = kn_ast_run(&args[0]);
 	}
@@ -51,10 +53,9 @@ struct kn_value_t kn_fn_if(const struct kn_ast_t *args) {
 	struct kn_value_t condition = kn_ast_run(&args[0]);
 
 	int which_arg = kn_value_to_boolean(&condition) ? 1 : 2;
-	struct kn_value_t ret = kn_ast_run(&args[which_arg]);
-
 	kn_value_free(&condition);
-	return ret;
+
+	return kn_ast_run(&args[which_arg]);
 }
 
 struct kn_value_t kn_fn_and(const struct kn_ast_t *args) {
