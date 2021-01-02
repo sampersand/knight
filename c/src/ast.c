@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "ast.h"
 #include "shared.h"
@@ -22,50 +23,51 @@ static char next(stream_t stream) {
 	return *((*stream)++);
 }
 
-static bool is_eof(stream_t stream) {
+static int is_eof(stream_t stream) {
 	return peek(stream) == '\0';
 }
 
 static void strip_stream(stream_t stream) {
-	char c = peek(stream);
+	while (1) {
+		char c = peek(stream);
 
-	switch (c) {
-	case '(':
-	case ')':
-	case '[':
-	case ']':
-	case '{':
-	case '}':
-	case ':':
-		break;
+		switch (c) {
+		case '(':
+		case ')':
+		case '[':
+		case ']':
+		case '{':
+		case '}':
+		case ':':
+			break;
 
-	case '#':
-		while (!is_eof(stream) && next(stream) != '\n') {
-			// do nothing until we hit EOF or EOL.
+		case '#':
+			while (!is_eof(stream) && next(stream) != '\n') {
+				// do nothing until we hit EOF or EOL.
+			}
+
+			continue;
+
+		default:
+			if (!isspace(c)) {
+				return;
+			}
 		}
 
-		strip_stream(stream);
-		return;
-
-		// fall through, as will be immediately after a comment.
-	default:
-		if (!isspace(c)) {
-			return;
-		}
+		advance(stream);
 	}
-
-	advance(stream);
-	strip_stream(stream);
 }
 
 
-struct kn_ast_t kn_ast_parse_integer(stream_t stream) {
+static struct kn_ast_t kn_ast_parse_integer(stream_t stream) {
+	assert(isdigit(peek(stream)));
+
 	kn_integer_t integer = 0;
 
-	while (isdigit(peek(stream))) {
+	do {
 		integer *= 10;
 		integer += next(stream) - '0';
-	}
+	} while (isdigit(peek(stream)));
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_VALUE,
@@ -73,53 +75,55 @@ struct kn_ast_t kn_ast_parse_integer(stream_t stream) {
 	};
 }
 
-struct kn_ast_t kn_ast_parse_identifier(stream_t stream) {
+static int isident(char c) {
+	return islower(c) || isdigit(c) || c == '_';
+}
+
+static struct kn_ast_t kn_ast_parse_identifier(stream_t stream) {
+	assert(isident(peek(stream)));
+
 	size_t capacity = 8;
 	size_t length = 0;
 	char *identifier = xmalloc(capacity);
-	char c;
 
-	while (islower(c = peek(stream)) || isdigit(c) || c == '_') {
-		identifier[length++] = c;
-		advance(stream);
+	do {
+		identifier[length++] = next(stream);
 
 		if (length == capacity) {
-			capacity *= 2;
-			identifier = xrealloc(identifier, capacity);
+			identifier = xrealloc(identifier, capacity *= 2);
 		}
-	}
+	} while (isident(peek(stream)));
 
 	identifier[length++] = '\0';
 	identifier = xrealloc(identifier, length);
 
 	return (struct kn_ast_t) {
-		.kind = KN_TT_IDENT,
-		.ident = identifier
+		.kind = KN_TT_IDENTIFIER,
+		.identifier = identifier
 	};
 }
 
-struct kn_ast_t kn_ast_parse_string(stream_t stream) {
-	size_t length = 0;
-	size_t capacity = 1024;
-	char *string = xmalloc(capacity);
-	char quote = next(stream);
-	char c;
+static struct kn_ast_t kn_ast_parse_string(stream_t stream) {
+	assert(peek(stream) == '"' || peek(stream) == '\'');
 
-	while(!is_eof(stream) && (c = next(stream)) != quote) {
+	size_t length = 0;
+	size_t capacity = 16;
+	char *string = xmalloc(capacity);
+
+	for (char c, quote = next(stream); quote != (c = next(stream));) {
 		string[length++] = c;
 
+		if (c == '\0') {
+			die("unterminated quote encountered: %c%s\n",
+				quote, string);
+		}
+
 		if (length == capacity) {
-			capacity *= 2;
-			string = xrealloc(string, capacity);
+			string = xrealloc(string, capacity *= 2);
 		}
 	}
 
 	string[length++] = '\0';
-
-	if (c != quote) {
-		die("unterminated quote encountered: %c%s\n", quote, string);
-	}
-
 	string = xrealloc(string, length); // remove unused capacity
 
 	return (struct kn_ast_t) {
@@ -128,18 +132,19 @@ struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 	};
 }
 
-struct kn_ast_t kn_ast_parse_keyword(stream_t stream) {
+static struct kn_ast_t kn_ast_parse_function(stream_t stream) {
 	char name = peek(stream);
+
+	// strip trailing keywords.
+	while (isupper(peek(stream))) {
+		advance(stream);
+	}
+
 	const struct kn_function_t *function = kn_fn_fetch(name);
 
 	if (function == NULL) {
 		die("unknown function '%c' encountered.", name);
 	}
-
-	// advance stream.
-	do {
-		advance(stream);
-	} while (isupper(name) && isupper(peek(stream)));
 
 	size_t arity = function->arity;
 
@@ -162,13 +167,21 @@ struct kn_ast_t kn_ast_parse(stream_t stream) {
 
 	if (isdigit(peeked)) {
 		return kn_ast_parse_integer(stream);
-	} else if (islower(peeked) || peeked == '_') {
+	}
+
+	if (isident(peeked)) {
 		return kn_ast_parse_identifier(stream);
-	} else if (peeked == '\'' || peeked == '"') {
+	}
+
+	if (peeked == '\'' || peeked == '"') {
 		return kn_ast_parse_string(stream);
-	} else if (isupper(peeked) || ispunct(peeked)) {
-		return kn_ast_parse_keyword(stream);
-	} else if (peeked == '\0') {
+	}
+
+	if (isupper(peeked) || ispunct(peeked)) {
+		return kn_ast_parse_function(stream);
+	}
+
+	if (peeked == '\0') {
 		die("unexpected eof; expected an expression.");
 	} else {
 		die("unknown token start '%c'", peeked);
@@ -180,11 +193,11 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 	case KN_TT_VALUE:
 		return kn_value_clone(&ast->value);
 
-	case KN_TT_IDENT: {
-		const struct kn_value_t *retptr = kn_env_get(ast->ident);
+	case KN_TT_IDENTIFIER: {
+		const struct kn_value_t *retptr = kn_env_get(ast->identifier);
 
 		if (retptr == NULL) {
-			die("unknown identifier '%s'", ast->ident);
+			die("unknown identifier '%s'", ast->identifier);
 		}
 
 		return kn_value_clone(retptr);
@@ -208,12 +221,12 @@ struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 		ret.value = kn_value_clone(&ast->value);
 		break;
 
-	case KN_TT_IDENT: {
-		char *ident = strdup((char *) ast->ident);
+	case KN_TT_IDENTIFIER: {
+		char *identifier = strdup((char *) ast->identifier);
 
-		VERIFY_NOT_NULL(ident, "unable to duplicate an identifier");
+		VERIFY_NOT_NULL(identifier, "unable to duplicate identifier");
 
-		ret.ident = ident;
+		ret.identifier = identifier;
 		break;
 	}
 
@@ -243,8 +256,8 @@ void kn_ast_free(struct kn_ast_t *ast) {
 		kn_value_free(&ast->value);
 		break;
 
-	case KN_TT_IDENT:
-		xfree((void *) ast->ident);
+	case KN_TT_IDENTIFIER:
+		xfree((void *) ast->identifier);
 		break;
 
 	case KN_TT_FUNCTION:

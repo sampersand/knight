@@ -1,9 +1,6 @@
 #ifndef KN_STRING_H
 #define KN_STRING_H
 
-#include <stdint.h>
-#include "integer.h"
-
 /*
  * A struct that's used to manage strings within Knight.
  *
@@ -54,24 +51,6 @@ struct kn_string_t kn_string_new(const char *);
  * to prevent memory leaks.
  */
 struct kn_string_t kn_string_clone(const struct kn_string_t *);
-
-/*
- * Creates a string from the given integer.
- *
- * When done using the returned value, it should be passed to `kn_string_free`
- * to prevent memory leaks.
- */
-struct kn_string_t kn_string_from_integer(kn_integer_t);
-
-/*
- * Converts the given string into an integer.
- *
- * Leading whitespace is stripped. If the first non-whitespace character is '-',
- * The resulting integer will be negative.  Then, characters are taken until a 
- * non-digit character is encountered, and the digits up to that point are
- * returned. If no digits are found, `0` is returned.
- */
-kn_integer_t kn_string_to_integer(const struct kn_string_t *);
 
 /*
  * Frees the memory associated with a string.

@@ -5,10 +5,19 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "string.h"
-#include "integer.h"
+
+/*
+ * The type that's used to represent an integer in Knight.
+ */
+typedef intmax_t kn_integer_t;
 
 
+/*
+ * The type that's used to represent boolean values in Knight.
+ */
 typedef bool kn_boolean_t;
+
+// forward declare.
 struct kn_ast_t;
 
 enum kn_value_kind_t {

@@ -6,6 +6,22 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+
+#ifndef NDEBUG
+#define assert_msg(cond, msg, ...) \
+	do { \
+		if (!(cond)) { \
+			bug("assertion failed: " msg, ##__VA_ARGS__); \
+		} \
+	} while (0)
+#else
+#define DEBUG_ASSERT(cond, msg, ...) \
+	do { \
+		/* nothing */ \
+	} while(0)
+#endif /* DEBUG */
+
+
 #ifdef DEBUG
 #define DEBUG_ASSERT(cond, msg, ...) \
 	do { \

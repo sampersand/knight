@@ -11,10 +11,10 @@
  * functions. However, for ease of use, each function is defined to be its own
  * token as well.
  *
- * The `value` and `ident` fields are exclusively used by the `KN_TT_VALUE` and
- * `KN_TT_IDENT` fields, respectively. The `args` field is used by the function
- * tokens. Arguments start from `args[0]` and count upwards to one less than the
- * arity of the function; arguments beyond that are undefined.
+ * The `value` and `identifier` fields are exclusively used by the `KN_TT_VALUE`
+ * and `KN_TT_IDENTIFIER` fields, respectively. The `args` field is used by the
+ * function tokens. Arguments start from `args[0]` and count upwards to one less
+ * than the arity of the function; arguments beyond that are undefined.
  *
  * With the sole exception of `KN_TT_EQL`, every function will automatically
  * convert types to the types they expect.
@@ -28,7 +28,7 @@ enum kn_token_kind {
 	/*
 	 * An identifier within Knight.
 	 */
-	KN_TT_IDENT,
+	KN_TT_IDENTIFIER,
 
 	/*
 	 * A function
@@ -47,7 +47,7 @@ struct kn_ast_t {
 
 	union {
 		struct kn_value_t value;
-		const char *ident;
+		const char *identifier;
 		struct {
 			const struct kn_function_t *function;
 			struct kn_ast_t *args;
