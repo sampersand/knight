@@ -41,7 +41,7 @@ module Kn
 		end
 
 		define 'PROMPT' do
-			gets
+			$stdin.gets # so we don't read from ARGV
 		end
 
 		define 'RANDOM' do 

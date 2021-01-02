@@ -1,16 +1,11 @@
+#!/usr/bin/env ruby
 require_relative 'value'
-Kn::Value.parse(<<EOS).run
-; = fizzbuzz BLOCK
-	; = n 0
-	: WHILE < (= n + 1 n) (+ max 1)
-		: OUTPUT
-			: IF ! (% n 15)
-				: "FizzBuzz"
-			: IF ! (% n 5)
-				: "Fizz"
-			: IF ! (% n 3)
-				: "Buzz"
-				: n
-; = max 100
-: CALL fizzbuzz
-EOS
+
+expr = 
+	case $*[0]
+	when '-e' then $*[1].dup
+	when '-f' then open($*[1], &:read)
+	else abort "usage: #$0 [-e 'program'] [-f file]"
+	end
+
+Kn::Value.parse(expr).run
