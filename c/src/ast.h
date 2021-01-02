@@ -55,9 +55,6 @@ struct kn_ast_t {
 	};
 };
 
-
-
-
 /*
  * Parse a `kn_ast_t` from an input stream.
  *
