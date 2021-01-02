@@ -8,21 +8,6 @@
 
 
 #ifndef NDEBUG
-#define assert_msg(cond, msg, ...) \
-	do { \
-		if (!(cond)) { \
-			bug("assertion failed: " msg, ##__VA_ARGS__); \
-		} \
-	} while (0)
-#else
-#define DEBUG_ASSERT(cond, msg, ...) \
-	do { \
-		/* nothing */ \
-	} while(0)
-#endif /* DEBUG */
-
-
-#ifdef DEBUG
 #define DEBUG_ASSERT(cond, msg, ...) \
 	do { \
 		if (!(cond)) { \
@@ -50,7 +35,7 @@ void die(const char *, ...) __attribute__((noreturn,cold));
  */
 #define bug(msg, ...) \
 	die("%s:%s:%d: bug encountered: " msg "\n", \
-		__FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+		__FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
 /*
  * Allocates `size_t` bytes of memory and returns a pointer to it.

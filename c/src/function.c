@@ -85,9 +85,9 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_args) {
 	(void) _args;
 
 	size_t len;
-	char *line = fgetln(stdin, &len);
+	char *line;
 
-	if (line == NULL) {
+	if (getline(&line, &len, stdin) == -1) {
 		if (feof(stdin)) {
 			return kn_value_new_string(kn_string_intern(""));
 		} else {
