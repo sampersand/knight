@@ -3,8 +3,14 @@ class String
     def coerce(rhs) [method(rhs.class.name).(self), rhs] end
 end
 
+case {a: 3, b: 4}
+in { :a, :b } then puts a, b
+end
+exit
 class Numeric
-    def to_b; !zero? end
+		def to_b = !zero?
+
+    # def to_b; !zero? end
     alias to_str to_s
 end
 
@@ -54,7 +60,7 @@ def parse(input)
 	else raise "unknown token '$token'."
 	end
 end
-
+__END__
 def run(cmd, arg1=nil, arg2=nil, arg3=nil)
 	case cmd
 	when Ident then $env[cmd]

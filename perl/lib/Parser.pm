@@ -29,12 +29,12 @@ sub next($) {
 	return unless $self;
 
 	my $token;
-	$token = Ast::String->parse($self);  if (defined $token) { print "String"; return $token; }
-	$token = Ast::Identifier->parse($self);  if (defined $token) { print "Identifier"; return $token; }
-	$token = Ast::Number->parse($self);  if (defined $token) { print "Number"; return $token; }
-	$token = Ast::Boolean->parse($self);  if (defined $token) { print "Boolean"; return $token; }
-	$token = Ast::Null->parse($self);  if (defined $token) { print "Null"; return $token; }
-	$token = Ast::Function->parse($self);  if (defined $token) { print "Function"; return $token; }
+	$token = Ast::String->parse($self) and print "String", return $token;
+	$token = Ast::Identifier->parse($self) and print "Identifier", return $token;
+	$token = Ast::Number->parse($self) and print "Number", return $token;
+	$token = Ast::Boolean->parse($self) and print "Boolean", return $token;
+	$token = Ast::Null->parse($self) and print "Null", return $token;
+	$token = Ast::Function->parse($self) and print "Function", return $token;
 	die "bad token start '$self'.";
 }
 

@@ -18,7 +18,7 @@ sub pow() { Ast::Number->new(shift->{value} **shift->to_number()->{value}); }
 sub band(){ Ast::Number->new(shift->{value} & shift->to_number()->{value}); }
 sub bor() { Ast::Number->new(shift->{value} | shift->to_number()->{value}); }
 sub bxor(){ Ast::Number->new(shift->{value} ^ shift->to_number()->{value}); }
-sub shl() { Ast::Number->new(shift->{value}<<(shift->to_number()->{value}));}
+sub shl() { Ast::Number->new(shift->{value}<<(	shift->to_number()->{value}));}
 sub shr() { Ast::Number->new(shift->{value} >>shift->to_number()->{value}); }
 sub cmp() { Ast::Number->new(shift->{value}<=>shift->to_number()->{value}); }
 

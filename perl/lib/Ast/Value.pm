@@ -18,7 +18,7 @@ sub to_string {
 }
 
 # All types are truthy by default.
-sub to_bool {
+sub to_boolean {
 	Ast::Boolean->new(1);
 }
 
@@ -29,7 +29,7 @@ sub interpolate {
 
 # Logical negation of this value.
 sub not {
-	shift->to_bool()->not();
+	shift->to_boolean()->not();
 }
 
 # Checks to see if two values are equal. This default only works for

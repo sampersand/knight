@@ -1,0 +1,17 @@
+; = cardpub + 0 15733400
+; = doorpub + 0 6408062
+; = loopn 1
+; = value 1
+: WHILE TRUE
+	; = value (% (* 7 value) 20201227)
+	: IF | (= iscard (? value cardpub)) (? value doorpub)
+		; = subject IF iscard doorpub cardpub
+			; = value 1
+			; = n loopn
+			; WHILE n
+				; = n - n 1
+				: = value (% (* value subject) 20201227)
+			; OUTPUT value
+			: QUIT 0
+		; = loopn + 1 loopn
+			: IF (> loopn 10000000000) (QUIT 4) NULL

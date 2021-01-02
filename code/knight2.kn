@@ -1,0 +1,56 @@
+; = fs ";"
+; = peek BLOCK
+	: = __chr GET __stream 0 1
+; = advance BLOCK
+	: = __stream SET __stream 0 1 ""
+; = iseof BLOCK : ! LENGTH __stream
+; = isdigit BLOCK 
+	; CALL peek
+	: & (< '/' __chr) (> ':' __chr)
+; = iswhitespace BLOCK
+	: | (CALL iseol) (| (? __chr ' ') (?__chr '	'))
+; = islower BLOCK
+	; CALL peek
+	:  | (& (< '`' __chr) (> '{' __chr)) (? '_' __chr)
+; = iseol BLOCK
+	; CALL peek
+	: ? __chr '
+'
+
+; = strip_whitespace_and_comments BLOCK
+	: IF CALL iswhitespace
+		; CALL advance
+		: CALL strip_whitespace_and_comments
+	: IF (? __chr '#')
+		; WHILE ! | (CALL iseof) (CALL iseol)
+			: CALL advance
+		: CALL strip_whitespace_and_comments
+		: NULL
+; = next_token BLOCK
+	; CALL strip_whitespace_and_comments
+	; CALL peek
+	; CALL advance
+	; = __next_token_ret __chr
+
+	: IF CALL isdigit
+		; WHILE CALL isdigit
+			; = __next_token_ret + __next_token_ret __chr
+			: CALL advance
+		: + 0 __next_token_ret
+	: IF CALL islower
+		; WHILE | (CALL islower) (CALL isdigit)
+			; = __next_token_ret + __next_token_ret __chr
+			: CALL advance
+		: + 0 __next_token_ret
+	: IF | (? __chr '"') (? __chr "'")
+		NULL
+		NULL
+
+
+
+; = stream "; = a 3 : OUT + 'a*4=' * a 4"
+
+; = __stream "   
+# A 123
+1234"
+: OUTPUT CALL next_token

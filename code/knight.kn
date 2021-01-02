@@ -1,0 +1,134 @@
+; = fs ";"
+; = peek BLOCK
+	: = __chr GET __stream 0 1
+; = advance BLOCK
+	: = __stream SET __stream 0 1 ""
+; = iseof BLOCK : ! LENGTH __stream
+; = isdigit BLOCK 
+	: & (< '/' __chr) (> ':' __chr)
+; = iswhitespace BLOCK
+	: | (CALL iseol) (| (? __chr ' ') (?__chr '	'))
+; = islower BLOCK
+	:  | (& (< '`' __chr) (> '{' __chr)) (? '_' __chr)
+; = isupper BLOCK
+	: & (< '@' __chr) (> '[' __chr)
+; = iseol BLOCK
+	: ? __chr '
+'
+
+; = strip_whitespace_and_comments BLOCK
+	; CALL peek
+	: IF CALL iswhitespace
+		; CALL advance
+		: CALL strip_whitespace_and_comments
+	: IF (? __chr '#')
+		; WHILE ! | (CALL iseof) (CALL iseol)
+			; CALL advance
+			: CALL peek 
+		: CALL strip_whitespace_and_comments
+		: NULL
+
+; = next_number BLOCK
+	; = __next_number_ret 0
+	; WHILE CALL isdigit
+		; = __next_number_ret + (* __next_number_ret 10) __chr
+		; CALL advance
+		: CALL peek
+	: __next_number_ret
+
+# Parses the next identifier.
+; = next_identifier BLOCK
+	; = __next_ident ""
+	; WHILE (| (CALL islower) (CALL isdigit))
+		; = __next_ident + __next_ident __chr
+		; CALL advance
+		: CALL peek
+	: __next_ident
+
+; = next_string BLOCK
+	; = __next_string ""
+	; = __next_string_quote __chr
+	; CALL advance
+	; WHILE ! (? __next_string_quote CALL peek)
+		; = __next_string (+ __next_string __chr)
+		: IF CALL iseof
+			; OUTPUT ++ "unmatched string: " __next_string_quote __next_string
+			: QUIT 1
+			: CALL advance
+	; CALL advance # delete the trailing quote
+	: __next_string
+
+; = next_keyword BLOCK
+	; = __next_keyword __chr
+	; IF CALL isupper
+		: WHILE CALL isupper
+			; CALL advance
+			: CALL peek
+		: CALL advance
+	: IF (? __next_keyword ';')
+		; OUTPUT CALL run
+		: CALL run
+	: IF (? __next_keyword '=')
+		; CALL strip_whitespace_and_comments
+		: = (EVAL ++ '"__kn_env_' (CALL next_identifier) '"') (CALL run)
+	: IF (? __next_keyword 'T') : TRUE
+	: IF (? __next_keyword 'F') : FALSE
+	: IF (? __next_keyword 'N') : NULL
+	: IF (? __next_keyword 'P') : PROMPT
+	: IF (? __next_keyword 'P') : PROMPT
+	: IF (? __next_keyword 'E') : EVAL CALL run
+	: IF (? __next_keyword 'B') : EVAL CALL run
+
+#kn_fn_true
+#kn_fn_false
+#kn_fn_null
+#kn_fn_prompt
+#kn_fn_rand
+#kn_fn_eval
+#kn_fn_block
+#kn_fn_call
+#kn_fn_system
+#kn_fn_quit
+#kn_fn_not
+#kn_fn_length
+#kn_fn_output
+#kn_fn_add
+#kn_fn_sub
+#kn_fn_mul
+#kn_fn_div
+#kn_fn_mod
+#kn_fn_pow
+#kn_fn_eql
+#kn_fn_lth
+#kn_fn_gth
+#kn_fn_and
+#kn_fn_or
+#kn_fn_then
+#kn_fn_while
+#kn_fn_assign
+#kn_fn_if
+#kn_fn_get
+#kn_fn_set
+
+; = run BLOCK
+	; CALL strip_whitespace_and_comments
+	: IF CALL isdigit
+		: CALL next_number
+	: IF CALL islower
+		: EVAL + "__kn_env_" CALL next_identifier
+	: IF | (? __chr '"') (? __chr "'")
+		: CALL next_string
+		: CALL next_keyword
+
+; = stream "; = a 3 : OUT + 'a*4=' * a 4"
+
+; = __stream '   
+# A 123
+
+; = a 3
+a
+'
+; = __kn_env_foo 3
+; OUTPUT CALL run
+#; OUTPUT CALL run
+:N

@@ -1,0 +1,14 @@
+; = cardpub 15733400
+; = doorpub 6408062
+; = i 2
+; = n 1
+: WHILE TRUE
+	; = n % (* n 7) 20201227
+	: IF | (? n cardpub) (? n doorpub)
+		; = ret 1
+		; = n IF (? n cardpub) doorpub cardpub
+		; WHILE = i (- i 1)
+			: = ret % (* ret n) 20201227
+		; OUTPUT ret
+		: QUIT 0
+		: = i (+ i 1)

@@ -56,18 +56,38 @@ sub run($$) {
 
 	### Arity 0 ###
 	return Ast::String->new(<STDIN>) if $op eq 'P';
+	return Ast::Number->new(int(rand() * ~0)) if $op eq 'R';
+
 
 	### Arity 1 ###
-	# `BLOCK` is weird and shouldn't evaluate its parameter...
+	return Parser->new($args[0]->to_string())->next()->run() if $op eq 'E';
 	return $args[0] if $op eq 'B';
+	return $args[0]->run() if $op eq 'C';
+	return `$args[0]->to_string()` if $op eq '`';
+	exit $args[0]->to_number()->value if $op eq 'Q';
+	print "<", $args[0]->to_boolean(), ">";
+	exit;
+	# return $args[0]->
+=begin
+my $parser = Parser->new("T O 4 ; = a 3 : O + a 4");
 
+	KN_TT_EVAL = ARITY_INCR,
+	KN_TT_BLOCK, 
+	KN_TT_CALL,
+	KN_TT_SYS,
+	KN_TT_QUIT, 
+	KN_TT_NOT,
+	KN_TT_LENGTH,
+	KN_TT_OUPTUT,
+
+=cut
 	return Ast::Number->new(length $args[0]) if $op eq 'L';
 	return 1 if $op =~ /[OEBCQ`!L]/;
 	return 2 if $op =~ qr$[-+*/^<>&|!;=WR]$;
 	return 3 if $op =~ /[IG]/;
 	return 4 if $op eq 'S';
 
-
+	die "unknown op $op";
 }
 
 1;

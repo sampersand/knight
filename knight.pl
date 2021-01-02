@@ -154,40 +154,22 @@ sub run($) {
 # push @ARGV, '/users/samp/me/knight/tmp.txt';
 push @ARGV, '/users/samp/me/aoc2020/day10/day10.txt';
 run parse tokenize <<'EOS'
-;=gB E+'_'i;=sB E+++'=_'i' 'v;=i=_0 0;W=vP;=v+0v;=i+1iCs
-;=n=f i;Wf;=fF;=i 0W<i n;=lCg;=i+1i;=rCgI<r l;=fT;=i-i 1
-;=v r;Cs;=i+1i;=v lCsN;=i n;=v+3Cg;Cs;=i 0;=a=b 1;W<i n;
-=d-0-Cg;=i+1iCgI?1d=a+1aI?3d=b+1bN O+"Part 1: "*a b
+; = fib BLOCK
+	: IF (< n 2)
+		: n
+		9
+		#; = n (- n 1)
+		#; EVAL (+ (+(+ "=_i" i) " ") n)
+		#; = i (+ 1 i)
+		#; = tmp (CALL fib)
+		#; = i (- i 1)
+		#; = n (EVAL (+ "_i" i))
+		#: + tmp (CALL fib)
+; = i 0
+; = n 10
+: OUTPUT CALL fib
+
 EOS
-__END__
-
-LINES = open('day10.txt')
-  .reject(&:empty?)              # delete trailing line
-  .map(&:to_i)                   # convert each line to a number
-	.sort                          # sort them
-	.unshift(0)                    # add 0 to the start
-	.tap { _1.push _1.last + 3 }   # add the builtin adaptor to the end.
-
-LINES
-	.each_cons(2)                  # ever group
-	.map { _1.reduce(&:-) }        # get the diff
-	.tally                         # tally up
-	.filter_map { _1 != -2 && _2 } # ignore `_2`s
-	.reduce(&:*)                   # get the product
-	.tap { puts "Part 1: #{_1}"}   # print it out
-
-def part2(curr=0, lines=LINES, memo = { lines.max => 1 })
-	memo[curr] ||=
-		lines
-			.take_while { _1 - curr <= 3 }
-			.each_with_index
-			.map { part2 _1, lines[_2+1..], memo }
-			.sum
-end
-
-puts "Part 2: #{part2 / 2}"
-
-
 __END__
 run parse tokenize <<EOS;
 ; = fib BLOCK

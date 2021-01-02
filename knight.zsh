@@ -215,6 +215,7 @@ evaluate () {
 }
 
 knight () {
+
 	echo "$1" | tokenize | gen_ast
 	evaluate $last_ast
 }
@@ -228,7 +229,7 @@ declare -A environment
 # fi
 
 
-knight '
+knight $(<<EOS
 ; = a 0
 ; = b 1
 ; = n 10
@@ -239,4 +240,5 @@ knight '
   ; = a tmp
   : = n (- n 1)
 : OUTPUT b
-'
+EOS
+)
