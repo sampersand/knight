@@ -132,11 +132,13 @@ static struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 }
 
 static struct kn_ast_t kn_ast_parse_function(stream_t stream) {
-	char name = peek(stream);
+	char name = next(stream);
 
 	// strip trailing keywords.
-	while (isupper(peek(stream))) {
-		advance(stream);
+	if (isupper(name)) {
+		while (isupper(peek(stream))) {
+			advance(stream);
+		}
 	}
 
 	const struct kn_function_t *function = kn_fn_fetch(name);
