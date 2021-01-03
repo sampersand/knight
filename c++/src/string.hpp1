@@ -1,0 +1,19 @@
+#pragma once
+
+#include "value.hpp"
+
+namespace kn {
+	class string : public value {
+	protected:
+		std::string str;
+
+	public:
+		string(std::string string);
+		bool to_boolean(void) const;
+		integer_t to_integer(void) const;
+		std::string to_string(void) const;
+
+		string operator+(const string& rhs) const;
+		string operator*(const string& rhs) const;
+	};
+}
