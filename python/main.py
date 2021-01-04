@@ -1,20 +1,17 @@
 from knight import *
 
-x="abcd"
-import re
-r = re.compile(r'.')
-x = r.sub('!', x)
-print(x)
-# print(dir())
-print(Function.known['S'](
-	Value('abcde'),
-	Value(1),
-	Value(0),
-	Value("q")
-))
+import sys
 
-# def foo(x): pass
+# lol
+sys.setrecursionlimit(10000)
 
-# print(dir(foo))
+if len(sys.argv) != 3 or sys.argv[1] not in ['-e', '-f']:
+	quit(f"usage: {sys.argv[0]} [-e 'program'] [-f 'file']")
 
-# # print(dir())
+if sys.argv[1] == '-e':
+	program = sys.argv[2]
+else:
+	with open(sys.argv[2]) as f:
+		program = f.read()
+
+Value.parse(program).run()

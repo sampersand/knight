@@ -1,4 +1,4 @@
-from knight import Value
+import knight
 from random import randint
 import subprocess
 
@@ -13,10 +13,10 @@ class Function():
 		return self.func.__code__.co_argcount
 
 	def __call__(self, *args):
-		return Value(self.func(*args))
+		return knight.Value.create(self.func(*args))
 
 def function(name=None):
-	return lambda body: Function.known.__setitem__(name or body.__name__[0].upper(), body)
+	return lambda body: Function.known.__setitem__(name or body.__name__[0].upper(), Function(body))
 
 @function()
 def true():
@@ -40,8 +40,7 @@ def random():
 
 @function()
 def eval_(text):
-	#TODO
-	pass
+	return knight.Value.parse(str(text.run())).run()
 
 @function()
 def block(blk):
@@ -110,7 +109,8 @@ def lth(lhs, rhs):
 
 @function('>')
 def gth(lhs, rhs):
-	return lhs.run() > rhs.run()
+	lhs = lhs.run()
+	return rhs.run() < lhs
 
 @function('?')
 def eql(lhs, rhs):
@@ -127,8 +127,8 @@ def or_(lhs, rhs):
 	return lhs if lhs else rhs.run()
 
 @function(';')
-def then(l, rhs):
-	l.run()
+def then(lhs, rhs):
+	lhs.run()
 	return rhs.run()
 
 @function()
@@ -141,10 +141,10 @@ def while_(cond, body):
 	return ret
 
 @function('=')
-def assign(variable, value):
-	name = variable.data if isinstance(arg, Identifier) else str(arg.run())
+def assign(name, value):
+	name = name.data if isinstance(name, knight.Identifier) else str(name.run())
 	value = value.run()
-	ENVIRONMENT[name] = value
+	knight.ENVIRONMENT[name] = value
 	return value 
 
 @function()
