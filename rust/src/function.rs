@@ -136,6 +136,8 @@ functions! {
 
 		if let Some(stripped) = text.strip_suffix('\\') {
 			print!("{}", stripped);
+			use std::io::Write;
+			let _ = std::io::stdout().flush();
 		} else {
 			println!("{}", text);
 		}
@@ -247,10 +249,14 @@ functions! {
 	}
 
 	fn 'S' (string, start, length, repl) {
-		let mut s = string.run().as_string().into_owned();
+		let s = string.run().as_string().into_owned();
 		let start = start.run().as_number() as usize;
-		s.replace_range(start..start + length.run().as_number() as usize, &repl.run().as_string());
+		let stop = start + length.run().as_number() as usize;
 
-		Value::String(s)
+		let mut x = s.chars().take(start).collect::<String>();
+		x.push_str(&repl.run().as_string());
+		x.extend(s.chars().skip(stop));
+
+		Value::String(x)
 	}
 }

@@ -64,7 +64,7 @@ module Kn
 	class Text < Value
 		def self.parse(stream)
 			case
-			when !stream.slice!(/\A(["'])(.*?)(\1|\z)/) then nil
+			when !stream.slice!(/\A(["'])(.*?)(\1|\z)/m) then nil
 			when $3 then new $2
 			else raise ArgumentError, "unterminated string encountered"
 			end
@@ -88,10 +88,12 @@ module Kn
 
 	class Null < Value
 		def self.parse(stream)
-			stream.slice!(/\AN[A-Z]*/) and new
+			stream.slice!(/\AN[A-Z]*/) and new(nil)
 		end
 
-		def initialize = super(nil)
+		# def self.new = super(nil)
+
+		# def initialize = super(nil)
 
 		def to_s = "null"
 		def to_i = 0

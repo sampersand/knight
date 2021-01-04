@@ -1,134 +1,453 @@
-; = fs ";"
+## Peeks at the first character in the stream.
+# ARGUMENTS:
+#    __stream: The stream to peek into.
+# RETURNS:
+#    the first character of the string, or an empty string if the stream's empty.
+# UPDATES:
+#    __chr: the return value is also assigned to `__chr`.
 ; = peek BLOCK
 	: = __chr GET __stream 0 1
+
+## Discards the first character of the stream.
+# ARGUMENTS:
+#    __stream: The stream to delete the first character of
+# UPDATES:
+#    __stream
 ; = advance BLOCK
 	: = __stream SET __stream 0 1 ""
-; = iseof BLOCK : ! LENGTH __stream
+
+## Checks to see if the stream is at end of file.
+# ARGUMENTS:
+#    __stream: The stream to check.
+# RETURNS:
+#    True if the stream is empty, false otherwise.
+; = iseof BLOCK
+	: ! LENGTH __stream
+## Checks to see if the given character is a digit.
+# ARGUMENTS:
+#    __chr: The character to check
+# RETURNS:
+#    True when the character is a single ASCII digit; false otherwise.
 ; = isdigit BLOCK 
 	: & (< '/' __chr) (> ':' __chr)
+
+## Checks to see if the given character is whitespace.
+# ARGUMENTS:
+#    __chr: The character to check
+# RETURNS:
+#    True when the character is a newline, tab, or a space; false otherwise.
 ; = iswhitespace BLOCK
-	: | (CALL iseol) (| (? __chr ' ') (?__chr '	'))
+	: | (CALL iseol)
+	  | (? __chr ' ')
+	  | (? __chr '	')
+	  | (? __chr '(')
+	  | (? __chr ')')
+	  | (? __chr '[')
+	  | (? __chr ']')
+	  | (? __chr '{')
+	  | (? __chr '}')
+	    (? __chr ':')
+
+## Checks to see if the given character is a lowercase character or an underscore.
+# ARGUMENTS:
+#    __chr: The character to check
+# RETURNS:
+#    True if the character is between `a` and `z`, or is equal to `_`.
 ; = islower BLOCK
 	:  | (& (< '`' __chr) (> '{' __chr)) (? '_' __chr)
+
+## Checks to see if the given character is an uppercase character.
+# ARGUMENTS:
+#    __chr: The character to check
+# RETURNS:
+#    True if the character is between `A` and `Z`
 ; = isupper BLOCK
-	: & (< '@' __chr) (> '[' __chr)
+	:  & (< '@' __chr) (> '[' __chr)
+
+## Checks to see if the given character is an end of line character.
+# ARGUMENTS:
+#    __chr: The character to check
+# RETURNS:
+#    True if the character is a literal newline.
 ; = iseol BLOCK
 	: ? __chr '
 '
 
+## Strips all leading whitespace and comments from the stream.
+# ARGUMENTS:
+#    __stream: The stream to strip.
+# CLOBBERS: __chr
 ; = strip_whitespace_and_comments BLOCK
 	; CALL peek
 	: IF CALL iswhitespace
 		; CALL advance
 		: CALL strip_whitespace_and_comments
 	: IF (? __chr '#')
+		; CALL advance
 		; WHILE ! | (CALL iseof) (CALL iseol)
-			; CALL advance
-			: CALL peek 
+		; CALL advance
+		: CALL peek
 		: CALL strip_whitespace_and_comments
 		: NULL
 
-; = next_number BLOCK
-	; = __next_number_ret 0
+; = __next_number BLOCK
+	; = __next_number_ret + 'n' __chr
+	; CALL peek
 	; WHILE CALL isdigit
-		; = __next_number_ret + (* __next_number_ret 10) __chr
+		; = __next_number_ret + __next_number_ret __chr
 		; CALL advance
 		: CALL peek
 	: __next_number_ret
 
-# Parses the next identifier.
-; = next_identifier BLOCK
-	; = __next_ident ""
-	; WHILE (| (CALL islower) (CALL isdigit))
-		; = __next_ident + __next_ident __chr
+; = __next_identifier BLOCK
+	; = __next_identifier_ret + 'i' __chr
+	; CALL peek
+	; WHILE | (CALL islower) (CALL isdigit)
+		; = __next_identifier_ret + __next_identifier_ret __chr
 		; CALL advance
 		: CALL peek
-	: __next_ident
+	: __next_identifier_ret
 
-; = next_string BLOCK
-	; = __next_string ""
+; = __next_string BLOCK
 	; = __next_string_quote __chr
-	; CALL advance
-	; WHILE ! (? __next_string_quote CALL peek)
-		; = __next_string (+ __next_string __chr)
-		: IF CALL iseof
-			; OUTPUT ++ "unmatched string: " __next_string_quote __next_string
-			: QUIT 1
-			: CALL advance
-	; CALL advance # delete the trailing quote
-	: __next_string
+	; = __next_string_ret 's'
+	; CALL peek
+	; WHILE ! | (CALL iseof) (? __chr __next_string_quote)
+		; = __next_string_ret + __next_string_ret __chr
+		; CALL advance
+		: CALL peek
+	; IF (CALL iseof)
+		; OUTPUT ++ "unterminated quote: " __next_string_quote (SET __next_string_ret 0 1 "")
+		: QUIT 1
+		: CALL advance # remove trailing quote, if one exists
+	: __next_string_ret
 
-; = next_keyword BLOCK
-	; = __next_keyword __chr
+; = __next_function BLOCK
+	; = __next_function_ret __chr
 	; IF CALL isupper
-		: WHILE CALL isupper
+		; CALL peek
+		: WHILE (CALL isupper)
 			; CALL advance
 			: CALL peek
-		: CALL advance
-	: IF (? __next_keyword ';')
-		; OUTPUT CALL run
-		: CALL run
-	: IF (? __next_keyword '=')
-		; CALL strip_whitespace_and_comments
-		: = (EVAL ++ '"__kn_env_' (CALL next_identifier) '"') (CALL run)
-	: IF (? __next_keyword 'T') : TRUE
-	: IF (? __next_keyword 'F') : FALSE
-	: IF (? __next_keyword 'N') : NULL
-	: IF (? __next_keyword 'P') : PROMPT
-	: IF (? __next_keyword 'P') : PROMPT
-	: IF (? __next_keyword 'E') : EVAL CALL run
-	: IF (? __next_keyword 'B') : EVAL CALL run
+		: N
+	: IF | (? __next_function_ret 'T')
+	     | (? __next_function_ret 'F')
+	     | (? __next_function_ret 'N')
+	     | (? __next_function_ret 'P')
+	       (? __next_function_ret 'R')
+		: + __next_function_ret '$'
+		: IF | (? __next_function_ret 'B')
+		     | (? __next_function_ret 'E')
+		     | (? __next_function_ret 'C')
+		     | (? __next_function_ret '`')
+		     | (? __next_function_ret 'Q')
+		     | (? __next_function_ret '!')
+		     | (? __next_function_ret 'L')
+		       (? __next_function_ret 'O')
+			: ++ __next_function_ret (CALL next_ast) '$'
+			: IF | (? __next_function_ret '+')
+			     | (? __next_function_ret '-')
+			     | (? __next_function_ret '*')
+			     | (? __next_function_ret '/')
+			     | (? __next_function_ret '%')
+			     | (? __next_function_ret '^')
+			     | (? __next_function_ret '?')
+			     | (? __next_function_ret '<')
+			     | (? __next_function_ret '>')
+			     | (? __next_function_ret ';')
+			     | (? __next_function_ret '=')
+			     | (? __next_function_ret 'W')
+			     | (? __next_function_ret '&')
+			       (? __next_function_ret '|')
+				: ++++ __next_function_ret (CALL next_ast) '$' (CALL next_ast) '$'
+				: IF | (? __next_function_ret 'I')
+				       (? __next_function_ret 'G')
+					: ++++++ __next_function_ret (CALL next_ast) '$' (CALL next_ast) '$' (CALL next_ast) '$'
+					: IF (? __next_function_ret 'S')
+						: ++++++++ __next_function_ret (CALL next_ast) '$'
+							(CALL next_ast) '$' (CALL next_ast) ',' (CALL next_ast) '$'
+						; OUTPUT ++ "unknown function '" __next_function_ret "'."
+						: QUIT 1
 
-#kn_fn_true
-#kn_fn_false
-#kn_fn_null
-#kn_fn_prompt
-#kn_fn_rand
-#kn_fn_eval
-#kn_fn_block
-#kn_fn_call
-#kn_fn_system
-#kn_fn_quit
-#kn_fn_not
-#kn_fn_length
-#kn_fn_output
-#kn_fn_add
-#kn_fn_sub
-#kn_fn_mul
-#kn_fn_div
-#kn_fn_mod
-#kn_fn_pow
-#kn_fn_eql
-#kn_fn_lth
-#kn_fn_gth
-#kn_fn_and
-#kn_fn_or
-#kn_fn_then
-#kn_fn_while
-#kn_fn_assign
-#kn_fn_if
-#kn_fn_get
-#kn_fn_set
-
-; = run BLOCK
+# Actually parse the AST
+; = __next_ast BLOCK
 	; CALL strip_whitespace_and_comments
+	; CALL peek
+	; CALL advance
 	: IF CALL isdigit
-		: CALL next_number
+		: CALL __next_number
 	: IF CALL islower
-		: EVAL + "__kn_env_" CALL next_identifier
+		: CALL __next_identifier
 	: IF | (? __chr '"') (? __chr "'")
-		: CALL next_string
-		: CALL next_keyword
+		: CALL __next_string
+		: CALL __next_function
 
-; = stream "; = a 3 : OUT + 'a*4=' * a 4"
+# Assign the AST a unique name and return that name.
+; = __next_function_idx 0
+; = __next_ast_recur 0
+; = next_ast BLOCK
+	; = (+ '__next_ast_name_' __next_ast_recur) (+ "__ast_fn_" __next_function_idx)
+	; = __next_function_idx + __next_function_idx 1
+	; = __next_ast_recur + __next_ast_recur 1
+	; = __next_ast_tmp CALL __next_ast
+	; = __next_ast_recur - __next_ast_recur 1
+	; = __next_ast_name (EVAL + "__next_ast_name_" __next_ast_recur)
+	; = (+ "" __next_ast_name) __next_ast_tmp
+	: __next_ast_name
 
-; = __stream '   
-# A 123
+; = __next_arg BLOCK
+	; = __run_ast_next_arg_ret ""
+	; WHILE ! ? '$' (GET __value_data 0 1)
+		; = __run_ast_next_arg_ret + __run_ast_next_arg_ret GET __value_data 0 1
+		: = __value_data SET __value_data 0 1 ""
+	; = __value_data SET __value_data 0 1 ""
+	: __run_ast_next_arg_ret
 
-; = a 3
-a
-'
-; = __kn_env_foo 3
-; OUTPUT CALL run
-#; OUTPUT CALL run
-:N
+## Splits a value into its kind and data sections
+# ARGUMENTS:
+#    __value: The value to split
+# UPDATES:
+#    __value_kind: Becomes the kind of data `__value` is.
+#    __value_data: Becomes the data that `__value` points to.
+; = categorize_value BLOCK
+	; = __value_kind GET __value 0 1
+	: = __value_data SET __value 0 1 ""
+
+## Converts a value to a string.
+# ARGUMENTS:
+#    __value: The value to convert
+# CLOBBERS:
+#    __value_kind, __value_data
+# RETURNS:
+#    A Knight string representing the value given.
+; = to_string BLOCK
+	; CALL categorize_value
+	: IF | (? 's' __value_kind) (? 'n' __value_kind)
+		: __value_data
+	: IF ? 'T' __value_kind
+		: 'true'
+	: IF ? 'F' __value_kind
+		: 'false'
+	: IF ? 'N' __value_kind
+		: 'null'
+	; OUTPUT ++ "unknown value '" __value "'"
+	: QUIT 2
+
+## Converts a value to a boolean.
+# ARGUMENTS:
+#    __value: The value to convert
+# RETURNS:
+#    A Knight boolean representing the value given.
+; = to_boolean BLOCK
+	: ! | (? 's' __value) | (? 'n0' __value) | (? 'F$' __value) (? 'N$' __value)
+
+## Converts a value to a number.
+# ARGUMENTS:
+#    __value: The value to convert
+# CLOBBERS:
+#    __value_kind, __value_data
+# RETURNS:
+#    A Knight number based on the given value.
+; = to_number BLOCK
+	; CALL categorize_value
+	: IF | (? 's' __value_kind) (? 'n' __value_kind)
+		: + 0 __value_data
+	: IF ? 'T' __value_kind
+		: 1
+	: IF | (? 'F$' __value_kind) (? 'N$' __value_kind)
+		: 0
+	; OUTPUT ++ "unknown value '" __value "'"
+	: QUIT 2
+
+; = __eval_arg BLOCK
+	; = __ast EVAL +++ "__run_ast_arg" __eval_arg_num "_" __run_ast_recur
+	; = __run_ast_recur + __run_ast_recur 1
+	; = __value CALL run_ast
+	; = __run_ast_recur - __run_ast_recur 1
+	: __value
+
+; = __eval_arg0 BLOCK
+	; = __eval_arg_num 0
+	: CALL __eval_arg
+
+; = __eval_arg1 BLOCK
+	; = __eval_arg_num 1
+	: CALL __eval_arg
+
+; = __eval_arg2 BLOCK
+	; = __eval_arg_num 2
+	: CALL __eval_arg
+
+; = __eval_arg3 BLOCK
+	; = __eval_arg_num 3
+	: CALL __eval_arg
+
+; = __run_ast_recur 0
+; = run_ast BLOCK
+	; = __value EVAL __ast
+	; CALL categorize_value
+	: IF | (? 's' __value_kind)
+	     | (? 'n' __value_kind)
+	     | (? 'T' __value_kind)
+	     | (? 'F' __value_kind)
+	       (? 'N' __value_kind)
+		: __value
+	: IF ? 'i' __value_kind
+		: EVAL + '__kn_env_' __value_data
+	: IF ? 'R' __value_kind
+		: + 'n' RANDOM
+	: IF ? 'P' __value_kind
+		: + 's' PROMPT
+	; = __run_ast_arg0 = (+ '__run_ast_arg0_' __run_ast_recur) (CALL __next_arg)
+	: IF ? 'E' __value_kind
+		; CALL __eval_arg0
+		; = __stream CALL to_string
+		; = __ast CALL next_ast
+		: CALL run_ast
+	: IF ? 'B' __value_kind
+		: __run_ast_arg0
+	: IF ? 'C' __value_kind
+		; = __ast CALL __eval_arg0
+		: CALL run_ast
+	: IF ? '`' __value_kind
+		; CALL __eval_arg0
+		: + 's' ` CALL to_string
+	: IF ? 'Q' __value_kind
+		; CALL __eval_arg0
+		: QUIT CALL to_number
+	: IF ? '!' __value_kind
+		; CALL __eval_arg0
+		: IF CALL to_boolean 'F$' 'T$'
+	: IF ? 'L' __value_kind
+		; CALL __eval_arg0
+		: + 'n' LENGTH CALL to_string
+	: IF ? 'O' __value_kind
+		; CALL __eval_arg0
+		: + 's' OUTPUT CALL to_string
+	; = (+ '__run_ast_arg1_' __run_ast_recur) (CALL __next_arg)
+	: IF ? '+' __value_kind
+		; CALL __eval_arg0
+		; CALL categorize_value
+		: IF ? 's' __value_kind
+			: + __value 
+				; CALL __eval_arg1
+				: CALL to_string
+			: + 'n' + (CALL to_number)
+				; CALL __eval_arg1
+				: CALL to_number
+	: IF ? '-' __value_kind
+		; CALL __eval_arg0
+		: + 'n' - (CALL to_number)
+			; CALL __eval_arg1
+			: CALL to_number
+	: IF ? '*' __value_kind
+		; CALL __eval_arg0
+		; CALL categorize_value
+		: IF ? 's' __value_kind
+			: + 's' * (CALL to_string)
+				; CALL __eval_arg1
+				: CALL to_number
+			: + 'n' * (CALL to_number)
+				; CALL __eval_arg1
+				: CALL to_number
+	: IF ? '/' __value_kind
+		; CALL __eval_arg0
+		: + 'n' / (CALL to_number)
+			; CALL __eval_arg1
+			; = __tmp CALL to_number	
+			: IF __tmp
+				: __tmp 
+				; OUTPUT "division by zero"
+				: QUIT 1
+	: IF ? '%' __value_kind
+		; CALL __eval_arg0
+		: + 'n' % (CALL to_number)
+			; CALL __eval_arg1
+			; = __tmp CALL to_number	
+			: IF __tmp
+				: __tmp 
+				; OUTPUT "modulo by zero"
+				: QUIT 1
+	: IF ? '^' __value_kind
+		; CALL __eval_arg0
+		: + 'n' ^ (CALL to_number)
+			; CALL __eval_arg1
+			: CALL to_number
+	: IF ? '?' __value_kind
+		; CALL __eval_arg0
+		: IF ? __value CALL __eval_arg1
+			: 'T$'
+			: 'F$'
+	: IF ? '<' __value_kind
+		; CALL __eval_arg0
+		: IF [IF (? 's' __value_kind) 
+				(< __value_data ; CALL __eval_arg1 : CALL to_string)
+				(< CALL to_number ; CALL __eval_arg1 : CALL to_number)]
+			: 'T$'
+			: 'F$'
+	: IF ? '>' __value_kind
+		; CALL __eval_arg0
+		: IF [IF (? 's' __value_kind) 
+				(> __value_data ; CALL __eval_arg1 : CALL to_string)
+				(> CALL to_number ; CALL __eval_arg1 : CALL to_number)]
+			: 'T$'
+			: 'F$'
+	: IF ? '&' __value_kind
+		; CALL __eval_arg0
+		: IF CALL to_boolean
+			: CALL __eval_arg1
+			: __value
+	: IF ? '|' __value_kind
+		; CALL __eval_arg0
+		: IF CALL to_boolean
+			: __value
+			: CALL __eval_arg1
+	: IF ? ';' __value_kind
+		; CALL __eval_arg0
+		: CALL __eval_arg1
+	: IF ? 'W' __value_kind
+		; = (+ '__while_ret_'  __run_ast_recur) 'N$'
+		; WHILE (; CALL __eval_arg0 CALL to_boolean)
+			: = (+ '__while_ret_' __run_ast_recur) CALL __eval_arg1
+		: EVAL + '__while_ret_'  __run_ast_recur
+	: IF ? '=' __value_kind
+		; = __value EVAL __run_ast_arg0
+		; CALL categorize_value
+		: IF ? 'i' __value_kind
+			: = (+ '__kn_env_' __value_data) CALL __eval_arg1
+			: = (+ '__kn_env_' CALL __eval_arg0) CALL __eval_arg1
+	; = (+ '__run_ast_arg2_' __run_ast_recur) (CALL __next_arg)
+	: IF ? 'I' __value_kind
+		; CALL __eval_arg0
+		: CALL IF CALL to_boolean __eval_arg1 __eval_arg2
+	: IF ? 'G' __value_kind
+		; CALL __eval_arg0
+		; = (+ '__get_string' __run_ast_recur) CALL to_string
+		; CALL __eval_arg1
+		; = (+ '__get_start' __run_ast_recur) CALL to_number
+		; CALL __eval_arg2
+		; = __get_length CALL to_number
+		: GET (EVAL + '__get_string' __run_ast_recur) (EVAL + '__get_start' __run_ast_recur) __get_length
+	; = (+ '__run_ast_arg3_' __run_ast_recur) (CALL __next_arg)
+	: IF ? 'G' __value_kind
+		; CALL __eval_arg0
+		; = (+ '__set_string' __run_ast_recur) CALL to_string
+		; CALL __eval_arg1
+		; = (+ '__set_start' __run_ast_recur) CALL to_number
+		; CALL __eval_arg2
+		; = (+ '__set_length' __run_ast_recur) CALL to_number
+		; CALL __eval_arg3
+		; = __set_substr CALL to_number
+		: SET
+			(EVAL + '__set_string' __run_ast_recur)
+			(EVAL + '__set_start' __run_ast_recur)
+			(EVAL + '__set_length' __run_ast_recur)
+			__set_substr
+	; OUTPUT ++ "unknown function '" __value "'"
+	: QUIT 2
+
+
+; OUTPUT "file to run: \"
+; = __stream ` + "cat " PROMPT
+; = __ast CALL next_ast
+: CALL run_ast

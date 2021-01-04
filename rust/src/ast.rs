@@ -44,7 +44,7 @@ impl Ast {
 		let mut identifier = String::with_capacity(16); // most idents are more than 16 chars, so its good initial size.
 
 		while let Some(chr) = stream.peek() {
-			if matches!(chr, 'a'..='z' | '_') {
+			if matches!(chr, 'a'..='z' | '0'..='9' | '_') {
 				identifier.push(*chr);
 				let _ = stream.next();
 			} else {

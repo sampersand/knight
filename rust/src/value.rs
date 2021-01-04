@@ -32,7 +32,7 @@ impl From<&Value> for bool {
 		match value {
 			Value::Null => false,
 			Value::Boolean(boolean) => *boolean,
-			Value::Number(number) => *number == 0,
+			Value::Number(number) => *number != 0,
 			Value::String(string) => !string.is_empty(),
 			Value::Ast(ast) => From::from(&ast.run())
 		}

@@ -1,0 +1,1 @@
+/Users/samp/me/knight/rust/target/debug/knight: /Users/samp/me/knight/rust/src/ast.rs /Users/samp/me/knight/rust/src/env.rs /Users/samp/me/knight/rust/src/function.rs /Users/samp/me/knight/rust/src/main.rs /Users/samp/me/knight/rust/src/value.rs
