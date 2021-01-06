@@ -289,7 +289,7 @@
 	       (? 'N' value_kind)
 		: value
 	: IF ? 'i' value_kind
-		: EVAL + '__kn_env_' value_data
+		: EVAL + '_v' value_data
 	: IF ? 'R' value_kind
 		: + 'n' RANDOM
 	: IF ? 'P' value_kind
@@ -343,8 +343,8 @@
 		; = value EVAL run_ast_arg0
 		; CALL categorize_value
 		: IF ? 'i' value_kind
-			: = (+ '__kn_env_' value_data) CALL eval_arg1
-			: = (+ '__kn_env_' ; CALL eval_arg0 : CALL to_string) CALL eval_arg1
+			: = (+ '_v' value_data) CALL eval_arg1
+			: = (+ '_v' ; CALL eval_arg0 : CALL to_string) CALL eval_arg1
 	: IF ? '-' value_kind
 		; CALL eval_arg0
 		: + 'n' - (CALL to_number)
@@ -444,7 +444,7 @@
 	; OUTPUT ++ "unknown function '" value "'"
 	: QUIT 2
 
-
+; OUTPUT "Enter a file to execute: \"
 ; = stream ` + "cat " PROMPT
 ; = ast CALL next_ast
 : CALL run_ast

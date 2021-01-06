@@ -84,16 +84,19 @@ struct kn_value_t kn_fn_or(const struct kn_ast_t *args) {
 struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_args) {
 	(void) _args;
 
-	size_t len;
-	char *line;
+	size_t cap = 0;
+	ssize_t slen;
+	char *line = NULL;
 
-	if (getline(&line, &len, stdin) == -1) {
+	if ((slen = getline(&line, &cap, stdin)) == -1) {
 		if (feof(stdin)) {
 			return kn_value_new_string(kn_string_intern(""));
 		} else {
 			perror("unable to read line");
 		}
 	}
+
+	size_t len = (size_t) slen;
 
 	char *ret = xmalloc(len + 1);
 	memcpy(ret, line, len);

@@ -8,22 +8,21 @@
 #include "shared.h"
 #include "function.h"
 
-// The "stream" type.
-typedef const char **stream_t;
+// register const char **stream;
 
-static char peek(stream_t stream) {
+static char peek(const char **stream) {
 	return **stream;
 }
 
-static void advance(stream_t stream) {
+static void advance(const char **stream) {
 	++(*stream);
 }
 
-static char next(stream_t stream) {
+static char next(const char **stream) {
 	return *((*stream)++);
 }
 
-static void strip_stream(stream_t stream) {
+static void strip_stream(const char **stream) {
 	char c;
 
 	while (1) {
@@ -57,7 +56,7 @@ static void strip_stream(stream_t stream) {
 }
 
 
-static struct kn_ast_t kn_ast_parse_integer(stream_t stream) {
+static struct kn_ast_t kn_ast_parse_integer(const char **stream) {
 	assert(isdigit(peek(stream)));
 
 	kn_integer_t integer = 0;
@@ -77,7 +76,7 @@ static int isident(char c) {
 	return islower(c) || isdigit(c) || c == '_';
 }
 
-static struct kn_ast_t kn_ast_parse_identifier(stream_t stream) {
+static struct kn_ast_t kn_ast_parse_identifier(const char **stream) {
 	assert(isident(peek(stream)));
 
 	size_t capacity = 8;
@@ -101,7 +100,7 @@ static struct kn_ast_t kn_ast_parse_identifier(stream_t stream) {
 	};
 }
 
-static struct kn_ast_t kn_ast_parse_string(stream_t stream) {
+static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 	assert(peek(stream) == '"' || peek(stream) == '\'');
 
 	size_t length = 0;
@@ -131,7 +130,7 @@ static struct kn_ast_t kn_ast_parse_string(stream_t stream) {
 	};
 }
 
-static struct kn_ast_t kn_ast_parse_function(stream_t stream) {
+static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	char name = next(stream);
 
 	// strip trailing keywords.
@@ -162,7 +161,7 @@ static struct kn_ast_t kn_ast_parse_function(stream_t stream) {
 	return ast;
 }
 
-struct kn_ast_t kn_ast_parse(stream_t stream) {
+struct kn_ast_t kn_ast_parse(const char **stream) {
 	strip_stream(stream);
 	char peeked = peek(stream);
 
@@ -258,7 +257,7 @@ void kn_ast_free(struct kn_ast_t *ast) {
 		break;
 
 	case KN_TT_IDENTIFIER:
-		xfree((void *) ast->identifier);
+		free((void *) ast->identifier);
 		break;
 
 	case KN_TT_FUNCTION:
@@ -266,7 +265,7 @@ void kn_ast_free(struct kn_ast_t *ast) {
 			kn_ast_free(&ast->arguments[i]);
 		}
 
-		xfree((void *) ast->arguments);
+		free((void *) ast->arguments);
 		break;
 
 	default:

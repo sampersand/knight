@@ -6,21 +6,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-
-#ifndef NDEBUG
-#define DEBUG_ASSERT(cond, msg, ...) \
-	do { \
-		if (!(cond)) { \
-			bug("assertion failed: " msg, ##__VA_ARGS__); \
-		} \
-	} while (0)
-#else
-#define DEBUG_ASSERT(cond, msg, ...) \
-	do { \
-		/* nothing */ \
-	} while(0)
-#endif /* DEBUG */
-
 /*
  * A function that's used to halt the execution of the program, writing the
  * given message to stderr before exiting with code 1.
@@ -53,17 +38,6 @@ void *xmalloc(size_t);
  * instead of returning `NULL`.
  */
 void *xrealloc(void *, size_t);
-
-/*
- * Frees the given pointer.
- *
- * This is identical to the stdlib's `free`, except the program is aborted if
- * `NULL` is passed.
- *
- * Unlike the other two `x` functions, `NULL` isn't expected: If one is
- * encountered, it's considered a bug. 
- */
-void xfree(void *);
 
 /*
  * A Macro used to verify that a pointer's not null. If it is, we abort

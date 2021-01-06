@@ -31,7 +31,7 @@ enum kn_token_kind {
 	KN_TT_IDENTIFIER,
 
 	/*
-	 * A function
+	 * A function within knight, ie a `kn_function_t` and its arguments.
 	 */
 	KN_TT_FUNCTION
 };
@@ -39,8 +39,8 @@ enum kn_token_kind {
 /*
  * The type that represents executable code within Knight.
  *
- * This type is created via `kn_ast_parse` and
- * should be disposed of via `kn_ast_free`.
+ * This type is created via `kn_ast_parse` and should be disposed of via
+ * `kn_ast_free`.
  */
 struct kn_ast_t {
 	enum kn_token_kind kind;

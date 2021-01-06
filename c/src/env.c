@@ -45,14 +45,17 @@ void kn_env_set(const char *identifier, struct kn_value_t value) {
 	struct kn_value_t *prev = (struct kn_value_t *) kn_env_get(identifier);
 
 	if (prev != NULL) {
+		kn_value_free(prev);
 		*prev = value;
 		return;
 	}
 
 	if (KN_ENV.length == KN_ENV.capacity) {
 		KN_ENV.capacity *= 2;
-		KN_ENV.keys = xrealloc(KN_ENV.keys, KN_ENV.capacity);
-		KN_ENV.vals = xrealloc(KN_ENV.vals, KN_ENV.capacity);
+		KN_ENV.keys = xrealloc(KN_ENV.keys,
+			sizeof(const char *) * KN_ENV.capacity);
+		KN_ENV.vals = xrealloc(KN_ENV.vals,
+			sizeof(struct kn_value_t) * KN_ENV.capacity);
 	}
 
 	KN_ENV.keys[KN_ENV.length] = strdup(identifier);
