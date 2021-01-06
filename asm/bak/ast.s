@@ -1,16 +1,17 @@
 # RDI, RSI, RDX, RCX, R8, R9
 .data
 	.asciz "arg = %c\n"
+.equ STREAM, %r12
 
 .macro peek where:req
-	movzbl (%r12), \where
+	movzbl (STREAM), \where
 .endm
 .macro advance
-	inc %r12
+	inc STREAM
 .endm
 
-.text
 
+.text
 
 strip_stream_strip:
 	advance
@@ -20,14 +21,28 @@ strip_stream:
 # TODO: ignore parens and colon
 	cmp $' ', %cl
 	je strip_stream_strip
-	cmp $'\t', %cl
-	jl strip_stream_comment
+	cmp $'\t', %cl # 
+	jl strip_stream_strip
 	cmp $0x0d, %cl # \r
 	jle strip_stream_strip
+	cmp $'(', %cl
+	je strip_stream_strip
+	cmp $')', %cl
+	je strip_stream_strip
+	cmp $'[', %cl
+	je strip_stream_strip
+	cmp $']', %cl
+	je strip_stream_strip
+	cmp $'{', %cl
+	je strip_stream_strip
+	cmp $'}', %cl
+	je strip_stream_strip
+	cmp $':', %cl
+	je strip_stream_strip
 # check to see if we are at a comment, if so strip it.
 strip_stream_comment:
 	cmp $'#', %ecx
-	jne strip_stream_ret
+	jne done_stripping
 0:
 	advance
 	peek %ecx
@@ -35,8 +50,7 @@ strip_stream_comment:
 	je strip_stream_strip
 	cmp $'\0', %ecx
 	jne 0b
-strip_stream_ret:
-	ret
+	jmp done_stripping
 
 
 # parse a number
@@ -120,9 +134,11 @@ unterminated_quote:
 	call _printf
 	jmp die
 
+foo: .asciz "stream='%s'\n"
 parse_function:
 	mov %rcx, %rdi
 	mov %rcx, %r13
+	advance
 0:
 	cmp $'A', %rcx
 	jl 1f
@@ -147,16 +163,17 @@ unknown_function:
 	call _printf
 	jmp die
 
+
 .globl parse_ast
 parse_ast:
-	sub $24, %rsp
-	mov %r12, (%rsp)
-	mov %r13, 8(%rsp)
-	mov %r14, 16(%rsp)
+	push %r12
+	push %r13
+	push %r14
 	mov %rdi, %r12
 
 # strip stream of whitespace
-	call strip_stream
+	jmp strip_stream
+done_stripping:
 	xor %eax, %eax
 	peek %ecx
 
@@ -181,13 +198,9 @@ not_a_string:
 	jmp parse_function
 
 done_parsing:
-	mov %rax, %rdi
-	call kn_value_dump
-	mov %r12, %rdi
-	mov (%rsp), %r12
-	mov 8(%rsp), %r13
-	mov 16(%rsp), %r14
-
-	add $24, %rsp
+	mov %r12, %rdi # this _needs_ to be here for `parse_next_argument`.
+	pop %r14
+	pop %r13
+	pop %r12
 	ret
 

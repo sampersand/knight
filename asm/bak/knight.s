@@ -1,29 +1,21 @@
 # RDI, RSI, RDX, RCX, R8, R9
-#.data
-#fmt:
-	#.asciz "arg = %s (%d bytes)\n"
-#fmt2:
-	#.asciz "arg = %c\n"
+.data
+fmt:
+	.asciz "arg = %s (%d bytes)\n"
+fmt2:
+	.asciz "arg = %c\n"
 
 .text
 .globl _main, parse_ast
 _main:
+	
 	sub $8, %rsp
 	mov 16(%rsi), %rdi
 	mov %rdi, (%rsp)
 	call parse_ast
 	mov %rax, %rdi
-
-#	mov %rax, %rbx # only temporary
-#	call kn_value_dump
-#	mov %rbx, %rdi
-
-	call run_value
-	mov %rax, %rdi
-	#jmp ddebug
-#	mov %rax, %rdi
 	call kn_value_dump
-	#call free_value
+
 	add $8, %rsp
 	xor %eax, %eax
 	ret
@@ -33,11 +25,6 @@ die:
 	mov $192, %rdi
 	call _exit
 
-
-.globl ddebug
-ddebug:
-	call debug
-	jmp die
 
 dbg_fmt:
 	.asciz "\
@@ -99,3 +86,26 @@ debug:
 	pop %rsi
 	add $8, %rsp
 	ret
+	
+# # RDI, RSI, RDX, RCX, R8, R9
+# 	.data
+# fmt:
+# 	.asciz "arg = %s (%d bytes)\n"
+# 
+# .macro foo
+# .endm
+# 
+# 	.text
+# 	.globl _main
+# _main:
+# 	push %rsi
+# 	mov 16(%rsi), %rdi
+# 	call _strlen
+# 	mov %rax, %rdx
+# 	mov (%rsp), %rsi
+# 	mov 16(%rsi), %rsi
+# 	lea fmt(%rip), %rdi
+# 	call _printf
+# 	add $8, %rsp
+# 	xor %eax, %eax
+# 	ret
