@@ -105,7 +105,7 @@ SET (string, start, len, repl) - Returns a new string with the substring of leng
 TRUE () - `TRUE` literal.
 U
 V
-W WHILE (cond, body) - Evaluates the `cond` while the `body`s true. Returns `body`s last value, or `NULL` if it never ran.
+W WHILE (cond, body) - Evaluates the `body` while the `cond`s true. Returns `body`s last value, or `NULL` if it never ran.
 X
 Y
 Z
