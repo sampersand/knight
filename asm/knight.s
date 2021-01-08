@@ -6,38 +6,88 @@
 	#.asciz "arg = %c\n"
 
 .text
-.globl _main, parse_ast
+.globl _main
 _main:
-	sub $8, %rsp
+	push %rdi
+	push %rsi
+	push %r12
+
 	mov 16(%rsi), %rdi
-	mov %rdi, (%rsp)
-	call parse_ast
-	mov %rax, %rdi
+	call initalize_knight
+	call ast_parse
 
-#	mov %rax, %rbx # only temporary
-#	call kn_value_dump
-#	mov %rbx, %rdi
 
-	call run_value
 	mov %rax, %rdi
-	#jmp ddebug
-#	mov %rax, %rdi
-	call kn_value_dump
-	#call free_value
-	add $8, %rsp
+	# # temporary
+	# mov %rax, %r12
+	# call value_dump
+	# mov %r12, %rdi
+	# # /temporary
+
+	call value_run
+	mov %rax, %rdi
+	call value_dump
+
 	xor %eax, %eax
+	pop %r12
+	pop %rsi
+	pop %rdi
 	ret
+
+initalize_knight:
+	nop  # TODO
+	ret
+#	sub $8, %rsp
+#	mov (%rsi), %rdi
+#	call _strdup
+#	mov %rax, %rdi
+#	call string_new
+#	mov %rax, %rdi
+#	call string_clone
+#	call string_free
+#	xor %eax, %eax
+#	add $8, %rsp
+#	ret
+
+# 	push %rdi
+# 	xor %eax, %eax
+# 	mov $1, %rdi
+# 	call _malloc
+# 	pop %rdi
+# 	ret
+# 
+# 	mov %rsp, %rax
+# 	call ddebug
+# 	mov 16(%rsi), %rdi
+# 	mov %rdi, (%rsp)
+# 	call ast_parse
+# 	mov %rax, %rdi
+# 
+# 	mov %rax, %rbx # only temporary
+# 	call value_dump
+# 	mov %rbx, %rdi
+# 
+# 	call value_run
+# 	mov %rax, %rdi
+# 	#jmp ddebug
+# #	mov %rax, %rdi
+# 	call value_dump
+# 	#call free_value
+# 	add $8, %rsp
+# 	xor %eax, %eax
+# 	ret
 
 .globl die
 die:
 	mov $192, %rdi
-	call _exit
+	jmp _exit
 
 
 .globl ddebug
 ddebug:
+	sub $8, %rsp
 	call debug
-	jmp die
+	call die
 
 dbg_fmt:
 	.asciz "\

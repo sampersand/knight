@@ -1,160 +1,182 @@
 # RDI, RSI, RDX, RCX, R8, R9
 
 .quad 0
-.global kn_fn_prompt
-kn_fn_prompt:
+.global func_prompt
+func_prompt:
 	call die
 
 .quad 0
-.global kn_fn_random
-kn_fn_random:
-	call die
+.global func_random
+func_random:
+	sub $8, %rsp
+	call _random
+	add $8, %rsp
+	mov %rax, %rdi
+	jmp value_new_integer
 
 .quad 0
-.global kn_fn_true
-kn_fn_true:
-	call ddebug
+.global func_true
+func_true:
+	mov $1, %edi
+	jmp value_new_boolean
 
 .quad 0
-.global kn_fn_false
-kn_fn_false:
-	call die
+.global func_false
+func_false:
+	mov $0, %edi
+	jmp value_new_boolean
 
 .quad 0
-.global kn_fn_null
-kn_fn_null:
-	call die
-
-
-.quad 1
-.global kn_fn_block
-kn_fn_block:
-	call die
+.global func_null
+func_null:
+	jmp value_new_null
 
 .quad 1
-.global kn_fn_eval
-kn_fn_eval:
+.global func_block
+func_block:
 	call die
 
 .quad 1
-.global kn_fn_call
-kn_fn_call:
+.global func_eval
+func_eval:
 	call die
 
 .quad 1
-.global kn_fn_system
-kn_fn_system:
+.global func_call
+func_call:
 	call die
 
 .quad 1
-.global kn_fn_quit
-kn_fn_quit:
+.global func_system
+func_system:
 	call die
 
 .quad 1
-.global kn_fn_not
-kn_fn_not:
+.global func_quit
+func_quit:
+	call die
+
+.quad 1
+.global func_not
+func_not:
+	push %rbx
+	mov (%rdi), %rbx
 	mov (%rdi), %rdi
-	call run_value
+	call value_run
 	mov %rax, %rdi
-	call to_boolean
-	mov %rax, %rdi
-	jmp new_boolean
+	call value_to_boolean
+
+	mov %rbx, %rdi
+	test %rax, %rax
+	setne %al
+	movzbl %al, %ebx
+	call value_free # with the `edi` up above
+
+	mov %rbx, %rdi
+	pop %rbx
+	jmp value_new_boolean
 
 .quad 1
-.global kn_fn_length
-kn_fn_length:
-	call die
+.global func_length
+func_length:
+	#call die
+	mov (%rdi), %rdi
+	call value_run
+	mov %rax, %rdi
+	call value_to_integer
+	mov %rax, %rdi
+	jmp value_new_integer
+
 
 .quad 1
-.global kn_fn_output
-kn_fn_output:
+.global func_output
+func_output:
 	call die
 
 
 .quad 2
-.global kn_fn_add
-kn_fn_add:
+.global func_add
+func_add:
 	call die
 
 .quad 2
-.global kn_fn_sub
-kn_fn_sub:
+.global func_sub
+func_sub:
 	call die
 
 .quad 2
-.global kn_fn_mul
-kn_fn_mul:
+.global func_mul
+func_mul:
 	call die
 
 .quad 2
-.global kn_fn_div
-kn_fn_div:
+.global func_div
+func_div:
 	call die
 
 .quad 2
-.global kn_fn_mod
-kn_fn_mod:
+.global func_mod
+func_mod:
 	call die
 
 .quad 2
-.global kn_fn_pow
-kn_fn_pow:
+.global func_pow
+func_pow:
 	call die
 
 .quad 2
-.global kn_fn_eql
-kn_fn_eql:
+.global func_eql
+func_eql:
 	call die
 
 .quad 2
-.global kn_fn_lth
-kn_fn_lth:
+.global func_lth
+func_lth:
 	call die
 
 .quad 2
-.global kn_fn_gth
-kn_fn_gth:
+.global func_gth
+func_gth:
 	call die
 
 .quad 2
-.global kn_fn_then
-kn_fn_then:
+.global func_then
+func_then:
 	call die
 
 .quad 2
-.global kn_fn_assign
-kn_fn_assign:
+.global func_assign
+func_assign:
 	call die
 
 .quad 2
-.global kn_fn_while
-kn_fn_while:
+.global func_while
+func_while:
 	call die
 
 .quad 2
-.global kn_fn_and
-kn_fn_and:
+.global func_and
+func_and:
 	call die
 
 .quad 2
-.global kn_fn_or
-kn_fn_or:
+.global func_or
+func_or:
 	call die
 
 
 .quad 3
-.global kn_fn_if
-kn_fn_if:
+.global func_if
+func_if:
 	call die
 
 .quad 3
-.global kn_fn_get
-kn_fn_get:
+.global func_get
+func_get:
 	call die
 
 
 .quad 4
-.global kn_fn_set
-kn_fn_set:
+.global func_set
+func_set:
 	call die

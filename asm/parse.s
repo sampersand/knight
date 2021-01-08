@@ -6,8 +6,8 @@
 	inc %r12
 .endm
 
-.globl parse_ast
-parse_ast:
+.globl ast_parse
+ast_parse:
 	push %r12
 	push %r13
 	push %r14
@@ -56,7 +56,7 @@ integer:
 	sub $'0', %al
 	cmp $9, %rax
 	jle 0b
-	call new_integer
+	call value_new_integer
 	jmp done_parsing
 
 
@@ -85,7 +85,7 @@ identifier:
 	dec %rsi # b/c it advances it in the `handle_stream` function.
 	call _strncat
 	mov %rax, %rdi
-	call new_identifier
+	call value_new_identifier
 	jmp done_parsing
 
 string:
@@ -108,7 +108,9 @@ string:
 	mov %r14, %rdx
 	call _strncat
 	mov %rax, %rdi
-	call new_string
+	call string_new
+	mov %rax, %rdi
+	call value_new_string
 	jmp done_parsing
 
 unterminated_quote:
@@ -136,39 +138,39 @@ invalid:
 	jmp keyword_function
 .endm
 
-decl_sym_function function_not, kn_fn_not
-decl_sym_function function_mod, kn_fn_mod
-decl_sym_function function_and, kn_fn_and
-decl_sym_function function_mul, kn_fn_mul
-decl_sym_function function_add, kn_fn_add
-decl_sym_function function_sub, kn_fn_sub
-decl_sym_function function_div, kn_fn_div
-decl_sym_function function_then, kn_fn_then
-decl_sym_function function_lth, kn_fn_lth
-decl_sym_function function_assign, kn_fn_assign
-decl_sym_function function_gth, kn_fn_gth
-decl_sym_function function_eql, kn_fn_eql
-decl_sym_function function_pow, kn_fn_pow
-decl_sym_function function_system, kn_fn_system
-decl_sym_function function_or, kn_fn_or
+decl_sym_function function_not, func_not
+decl_sym_function function_mod, func_mod
+decl_sym_function function_and, func_and
+decl_sym_function function_mul, func_mul
+decl_sym_function function_add, func_add
+decl_sym_function function_sub, func_sub
+decl_sym_function function_div, func_div
+decl_sym_function function_then, func_then
+decl_sym_function function_lth, func_lth
+decl_sym_function function_assign, func_assign
+decl_sym_function function_gth, func_gth
+decl_sym_function function_eql, func_eql
+decl_sym_function function_pow, func_pow
+decl_sym_function function_system, func_system
+decl_sym_function function_or, func_or
 
-decl_kw_function function_block, kn_fn_block
-decl_kw_function function_call, kn_fn_call
-decl_kw_function function_eval, kn_fn_eval
-decl_kw_function function_false, kn_fn_false
-decl_kw_function function_get, kn_fn_get
-decl_kw_function function_length, kn_fn_length
-decl_kw_function function_null, kn_fn_null
-decl_kw_function function_output, kn_fn_output
-decl_kw_function function_prompt, kn_fn_prompt
-decl_kw_function function_quit, kn_fn_quit
-decl_kw_function function_random, kn_fn_random
-decl_kw_function function_set, kn_fn_set
-decl_kw_function function_true, kn_fn_true
-decl_kw_function function_while, kn_fn_while
+decl_kw_function function_block, func_block
+decl_kw_function function_call, func_call
+decl_kw_function function_eval, func_eval
+decl_kw_function function_false, func_false
+decl_kw_function function_get, func_get
+decl_kw_function function_length, func_length
+decl_kw_function function_null, func_null
+decl_kw_function function_output, func_output
+decl_kw_function function_prompt, func_prompt
+decl_kw_function function_quit, func_quit
+decl_kw_function function_random, func_random
+decl_kw_function function_set, func_set
+decl_kw_function function_true, func_true
+decl_kw_function function_while, func_while
 
 function_if:
-	lea kn_fn_if(%rip), %rdi
+	lea func_if(%rip), %rdi
 keyword_function:
 	peek %eax
 	advance
@@ -176,7 +178,7 @@ keyword_function:
 	cmp $('Z' - 'A'), %rax
 	jle keyword_function
 function:
-	call new_function
+	call value_new_function
 	jmp done_parsing
 
 .data

@@ -23,26 +23,25 @@
 	ret
 .endm
 
-new_simple new_integer, KN_VL_INT_TAG
-new_simple new_string, KN_VL_STR_TAG
-new_simple new_identifier, KN_VL_IDENT_TAG
+new_simple value_new_integer, KN_VL_INT_TAG
+new_simple value_new_string, KN_VL_STR_TAG
+new_simple value_new_identifier, KN_VL_IDENT_TAG
 
-.globl new_boolean
-new_boolean:
+.globl value_new_boolean
+value_new_boolean:
 	push %rbx
 	mov %rdi, %rbx
 	mov $8, %rdi
 	call _malloc
 	movb $KN_VL_FALSE_TAG, (%rax)
 	cmp $0, %rbx
-	je 0f
-	movb $KN_VL_TRUE_TAG, (%rax)
-0:
+	setne %bl
+	addb %bl, (%rax)
 	pop %rbx
 	ret
 
-.globl new_null
-new_null:
+.globl value_new_null
+value_new_null:
 	sub $8, %rsp
 	mov %rdi, %rbx
 	mov $16, %rdi
@@ -52,8 +51,8 @@ new_null:
 	ret
 
 # note that this expects the stream to be in register r12.
-.globl new_function
-new_function:
+.globl value_new_function
+value_new_function:
 	push %rbx
 	push %r13
 	push %r14
@@ -76,7 +75,7 @@ new_function:
 	add $8, %r14			# add 8 to the destination location.
 	dec %r13 			# subtract one from arity
 	mov %r12, %rdi			
-	call parse_ast		
+	call ast_parse		
 	mov %rax, (%r14)		# set the value's pointer
 	mov %rdi, %r12 			# update the stream.
 	jmp 0b 	# go again
@@ -87,41 +86,78 @@ new_function:
 	pop %rbx
 	ret
 
-.globl to_boolean
-to_boolean:
-	xor %eax, %eax
+
+.globl value_to_boolean
+value_to_boolean:
 	movzbl (%rdi), %ecx
-	cmp $KN_VL_INT_TAG, %rcx
-	je int_to_boolean
+	jecxz value_to_boolean_integer
 	cmp $KN_VL_STR_TAG, %ecx
-	je str_to_boolean
+	je value_to_boolean_string
 	cmp $KN_VL_TRUE_TAG, %ecx
-	jne to_boolean_false
-to_boolean_true:
-	inc %eax
-to_boolean_false:
+	sete %cl
+	movzbl %cl, %ecx
 	ret
-str_to_boolean:
-	mov 8(%rdi), %rcx
-	movzbl (%rcx), %ecx
-	jmp to_boolean_compare
-int_to_boolean:
-	mov 8(%rdi), %rcx
-to_boolean_compare:
-	jrcxz to_boolean_true
+value_to_boolean_integer:
+	movq 8(%rdi), %rax
+	ret
+value_to_boolean_string:
+	mov 8(%rdi), %rsi
+	mov (%rsi), %rsi
+	xor %eax, %eax
+	movzbl (%rsi), %eax
 	ret
 
+.globl value_to_integer
+value_to_integer:
+	movzbl (%rdi), %ecx
+	mov 8(%rdi), %rax
+	jecxz value_to_integer_done # abuse the fact that ints are 0.
+	cmp $KN_VL_STR_TAG, %ecx
+	je value_to_integer_string
+	cmp $KN_VL_TRUE_TAG, %ecx
+	je 0f
+	mov $1, %eax
+	ret
+0:
+	xor %eax, %eax
+value_to_integer_done:
+	ret
+value_to_integer_string:
+	mov (%rax), %rdi
+	jmp _strlen
+
+.globl value_to_string
+value_to_string:
+	movzbl (%rdi), %ecx
+	mov 8(%rdi), %rax
+	jecxz value_to_string_integer # abuse the fact that ints are 0.
+	cmp $KN_VL_STR_TAG, %ecx
+	je value_to_string_string
+	cmp $KN_VL_TRUE_TAG, %ecx
+	je 0f
+	mov $1, %eax
+	ret
+0:
+	xor %eax, %eax
+value_to_string_integer:
+	sub $8, %rsp
+	mov %rax, %rsi
+	ret
+value_to_string_string:
+	call ddebug
+	mov (%rax), %rdi
+	jmp _strlen
 
 
-.globl run_value
-run_value:
+.globl value_run
+value_run:
 	movzbl (%rdi), %eax
 	cmp $KN_VL_FUNC_TAG, %rax
 	je 0f
 	cmp $KN_VL_IDENT_TAG, %rax
 	jne clone_value
 	mov 8(%rdi), %rdi # get the identifier's value.
-	jmp get_variable # 
+	jmp env_get_variable # 
 0:
 	push 8(%rdi) # push the function's return addr.
 	add $16, %rdi # set the arguments to the function's arguments.
@@ -152,18 +188,9 @@ clone_value_finalize:
 	add $24, %rsp
 	ret
 clone_string:
-	mov %r12, 8(%rsp)
-	mov $16, %rdi
-	call _malloc
-	mov %rax, %r12
-	movb $KN_VL_STR_TAG, (%r12)
 	mov 8(%rbx), %rdi
-	sub $8, %rsp
-	call _strdup
-	add $8, %rsp
-	mov %rax, 8(%r12)
-	mov %r12, %rax
-	mov 8(%rsp), %r12
+	call string_clone
+	mov %rbx, %rax
 	jmp clone_value_finalize
 clone_function:
 	# setup stack
@@ -172,6 +199,7 @@ clone_function:
 	mov 8(%rbx), %r13 # move function ptr over
 	mov -8(%r13), %r12 # load arity
 
+	# TODO: use lea here. `lea 16(,%r12,8), %rax`?
 	mov %r12, %rax
 	add $2, %rax
 	imul $8, %rax
@@ -190,11 +218,11 @@ clone_function:
 	mov 16(%rsp), %r13
 	jmp clone_value_finalize
 
-.globl free_value
-free_value:
+.globl value_free
+value_free:
 	push %rbx
 	mov %rdi, %rbx
-	mov (%rbx), %rax
+	mov (%rdi), %rax
 	cmp $KN_VL_FUNC_TAG, %bl
 	je free_function
 	cmp $KN_VL_IDENT_TAG, %bl
@@ -203,7 +231,7 @@ free_value:
 	jne finish_freeing
 free_string:
 	mov 8(%rbx), %rdi
-	call _free
+	call string_free
 finish_freeing:
 	mov %rbx, %rdi
 	call _free
@@ -219,7 +247,7 @@ free_function:
 	cmp $0, %r13
 	jz 1f
 	dec %r13
-	call free_value
+	call value_free
 	jmp 0b
 1:
 	pop %r14
@@ -228,8 +256,8 @@ free_function:
 
 invalid_fmt:
 	.asciz "unknown value type: '%d'\n"
-.global kn_value_dump
-kn_value_dump:
+.global value_dump
+value_dump:
 	push %rbx
 	mov %rdi, %rbx
 	movzbl (%rdi), %eax
@@ -263,6 +291,7 @@ Ldump_number:
 string_fmt: .asciz "String(%s)\n"
 Ldump_string:
 	mov 8(%rdi), %rsi
+	mov (%rsi), %rsi
 	lea string_fmt(%rip), %rdi
 	call _printf
 	pop %rbx
@@ -317,7 +346,7 @@ Ldump_func:
 	dec %r12
 	mov (%r13), %rdi
 	add $8, %r13
-	call kn_value_dump
+	call value_dump
 	jmp 0b
 1:
 	pop %r13
