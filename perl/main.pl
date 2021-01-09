@@ -1,33 +1,72 @@
+our %ENVIRONMENT = (qwert => 4);
 use strict;
 use warnings;
 use lib 'Kn';
 
-
+use Kn::Number;
 use Kn::Value;
-use Kn::Boolean;
-use Kn::Function;
 
-my $stream = $ARGV[0];
-Kn::Function->parse(\$stream)->run();
+=begin
+print("" . Kn::Boolean->new(0),
+	int Kn::Boolean->new(0),
+	Kn::Boolean->new(0) ? "t" : "f");
+
+print("" . Kn::Boolean->new(1),
+	int Kn::Boolean->new(1),
+	Kn::Boolean->new(1) ? "t" : "f");
+
+print("" . Kn::Null->new(),
+	int Kn::Null->new(),
+	Kn::Null->new() ? "t" : "f");
+
+print("" . Kn::Number->new(0),
+	int Kn::Number->new(0),
+	Kn::Number->new(0) ? "t" : "f");
+
+print("" . Kn::Number->new(1),
+	int Kn::Number->new(1),
+	Kn::Number->new(1) ? "t" : "f");
+
+print("" . Kn::Number->new(2),
+	int Kn::Number->new(2),
+	Kn::Number->new(2) ? "t" : "f");
+
+print("" . Kn::Number->new(3),
+	int Kn::Number->new(3),
+	Kn::Number->new(3) ? "t" : "f");
+
+print("" . Kn::Number->new(-1),
+	int Kn::Number->new(-1),
+	Kn::Number->new(-1) ? "t" : "f");
+
+print("" . Kn::String->new(""),
+	int Kn::String->new(""),
+	Kn::String->new("") ? "t" : "f");
+
+print("" . Kn::String->new("1"),
+	int Kn::String->new("1"),
+	Kn::String->new("1") ? "t" : "f");
+
+print("" . Kn::String->new("0"),
+	int Kn::String->new("0"),
+	Kn::String->new("0") ? "t" : "f");
+
+print("" . Kn::String->new("0 but true"),
+	int Kn::String->new("0 but true"),
+	Kn::String->new("0 but true") ? "t" : "f");
 =cut
 
-exit;
-print(Kn::Functions->add(Kn::Number->new(1), Kn::Boolean->new(1)));
+# my $s = "G "" 1 2++ '<' 4 '>'";
+# # my $s = "G 'abcdefghijkl' 1 2 ''";
+# print(
+# 	Kn::Function->parse(\$s)->run()
+# );
 
-print &length(Kn::String->new("123456 "));
+# =cut
 
-__END__
-use Kn::Parser;
+# __END__
 
-# my $parser = Parser->new("T O 4 ; = a 3 : O + a 4");
-# # my $parser = Parser->new(" 'abc' 12 ae N T F 3");
+my $stream = $ARGV[0];
+$stream = join("", <>);
 
-# $\="\n";
-my $env = { a => 3 };
-
-# # print $parser->next()->run($env);
-# my $res = $parser->next()->run($env);
-
-my $res = Kn::Parser->new("! 0")->next()->run($env);
-
-print $res, "\n";
+Kn::Value->parse(\$stream)->run();

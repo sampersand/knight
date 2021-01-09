@@ -16,7 +16,9 @@ sub new($$) {
 sub parse($) {
 	my ($class, $stream) = @_;
 
-	 $$stream =~ s/\A([TF])[A-Z]*//p and $class->new($1 eq 'T');
+	$$stream =~ s/\A([TF])[A-Z]*//p or return;
+
+	$class->new($1 eq 'T');
 }
 
 1;

@@ -16,7 +16,9 @@ sub new() {
 sub parse($$) {
 	my ($class, $stream) = @_;
 
-	$$stream =~ s/\AN[A-Z]*//p and $class->new();
+	$$stream =~ s/\AN[A-Z]*//p or return;
+
+	$class->new();
 }
 
 1;
