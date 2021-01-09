@@ -1,24 +1,31 @@
-#include "knight.h"
-#include "env.h"
-#include <time.h>
-#include <stdlib.h>
+#include <time.h>   /* time */
+#include <stdlib.h> /* srand */
+
+#include "ast.h"    /* kn_ast_t, kn_ast_parse, kn_ast_run, kn_ast_free */
+#include "knight.h" /* prototypes, kn_value_t */
+#include "env.h"    /* kn_env_init */
 
 
+// We define the environment size as starting at 256 identifiers.
 #ifndef KNIGHT_ENV_INIT_SIZE
-#define KNIGHT_ENV_INIT_SIZE 128
+#define KNIGHT_ENV_INIT_SIZE 256
 #endif
 
-void kn_init(void) {
-	static bool INITIALIZED = false;
+int kn_init() {
+	// Ensure we only initialize knight once.
+	static int INITIALIZED = 0;
 
 	if (INITIALIZED) {
-		return;
+		return 0;
 	}
 
-	INITIALIZED = true;
-
+	INITIALIZED = 1;
 	kn_env_init(KNIGHT_ENV_INIT_SIZE);
+
+	// seed the random number generator.
 	srand(time(NULL));
+
+	return 1;
 }
 
 struct kn_value_t kn_run(const char *stream) {

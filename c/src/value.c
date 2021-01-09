@@ -1,29 +1,42 @@
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <string.h> /* strdup, strlen */
+#include <ctype.h>  /* isspace */
 
-#include "value.h"
-#include "ast.h"
-#include "shared.h"
+#include "value.h"  /* prototypes */
+#include "ast.h"    /* kn_ast_t, kn_ast_run, kn_ast_free, kn_ast_clone */
+#include "shared.h" /* die, bug, xmalloc */
 
 struct kn_value_t kn_value_new_ast(struct kn_ast_t *ast) {
-	return (struct kn_value_t) {.kind = KN_VT_AST, .ast = ast };
+	return (struct kn_value_t) {
+		.kind = KN_VT_AST,
+		.ast = ast
+	};
 }
 
 struct kn_value_t kn_value_new_string(struct kn_string_t string) {
-	return (struct kn_value_t) {.kind = KN_VT_STRING, .string = string };
+	return (struct kn_value_t) {
+		.kind = KN_VT_STRING,
+		.string = string
+	};
 }
 
 struct kn_value_t kn_value_new_integer(kn_integer_t integer) {
-	return (struct kn_value_t) {.kind = KN_VT_INTEGER, .integer = integer };
+	return (struct kn_value_t) {
+		.kind = KN_VT_INTEGER,
+		.integer = integer
+	};
 }
 
 struct kn_value_t kn_value_new_boolean(kn_boolean_t boolean) {
-	return (struct kn_value_t) {.kind = KN_VT_BOOLEAN, .boolean = boolean };
+	return (struct kn_value_t) {
+		.kind = KN_VT_BOOLEAN,
+		.boolean = boolean
+	};
 }
 
-struct kn_value_t kn_value_new_null(void) {
-	return (struct kn_value_t) {.kind = KN_VT_NULL };
+struct kn_value_t kn_value_new_null() {
+	return (struct kn_value_t) {
+		.kind = KN_VT_NULL
+	};
 }
 
 /*
@@ -34,7 +47,7 @@ struct kn_value_t kn_value_new_null(void) {
  */
 static struct kn_string_t string_from_integer(kn_integer_t num) {
 	static char buf[41]; // initialized to zero.
-	bool is_neg = num < 0;
+	_Bool is_neg = num < 0;
 
 	// start two back, as the last one's `\0`.
 	char *ptr = &buf[sizeof(buf) - 1];
@@ -58,7 +71,9 @@ static struct kn_string_t string_from_integer(kn_integer_t num) {
 
 	char *string = strdup(ptr);
 
-	VERIFY_NOT_NULL(string, "creating a string failed.");
+	if (string == NULL) {
+		die("duplicating a string failed");
+	}
 
 	return kn_string_new(string);
 }
@@ -124,6 +139,10 @@ kn_boolean_t kn_value_to_boolean(const struct kn_value_t *value) {
  * The resulting integer will be negative.  Then, characters are taken until a 
  * non-digit character is encountered, and the digits up to that point are
  * returned. If no digits are found, `0` is returned.
+ *
+ * This is used instead of `strtol`, as we have no way of easily knowing what
+ * the size of `intmax_t` is. As such, in the interest of portability, this
+ * function was written out.
  */
 static kn_integer_t string_to_integer(const struct kn_string_t *string) {
 	kn_integer_t ret = 0;
@@ -134,7 +153,7 @@ static kn_integer_t string_to_integer(const struct kn_string_t *string) {
 		ptr++;
 	}
 
-	bool is_neg = *ptr == '-';
+	_Bool is_neg = *ptr == '-';
 	unsigned char cur;
 
 	if (is_neg) {
@@ -204,7 +223,7 @@ void kn_value_free(struct kn_value_t *value) {
 	case KN_VT_INTEGER:
 	case KN_VT_BOOLEAN:
 	case KN_VT_NULL:
-		break;
+		break; // you dont need to free literal values.
 
 	default:
 		bug("unknown value kind '%d'", value->kind);

@@ -1,23 +1,22 @@
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <ctype.h>  /* isspace, isdigit, islower, isupper */
+#include <string.h> /* strdup */
+#include <assert.h> /* assert */
 
-#include "ast.h"
-#include "shared.h"
-#include "function.h"
+#include "env.h"    /* kn_env_get */
+#include "ast.h"    /* prototypes, kn_function_t, kn_value_t */
+#include "shared.h" /* die, xmalloc, xrealloc */
 
-// register const char **stream;
-
+/* get the first character of the stream. */
 static char peek(const char **stream) {
 	return **stream;
 }
 
+/* advance a single character in the stream. */
 static void advance(const char **stream) {
 	++(*stream);
 }
 
+/* advance a single character _and_ return the current one. */
 static char next(const char **stream) {
 	return *((*stream)++);
 }
@@ -30,6 +29,7 @@ static void strip_stream(const char **stream) {
 
 		switch (c) {
 		case '#':
+			// strip out comments
 			do {
 				c = next(stream);
 			} while (c != '\0' && c != '\n');
@@ -43,9 +43,11 @@ static void strip_stream(const char **stream) {
 		case '{':
 		case '}':
 		case ':':
+			// parens and colons are whitespace
 			break;
 
 		default:
+			// whitespace is obviously whitespace ;p
 			if (!isspace(c)) {
 				return;
 			}
@@ -61,6 +63,8 @@ static struct kn_ast_t kn_ast_parse_integer(const char **stream) {
 
 	kn_integer_t integer = 0;
 
+	// This may possibly overflow `integer`, but meh. Part of Knight's spec
+	// is that implementations may define the max integer literal.
 	do {
 		integer *= 10;
 		integer += next(stream) - '0';
@@ -72,6 +76,7 @@ static struct kn_ast_t kn_ast_parse_integer(const char **stream) {
 	};
 }
 
+// identifiers are lower-case letters, numbers, and an underscore.
 static int isident(char c) {
 	return islower(c) || isdigit(c) || c == '_';
 }
@@ -79,20 +84,14 @@ static int isident(char c) {
 static struct kn_ast_t kn_ast_parse_identifier(const char **stream) {
 	assert(isident(peek(stream)));
 
-	size_t capacity = 8;
-	size_t length = 0;
-	char *identifier = xmalloc(capacity);
+	// simply find the start and end of the identifier, then `strndup` it.
+	const char *start = *stream;
 
 	do {
-		identifier[length++] = next(stream);
-
-		if (length == capacity) {
-			identifier = xrealloc(identifier, capacity *= 2);
-		}
+		advance(stream);
 	} while (isident(peek(stream)));
 
-	identifier[length++] = '\0';
-	identifier = xrealloc(identifier, length);
+	char *identifier = strndup(start, *stream - start);
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_IDENTIFIER,
@@ -101,28 +100,26 @@ static struct kn_ast_t kn_ast_parse_identifier(const char **stream) {
 }
 
 static struct kn_ast_t kn_ast_parse_string(const char **stream) {
-	assert(peek(stream) == '"' || peek(stream) == '\'');
+	char quote = peek(stream);
 
-	size_t length = 0;
-	size_t capacity = 16;
-	char *string = xmalloc(capacity);
+	assert(quote == '\"' || quote == '\'');
+
+	advance(stream); // delete the starting quote before setting `start`.
+	const char *start = *stream;
 	char c;
 
-	for (char quote = next(stream); quote != (c = next(stream));) {
-		string[length++] = c;
+	do {
+		c = peek(stream);
 
 		if (c == '\0') {
-			die("unterminated quote encountered: %c%s\n",
-				quote, string);
+			die("unterminated quote encountered: '%s'", start);
 		}
 
-		if (length == capacity) {
-			string = xrealloc(string, capacity *= 2);
-		}
-	}
+		advance(stream);
+	} while (c != quote);
 
-	string[length++] = '\0';
-	string = xrealloc(string, length); // remove unused capacity
+	// subtract one because we've already advanced the ending quote.
+	char *string = strndup(start, *stream - start - 1);
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_VALUE,
@@ -130,14 +127,15 @@ static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 	};
 }
 
+
 static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	char name = next(stream);
 
-	// strip trailing keywords.
+	// strip trailing function words, if we're a non-symbolic function.
 	if (isupper(name)) {
-		while (isupper(peek(stream))) {
+		do {
 			advance(stream);
-		}
+		} while (isupper(peek(stream)));
 	}
 
 	const struct kn_function_t *function = kn_fn_fetch(name);
@@ -164,6 +162,10 @@ static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 struct kn_ast_t kn_ast_parse(const char **stream) {
 	strip_stream(stream);
 	char peeked = peek(stream);
+
+	// OPTIMIZATION: In the future, this could probably be optimized by
+	// having a massive switch statement for every possible character. (this
+	// is what I do in the assembly approach.)
 
 	if (isdigit(peeked)) {
 		return kn_ast_parse_integer(stream);
@@ -219,15 +221,16 @@ struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 	switch (ret.kind) {
 	case KN_TT_VALUE:
 		ret.value = kn_value_clone(&ast->value);
-		break;
+		return ret;
 
 	case KN_TT_IDENTIFIER: {
-		char *identifier = strdup((char *) ast->identifier);
+		ret.identifier = strdup((char *) ast->identifier);
 
-		VERIFY_NOT_NULL(identifier, "unable to duplicate identifier");
+		if (ret.identifier == NULL) {
+			die("unable to duplicate identifier");
+		}
 
-		ret.identifier = identifier;
-		break;
+		return ret;
 	}
 
 	case KN_TT_FUNCTION: {
@@ -240,14 +243,12 @@ struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 			ret.arguments[i] = kn_ast_clone(&ast->arguments[i]);
 		}
 
-		break;
+		return ret;
 	}
 
 	default:
 		bug("unknown kind '%d'", ast->kind);
 	}
-
-	return ret;
 }
 
 void kn_ast_free(struct kn_ast_t *ast) {

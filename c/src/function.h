@@ -1,6 +1,9 @@
 #ifndef KN_FUNCTION_H
 #define KN_FUNCTION_H
 
+#include "ast.h"   /* kn_ast_t */
+#include "value.h" /* kn_value_t */
+
 /*
  * The type that represents a function within knight.
  */
@@ -102,6 +105,9 @@ struct kn_value_t kn_fn_system(const struct kn_ast_t *ast);
 
 /*
  * `QUIT code`: Halts execution with the status code `code`.
+ *
+ * The first argument, after being converted to a number, must be able to be fit
+ * within an `int`.
  */
 struct kn_value_t kn_fn_quit(const struct kn_ast_t *ast);
 
@@ -120,7 +126,7 @@ struct kn_value_t kn_fn_length(const struct kn_ast_t *ast);
  * `OUTPUT msg`: Outputs `msg` as a string, followed by a newline.
  *
  * If `msg` ends with a backslash (`\`), then the newline is suppressed.
- */
+	 */
 struct kn_value_t kn_fn_output(const struct kn_ast_t *ast);
 
 
@@ -264,5 +270,6 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *ast);
  * returned.
  */
 struct kn_value_t kn_fn_set(const struct kn_ast_t *ast);
+
 
 #endif /* KN_FUNCTION_H */

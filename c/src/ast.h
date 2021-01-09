@@ -1,8 +1,8 @@
 #ifndef KN_AST_H
 #define KN_AST_H
 
-#include "env.h"
-#include "value.h"
+#include "value.h"    /* kn_value_t */
+#include "function.h" /* kn_function_t */
 
 /*
  * The kinds of tokens that exist within Knight.

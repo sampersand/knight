@@ -1,18 +1,28 @@
-#include <string.h>
-#include <assert.h>
+#include <string.h>  /* memcpy, strlen, strcmp, strndup, strcat */
+#include <assert.h>  /* assert */
+#include <stdlib.h>  /* rand, exit */
+#include <stdbool.h> /* true, false */
+#include <stdio.h>   /* getline, stdin, feof, perror, FILE, fread, ferror,
+                      * popen, pclose, printf */
 
-#include "ast.h"
-#include "knight.h"
-#include "shared.h"
-#include "function.h"
+#include "env.h"      /* kn_env_set */
+#include "knight.h"   /* kn_run */
+#include "shared.h"   /* xmalloc, xrealloc, die */
+#include "function.h" /* prototypes, kn_value_t, kn_ast_t, all kn_ast functions,
+                       * all kn_value functions */
 
 struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t ret;
 
+	// if it's an identifier, special-case it where we don't evaluate it.
 	if (args[0].kind == KN_TT_IDENTIFIER) {
 		ret = kn_ast_run(&args[1]);
 		kn_env_set(args[0].identifier, kn_value_clone(&ret));
 	} else {
+		// otherwise, evaluate the expression, convert to a string,
+		// and then use that as the identifier.
 		struct kn_value_t var = kn_ast_run(&args[0]);
 		struct kn_string_t identifier = kn_value_to_string(&var);
 
@@ -27,6 +37,8 @@ struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_block(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_ast_t *ast = xmalloc(sizeof(struct kn_ast_t));
 
 	*ast = kn_ast_clone(&args[0]);
@@ -35,6 +47,8 @@ struct kn_value_t kn_fn_block(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_while(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t ret = kn_value_new_null();
 	struct kn_value_t condition = kn_ast_run(&args[0]);
 
@@ -51,8 +65,11 @@ struct kn_value_t kn_fn_while(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_if(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t condition = kn_ast_run(&args[0]);
 
+	// a little efficiency hack to pick which argument to execute.
 	int which_arg = kn_value_to_boolean(&condition) ? 1 : 2;
 	kn_value_free(&condition);
 
@@ -60,8 +77,11 @@ struct kn_value_t kn_fn_if(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_and(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t ret = kn_ast_run(&args[0]);
 
+	// execute the RHS if the LHS is true.
 	if (kn_value_to_boolean(&ret)) {
 		kn_value_free(&ret);
 		ret = kn_ast_run(&args[1]);
@@ -71,8 +91,11 @@ struct kn_value_t kn_fn_and(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_or(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t ret = kn_ast_run(&args[0]);
 
+	// execute the RHS if the LHS is false.
 	if (!kn_value_to_boolean(&ret)) {
 		kn_value_free(&ret);
 		ret = kn_ast_run(&args[1]);
@@ -81,14 +104,19 @@ struct kn_value_t kn_fn_or(const struct kn_ast_t *args) {
 	return ret;
 }
 
-struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_args) {
-	(void) _args;
+// TODO: use fgets.
+struct kn_value_t kn_fn_prompt(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
+	(void) args;
 
 	size_t cap = 0;
 	ssize_t slen;
 	char *line = NULL;
 
+	// try to read a line from stdin.
 	if ((slen = getline(&line, &cap, stdin)) == -1) {
+		// if we're at eof, return an emtpy string. otherwise, abort.
 		if (feof(stdin)) {
 			return kn_value_new_string(kn_string_intern(""));
 		} else {
@@ -105,35 +133,42 @@ struct kn_value_t kn_fn_prompt(const struct kn_ast_t *_args) {
 	return kn_value_new_string(kn_string_new(ret));
 }
 
-struct kn_value_t kn_fn_rand(const struct kn_ast_t *_args) {
-	(void) _args;
-	// note: `kn_init` seeds the random value.
+struct kn_value_t kn_fn_rand(const struct kn_ast_t *args) {
+	assert(args != NULL);
+	(void) args;
 
+	// note: `kn_init` seeds the random value.
 	return kn_value_new_integer((kn_integer_t) rand());
 }
 
-struct kn_value_t kn_fn_true(const struct kn_ast_t *_args) {
-	(void) _args;
+struct kn_value_t kn_fn_true(const struct kn_ast_t *args) {
+	assert(args != NULL);
+	(void) args;
 
 	return kn_value_new_boolean(true);
 }
 
-struct kn_value_t kn_fn_false(const struct kn_ast_t *_args) {
-	(void) _args;
+struct kn_value_t kn_fn_false(const struct kn_ast_t *args) {
+	assert(args != NULL);
+	(void) args;
 
 	return kn_value_new_boolean(false);
 }
 
-struct kn_value_t kn_fn_null(const struct kn_ast_t *_args) {
-	(void) _args;
+struct kn_value_t kn_fn_null(const struct kn_ast_t *args) {
+	assert(args != NULL);
+	(void) args;
 
 	return kn_value_new_null();
 }
 
 struct kn_value_t kn_fn_eval(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t toeval = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&toeval);
 
+	// run the string as if it were its own program, but in the same namespace.
 	struct kn_value_t ret = kn_run(string.str);
 
 	kn_string_free(&string);
@@ -143,8 +178,11 @@ struct kn_value_t kn_fn_eval(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t block = kn_ast_run(&args[0]);
 
+	// running anything other than a block of code is just a no op.
 	if (block.kind != KN_VT_AST) {
 		return block;
 	}
@@ -156,7 +194,10 @@ struct kn_value_t kn_fn_call(const struct kn_ast_t *args) {
 	return ret;
 }
 
+// Yay for manual memory management!
 struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t arg0 = kn_ast_run(&args[0]);
 	struct kn_string_t command = kn_value_to_string(&arg0);
 	struct kn_value_t ret;
@@ -172,7 +213,8 @@ struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
 	size_t tmp;
 	char *result = xmalloc(cap);
 
-	while ((tmp = fread(result + len, 1, cap - len, stream))) {
+	// try to read the entire stream's stdout to `result`.
+	while (0 != (tmp = fread(result + len, 1, cap - len, stream))) {
 		len += tmp;
 
 		if (len == cap) {
@@ -181,6 +223,7 @@ struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
 		}
 	}
 
+	// Abort if `stream` had an error.
 	if (ferror(stream)) {
 		die("unable to read command stream");
 	}
@@ -188,6 +231,7 @@ struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
 	result = xrealloc(result, len + 1);
 	result[len] = '\0';
 
+	// Abort if we cant close stream.
 	if (pclose(stream) == -1) {
 		die("unable to close command stream.");
 	}
@@ -201,23 +245,30 @@ struct kn_value_t kn_fn_system(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_quit(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t ecode = kn_ast_run(&args[0]);
 
+	// no need to free the `ecode` value because we're exiting anyways.
 	exit((int) kn_value_to_integer(&ecode));
 }
 
 struct kn_value_t kn_fn_not(const struct kn_ast_t *args) {
-	struct kn_value_t boolean = kn_ast_run(&args[0]);
+	assert(args != NULL);
+
+	struct kn_value_t value = kn_ast_run(&args[0]);
 
 	struct kn_value_t ret =
-		kn_value_new_boolean(!kn_value_to_boolean(&boolean));
+		kn_value_new_boolean(!kn_value_to_boolean(&value));
 
-	kn_value_free(&boolean);
+	kn_value_free(&value);
 
 	return ret;
 }
 
 struct kn_value_t kn_fn_length(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t arg = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&arg);
 
@@ -230,6 +281,8 @@ struct kn_value_t kn_fn_length(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_output(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t arg = kn_ast_run(&args[0]);
 	struct kn_string_t string = kn_value_to_string(&arg);
 
@@ -238,6 +291,8 @@ struct kn_value_t kn_fn_output(const struct kn_ast_t *args) {
 	// with a `\0` if it's a backslash to prevent the printing of a
 	// newline. however, we replace it on the next line, so it's ok.
 	char *str = (char *) string.str;
+	assert(str != NULL);
+
 	size_t len = strlen(str);
 	char *penult = &str[len - 1];
 
@@ -305,6 +360,8 @@ static struct kn_value_t kn_fn_add_string(
 }
 
 struct kn_value_t kn_fn_add(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -323,6 +380,8 @@ struct kn_value_t kn_fn_add(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_sub(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -358,8 +417,6 @@ static struct kn_value_t kn_fn_mul_string(
 	char *ptr = string;
 
 	for (; amnt != 0; --amnt) {
-		// TODO: this can be made more efficient by calculating the
-		// new offset ourself each time.
 		memcpy(ptr, lhs.string.str, lhslen);
 		ptr += lhslen;
 	}
@@ -371,6 +428,8 @@ static struct kn_value_t kn_fn_mul_string(
 }
 
 struct kn_value_t kn_fn_mul(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -388,6 +447,8 @@ struct kn_value_t kn_fn_mul(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_div(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -405,6 +466,8 @@ struct kn_value_t kn_fn_div(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_mod(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -422,6 +485,8 @@ struct kn_value_t kn_fn_mod(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -429,7 +494,9 @@ struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
 	kn_integer_t base = kn_value_to_integer(&lhs);
 	kn_integer_t exponent = kn_value_to_integer(&rhs);
 
-	if (base != 0) {
+	// there's no builtin way to do integer exponentiation, so we have to
+	// do it manually.
+	if (base != 0 && base != 1) {
 		for (; exponent != 0; --exponent) {
 			result *= base;
 		}
@@ -442,10 +509,13 @@ struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_eql(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 	bool is_eql;
 
+	// if their kinds aren't equal, they're by definition not equal.
 	if (lhs.kind != rhs.kind) {
 		is_eql = false;
 		goto free_and_return;
@@ -485,8 +555,8 @@ free_and_return:
 }
 
 static int kn_value_cmp(
-	const struct kn_value_t lhs,
-	const struct kn_value_t rhs
+	struct kn_value_t lhs,
+	struct kn_value_t rhs
 ) {
 	switch(lhs.kind) {
 	case KN_VT_NULL:
@@ -518,6 +588,8 @@ static int kn_value_cmp(
 }
 
 struct kn_value_t kn_fn_lth(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -531,6 +603,8 @@ struct kn_value_t kn_fn_lth(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_gth(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	struct kn_value_t rhs = kn_ast_run(&args[1]);
 
@@ -544,15 +618,17 @@ struct kn_value_t kn_fn_gth(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_then(const struct kn_ast_t *args) {
-	struct kn_value_t lhs = kn_ast_run(&args[0]);
-	struct kn_value_t rhs = kn_ast_run(&args[1]);
+	assert(args != NULL);
 
+	struct kn_value_t lhs = kn_ast_run(&args[0]);
 	kn_value_free(&lhs);
 
-	return rhs;
+	return kn_ast_run(&args[1]);
 }
 
 struct kn_value_t kn_fn_get(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t arg0 = kn_ast_run(&args[0]);
 	struct kn_value_t arg1 = kn_ast_run(&args[1]);
 	struct kn_value_t arg2 = kn_ast_run(&args[2]);
@@ -569,7 +645,9 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *args) {
 	} else {
 		char *substr = strndup(string.str + start, amnt);
 
-		VERIFY_NOT_NULL(substr, "substring creation failed");
+		if (substr == NULL) {
+			die("substring creation failed");
+		}
 
 		ret = kn_value_new_string(kn_string_new(substr));
 	}
@@ -583,6 +661,8 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *args) {
 }
 
 struct kn_value_t kn_fn_set(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
 	struct kn_value_t arg0 = kn_ast_run(&args[0]);
 	struct kn_value_t arg1 = kn_ast_run(&args[1]);
 	struct kn_value_t arg2 = kn_ast_run(&args[2]);

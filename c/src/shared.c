@@ -1,4 +1,8 @@
-#include "shared.h"
+#include <stdio.h>  /* vfprintf, fprintf */
+#include <stdarg.h> /* va_list, va_start, va_end */
+#include <stdlib.h> /* exit, malloc, realloc */
+
+#include "shared.h" /* prototypes, size_t */
 
 void die(const char *fmt, ...) {
 	va_list args;
@@ -6,6 +10,7 @@ void die(const char *fmt, ...) {
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
+
 	fprintf(stderr, "\n");
 
 	exit(1);
@@ -14,7 +19,9 @@ void die(const char *fmt, ...) {
 void *xmalloc(size_t size) {
 	void *ptr = malloc(size);
 
-	VERIFY_NOT_NULL(ptr, "malloc failure for size %zd", size);
+	if (ptr == NULL) {
+		die("malloc failure for size %zd", size);
+	}
 
 	return ptr;
 }
@@ -22,7 +29,9 @@ void *xmalloc(size_t size) {
 void *xrealloc(void *ptr, size_t size) {
 	ptr = realloc(ptr, size);
 
-	VERIFY_NOT_NULL(ptr, "realloc failure for size %zd", size);
+	if (ptr == NULL) {
+		die("realloc failure for size %zd", size);
+	}
 
 	return ptr;
 }

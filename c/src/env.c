@@ -1,7 +1,8 @@
-#include <string.h>
+#include <string.h> /* strcmp, strdup */
+#include <assert.h> /* assert */
 
-#include "env.h"
-#include "shared.h"
+#include "env.h"    /* prototypes, kn_value_t, kn_value_free */
+#include "shared.h" /* xmalloc, xrealloc */
 
 /*
  * The type that holds all known variables within Knight.
@@ -23,6 +24,9 @@ struct kn_env_t {
 static struct kn_env_t KN_ENV;
 
 void kn_env_init(size_t capacity) {
+	assert(capacity <= SIZE_MAX / sizeof(struct kn_value_t));
+	assert(capacity != 0);
+
 	KN_ENV = (struct kn_env_t) {
 		.length = 0,
 		.capacity = capacity,
@@ -32,6 +36,8 @@ void kn_env_init(size_t capacity) {
 }
 
 const struct kn_value_t *kn_env_get(const char *identifier) {
+	assert(identifier != NULL);
+
 	for (size_t idx = 0; idx < KN_ENV.length; ++idx) {
 		if (strcmp(KN_ENV.keys[idx], identifier) == 0) {
 			return &KN_ENV.vals[idx];
@@ -41,7 +47,19 @@ const struct kn_value_t *kn_env_get(const char *identifier) {
 	return NULL;
 }
 
+static void reallocate() {
+	assert(KN_ENV.capacity != 0);
+
+	KN_ENV.capacity *= 2;
+	KN_ENV.keys = xrealloc(KN_ENV.keys,
+		sizeof(const char *) * KN_ENV.capacity);
+	KN_ENV.vals = xrealloc(KN_ENV.vals,
+		sizeof(struct kn_value_t) * KN_ENV.capacity);
+}
+
 void kn_env_set(const char *identifier, struct kn_value_t value) {
+	assert(identifier != NULL);
+
 	struct kn_value_t *prev = (struct kn_value_t *) kn_env_get(identifier);
 
 	if (prev != NULL) {
@@ -51,11 +69,7 @@ void kn_env_set(const char *identifier, struct kn_value_t value) {
 	}
 
 	if (KN_ENV.length == KN_ENV.capacity) {
-		KN_ENV.capacity *= 2;
-		KN_ENV.keys = xrealloc(KN_ENV.keys,
-			sizeof(const char *) * KN_ENV.capacity);
-		KN_ENV.vals = xrealloc(KN_ENV.vals,
-			sizeof(struct kn_value_t) * KN_ENV.capacity);
+		reallocate();
 	}
 
 	KN_ENV.keys[KN_ENV.length] = strdup(identifier);

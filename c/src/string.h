@@ -28,7 +28,7 @@ struct kn_string_t {
  * When done using the returned value, it should be passed to `kn_string_free`
  * to prevent memory leaks.
  */
-struct kn_string_t kn_string_intern(const char *);
+struct kn_string_t kn_string_intern(const char *str);
 
 /*
  * Creates a new string.
@@ -42,7 +42,7 @@ struct kn_string_t kn_string_intern(const char *);
  * When done using the returned value, it should be passed to `kn_string_free`
  * to prevent memory leaks.
  */
-struct kn_string_t kn_string_new(const char *);
+struct kn_string_t kn_string_new(const char *str);
 
 /*
  * Clones a string, returning a new copy of it.
@@ -50,7 +50,7 @@ struct kn_string_t kn_string_new(const char *);
  * When done using the returned value, it should be passed to `kn_string_free`
  * to prevent memory leaks.
  */
-struct kn_string_t kn_string_clone(const struct kn_string_t *);
+struct kn_string_t kn_string_clone(const struct kn_string_t *string);
 
 /*
  * Frees the memory associated with a string.
@@ -60,6 +60,6 @@ struct kn_string_t kn_string_clone(const struct kn_string_t *);
  *
  * This does nothing if the string was created via `kn_string_intern`.
  */
-void kn_string_free(struct kn_string_t *);
+void kn_string_free(struct kn_string_t *string);
 
 #endif /* KN_STRING_H */
