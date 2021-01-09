@@ -1,9 +1,9 @@
-package Ast::Identifier;
+package Kn::Identifier;
 use strict;
 use warnings;
 
 use lib '..';
-use parent 'Ast::Value';
+use parent 'Kn::Value';
 
 sub parse($$) {
 	my ($class, $stream) = @_;
@@ -11,8 +11,9 @@ sub parse($$) {
 	$$stream =~ s/\A[a-z_][a-z0-9_]*//p and $class->new(${^MATCH});
 }
 
-sub run($$) {
-	$_[1]->{$_[0]}
+sub run($) {
+	our %ENVIRONMENT;
+	$ENVIRONMENT{shift->{value}};
 }
 
 1;

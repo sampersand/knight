@@ -1,4 +1,5 @@
-package Ast::Function;
+=cut
+package Kn::Function;
 use strict;
 use warnings;
 
@@ -55,8 +56,8 @@ sub run($$) {
 	my @args = @{$self->{args}};
 
 	### Arity 0 ###
-	return Ast::String->new(<STDIN>) if $op eq 'P';
-	return Ast::Number->new(int(rand() * ~0)) if $op eq 'R';
+	return Kn::String->new(<STDIN>) if $op eq 'P';
+	return Kn::Number->new(int(rand() * ~0)) if $op eq 'R';
 
 
 	### Arity 1 ###
@@ -81,7 +82,7 @@ my $parser = Parser->new("T O 4 ; = a 3 : O + a 4");
 	KN_TT_OUPTUT,
 
 =cut
-	return Ast::Number->new(length $args[0]) if $op eq 'L';
+	return Kn::Number->new(length $args[0]) if $op eq 'L';
 	return 1 if $op =~ /[OEBCQ`!L]/;
 	return 2 if $op =~ qr$[-+*/^<>&|!;=WR]$;
 	return 3 if $op =~ /[IG]/;
