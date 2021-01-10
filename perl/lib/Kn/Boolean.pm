@@ -2,18 +2,17 @@ package Kn::Boolean;
 use strict;
 use warnings;
 
-use lib '..';
 use parent 'Kn::Value';
 
 use overload
 	'""' => sub { shift() ? 'true' : 'false' };
 
-sub new($$) {
+sub new {
 	my ($class, $val) = @_;
 	bless { value => ($val ? 1 : 0) }, $class;
 }
 
-sub parse($) {
+sub parse {
 	my ($class, $stream) = @_;
 
 	$$stream =~ s/\A([TF])[A-Z]*//p or return;

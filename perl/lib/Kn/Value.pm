@@ -9,54 +9,54 @@ use overload
 
 # Creates a new `Value` (or whatever its subclass is) by simply accepting
 # whatever value's given
-sub new($$) {
+sub new {
 	my $class = shift;
 	bless { value => shift }, $class;
 }
 
-sub add($$) {
+sub add {
 	Kn::Number->new(int(shift) + int(shift));
 }
 
-sub sub($$) {
+sub sub {
 	Kn::Number->new(int(shift) - int(shift));
 }
 
-sub mul($$) {
+sub mul {
 	Kn::Number->new(int(shift) * int(shift));
 }
 
-sub div($$) {
+sub div {
 	Kn::Number->new(int(shift) / int(shift));
 }
 
-sub mod($$) {
+sub mod {
 	Kn::Number->new(int(shift) % int(shift));
 }
 
-sub pow($$) {
+sub pow {
 	Kn::Number->new(int(shift) ** int(shift));
 }
 
-sub cmp($$) {
+sub cmp {
 	int(shift) <=> int(shift);
 }
 
-sub lth($$) {
+sub lth {
 	shift->cmp(shift) < 0
 }
 
-sub gth($$) {
+sub gth {
 	shift->cmp(shift) > 0
 }
 
-sub eql($$) {
+sub eql {
 	my ($lhs, $rhs) = @_;
 
 	ref($lhs) eq ref($rhs) && int($lhs->{value}) == int($rhs->{value})
 }
 
-sub run($) {
+sub run {
 	shift;
 }
 
@@ -67,7 +67,7 @@ use Kn::Null;
 use Kn::String;
 use Kn::Function;
 
-sub parse($$) {
+sub parse {
 	my $stream = $_[1];
 	my $ret;
 

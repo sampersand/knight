@@ -2,20 +2,17 @@ package Kn::Environment;
 use strict;
 use warnings;
 
-use lib '..';
-
 # The environment in which all variables are stored.
 my %ENVIRONMENT;
 
-# Fetches a singnle 
-sub get($$) {
+# Fetches a single variable from the environment. 
+sub get {
 	$ENVIRONMENT{"$_[1]"}
 }
 
-sub set($$$) {
-	my ($cls, $var, $val) = @_;
-
-	$ENVIRONMENT{"$var"} = $val;
+# Assigns a single variable to the environment
+sub set {
+	$ENVIRONMENT{"$_[1]"} = $_[2];
 }
 
 1;
