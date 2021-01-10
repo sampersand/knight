@@ -6,7 +6,7 @@ use lib '..';
 use parent 'Kn::Value';
 
 use overload
-	'""' => sub { shift->{value} ? 'true' : 'false' };
+	'""' => sub { shift() ? 'true' : 'false' };
 
 sub new($$) {
 	my ($class, $val) = @_;

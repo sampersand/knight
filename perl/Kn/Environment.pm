@@ -4,10 +4,12 @@ use warnings;
 
 use lib '..';
 
+# The environment in which all variables are stored.
 my %ENVIRONMENT;
 
+# Fetches a singnle 
 sub get($$) {
-	$ENVIRONMENT{"" . pop}
+	$ENVIRONMENT{"$_[1]"}
 }
 
 sub set($$$) {
