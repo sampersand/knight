@@ -1,3 +1,6 @@
+# This was an older version of my perl code, but it's extremely hacky. I just left
+# it here as it's kinda interesting to see my first attempt.
+
 use warnings;
 use strict;
 
