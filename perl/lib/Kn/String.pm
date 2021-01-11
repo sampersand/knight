@@ -5,36 +5,41 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'0+' => sub { no warnings; int shift->{value}; };
+	'0+' => sub { no warnings; int ${shift()}; };
 
+# Converts both arguments to a string and concatenates them.
 sub add {
-	Kn::String->new(shift->run() . shift->run());
+	Kn::String->new(shift . shift);
 }
 
-# Duplicates `self` by `rhs` times
+# Duplicates the first argument by the second argument's amount.
 sub mul {
-	Kn::String->new(shift->run() x int(shift->run()));
+	Kn::String->new(shift() x shift);
 }
 
 # Compares the two strings lexicographically.
 sub cmp {
-	"".shift->run() cmp "".shift->run();
+	"$_[0]" cmp "$_[1]"
 }
 
+# Checks to see if two strings are equal. This differs from `Value`'s in that
+# we check for equality with `eq` not `==`.
 sub eql {
 	my ($lhs, $rhs) = @_;
 
-	ref($lhs) eq ref($rhs) && $lhs->{value} eq $rhs->{value}
+	ref($lhs) eq ref($rhs) && $$lhs eq $$rhs
 }
 
-
+# Parses a string out, which should start with either `'` or `"`, after which
+# all characters (except for that quote) are taken literally. If the closing
+# quote isn't found, the program fails.
 sub parse {
 	my ($class, $stream) = @_;
 
-	$$stream =~ s/\A(["'])((?:(?!\1).)*)(\1|\z)//s or return;
+	$$stream =~ s/\A(["'])((?:(?!\1).)*)(\1)?//s or return;
 	die "missing closing quote" unless $3;
+
 	$class->new($2)
 }
 
 1;
-

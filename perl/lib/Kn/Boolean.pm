@@ -5,13 +5,9 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'""' => sub { shift() ? 'true' : 'false' };
+	'""' => sub { shift() ? 'true' : 'false'; };
 
-sub new {
-	my ($class, $val) = @_;
-	bless { value => ($val ? 1 : 0) }, $class;
-}
-
+## Parses a new boolean
 sub parse {
 	my ($class, $stream) = @_;
 

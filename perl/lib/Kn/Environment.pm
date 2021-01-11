@@ -7,7 +7,7 @@ my %ENVIRONMENT;
 
 # Fetches a single variable from the environment. 
 sub get {
-	$ENVIRONMENT{"$_[1]"}
+	$ENVIRONMENT{"$_[1]"};
 }
 
 # Assigns a single variable to the environment

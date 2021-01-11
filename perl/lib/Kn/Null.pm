@@ -8,10 +8,15 @@ use overload
 	'0+' => sub { 0 },
 	'""' => sub { 'null' };
 
+# Unlike every other value, `Null`s do not take arguments.
 sub new {
 	bless {}, shift
 }
 
+# Parses a null from the stream, which must start with `N`, and then may include
+# any number of upper case letters.
+#
+# Returns `undef` if the stream doesn't start with null.
 sub parse {
 	my ($class, $stream) = @_;
 

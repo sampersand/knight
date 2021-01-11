@@ -1,11 +1,19 @@
-our %ENVIRONMENT = (qwert => 4);
 use strict;
 use warnings;
 
-use Kn::Number;
-use Kn::Value;
+use lib 'lib';
+use Kn;
 
-my $stream = $ARGV[0];
-$stream = join("", <>);
+use constant USAGE => "usage: $0 (-e program | -f file)";
 
-Kn::Value->parse(\$stream)->run();
+my $sw = shift @ARGV;
+
+die USAGE unless $#ARGV == 0 && ($sw eq '-f' || $sw eq '-e');
+
+if ($sw eq '-f') {
+	Kn->run(join '', <>);
+} elsif ($sw eq '-e') {
+	Kn->run(shift @ARGV);
+} else {
+	die USAGE;
+}
