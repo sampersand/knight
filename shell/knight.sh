@@ -15,11 +15,9 @@ next_token () {
 		read -r line || die "nope"
 	done
 
-	# echo "pre: [$line]"
 	case "$(printf %c "$line")" in
 		[[:digit:]])
 			result=n$(expr "$line" : '\([[:digit:]]*\)')
-			#result=n${line%%[![:digit:]]*}
 			line=${line#${result#?}} ;;
 		[[:lower:]_])
 			result=i${line%%[![:lower:][:digit:]_]*}
@@ -62,7 +60,8 @@ $tmp$line"
 
 			if printf %c "$func" | grep '[[:upper:]]' >/dev/null
 			then
-				# if we're not punctuation, delete the remaining upper chars
+				# if we're not punctuation, delete the remaining
+				# upper chars
 				line=${line#"${line%%[![:upper:]]*}"}
 			else
 				# if we're punctuation, just delete that
@@ -87,12 +86,13 @@ $tmp$line"
 				next_token
 				next_token_rec=$((next_token_rec-1))
 
-				eval "next_token_ret_$next_token_rec=$(printf "%s%s\034" \
-					"\${next_token_ret_$next_token_rec}" "\$result")"
+				eval "next_token_ret_$next_token_rec=$(printf \
+"%s%s\034"  "\${next_token_ret_$next_token_rec}" "\$result")"
 			done
 
 			next_token_ast=$((next_token_ast+1))
-			eval "ast_token_$next_token_ast=\$next_token_ret_$next_token_rec"
+			eval "ast_token_$next_token_ast=\
+\$next_token_ret_$next_token_rec"
 			result=ast_token_$next_token_ast ;;
 	esac
 }
@@ -120,7 +120,8 @@ to_number () {
 
 	case "$1" in
 		n*) result=${1#?} ;;
-		s*) result=$(echo "$1" | sed 's/s[[:blank:]]*\([[:digit:]]*\).*/\1/') ;;
+		s*) result=$(echo "$1" | sed 's/s[[:blank:]]*\([[:'\
+'digit:]]*\).*/\1/') ;;
 		fT) result=1 ;;
 		f[FN]) result=0 ;;
 		*) die "cannot convert '$1' to a number." ;;
@@ -556,5 +557,18 @@ EOS
 	esac
 }
 
-next_token
+if  [ 2 -ne $# ] || [ '-e' != "$1" ] && [ '-f' != "$1" ]
+then
+	die "usage: $0 (-e 'program' | -f filename)"
+fi
+
+if [ '-e' = "$1" ]
+then
+	next_token <<EOS
+$2
+EOS
+else
+	next_token <"$2"
+fi
+
 evaluate
