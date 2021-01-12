@@ -171,7 +171,9 @@ evaluate () {
 		fE)
 			evaluate "$2"
 			to_string
-			next_token <<<$result
+			next_token <<EOS
+$result
+EOS
 			evaluate ;;
 
 		fB) 
@@ -243,7 +245,7 @@ evaluate () {
 				result=n$((result + arg1))
 			fi ;;
 
-		f\-)
+		f-)
 			evaluate "$2"
 			to_number
 
@@ -270,7 +272,7 @@ evaluate () {
 			if [ s = "$(printf %c "$arg0")" ]
 			then
 				to_string
-				result=s$(seq -f'\000' -s"${arg0#?}" 1 "$result" | sed s/\000//)
+				result=s$(seq -f'\000' -s"${arg0#?}" 1 "$result" | sed 's/\000//')
 			else
 				to_number
 				arg1=$result
@@ -278,7 +280,7 @@ evaluate () {
 				result=n$((result * arg1))
 			fi ;;
 
-		f\/)
+		f/)
 			evaluate "$2"
 			to_number
 
@@ -298,7 +300,7 @@ evaluate () {
 
 			result=n$((arg0 / result)) ;;
 
-		f\%)
+		f%)
 			evaluate "$2"
 			to_number
 
@@ -318,7 +320,7 @@ evaluate () {
 
 			result=n$((arg0 % result)) ;;
 
-		f\^)
+		f^)
 			evaluate "$2"
 			to_number
 
@@ -331,7 +333,7 @@ evaluate () {
 			eval_recur=$((eval_recur-1))
 			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
 
-			result=n$((arg0 ** result)) ;;
+			result=n$(echo "$arg0^$result" | bc) ;;
 
 		f\?)
 			evaluate "$2"
@@ -400,7 +402,7 @@ evaluate () {
 			then
 				to_string
 
-				if [ "$arg0" > "$result" ]
+				if [ "x$arg0" \> "x$result" ]
 				then
 					result=fT
 				else
@@ -505,7 +507,7 @@ evaluate () {
 			arg1=$(eval printf %s "\$_arg1_$eval_recur")
 			arg2=$result
 			
-			if (( ${#arg0} < (arg1 + arg2) ))
+			if [ 1 = "$(( ${#arg0} < (arg1 + arg2) ))" ]
 			then
 				result=s$(printf %s "$arg0" | sed "s/.\{$arg1\}//")
 			else
@@ -538,7 +540,7 @@ evaluate () {
 			arg2=$(eval printf %s \"\$_arg2_$eval_recur\")
 			arg3=$result
 
-			if (( ${#arg0} < (arg1 + arg2) ))
+			if [ 1 = "$(( ${#arg0} < (arg1 + arg2) ))" ]
 			then
 				result=s$(printf %s "$arg0" | \
 					sed "s/\(.\{$arg1\}\).*/\1/")$arg3
