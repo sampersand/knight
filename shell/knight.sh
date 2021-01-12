@@ -1,311 +1,558 @@
 #!/bin/sh
-#!/usr/local/bin/shellcheck
+#!/usr/local/bin/shellcheck -ssh
 
-# Aborts execution after printing the message to stderr.
-abort () { echo $@ >&2; exit 1; }
+die () { echo "$@" >&2; exit 1; }
 
-car () { printf %s "$1" | head -c1; }
-cdr () { printf %s "$1" | tail -c $(( ${#1} - 2)); }
-
-# The function that tokenizes all the tokens. It takes a single argument, and
-# prints out tokens separated by `\0`.
-tokenize () {
-	# While our input isn't empty...
-	while [ -n "$1" ]; do
-		# Set the current character and the arguments to teh function.
-		chr=$(car "$1")
-		set -- "$(cdr "$1")"
-
-		case $chr in
-			# Whitespace and any type of paren are just ignored.
-			["$(printf '()[]{}\ \n\t\f')"])
-				continue ;;
-			# Comments start with a `#` and are read to EOL
-			\#)
-				read -r
-				continue ;;
-			# Identifiers start with a lowercase letter or underscore, and contain
-			# any alphanumeric + `_`s.
-			[a-z_])
-				printf i%s "$chr"
-				while [ -n "$1" ]; do 
-					case "$(car $1)" in
-						[a-z_0-9]) printf %s "$(car "$1")" ;;
-						*) break ;;
-					esac
-					set -- "$(cdr "$1")"
-				done ;;
-			# Integers start with any number and contain any amount of digits or `_`.
-			[0-9])
-				printf n%s "$chr"
-				while [ -n "$1" ]; do 
-					case "$(car $1)" in
-						[0-9]) printf %s "$(car "$1")" ;;
-						_) ;; # ignore underscores.
-						*) break ;;
-					esac
-					set -- "$(cdr "$1")"
-				done
-				printf '\0'
-				;;
-			# # Stripn start with any number
-			# [A-Z])
-			# 	printf c%s "$chr"
-			# 	while [ -n "$1" ]; do 
-			# 		case "$(car $1)" in
-			# 			[0-9]) printf %s "$(car "$1")" ;;
-			# 			_) ;; # ignore underscores.
-			# 			*) break ;;
-			# 		esac
-			# 		set -- "$(cdr "$1")"
-			# 	done
-			# 	printf '\0'
-			# 	;;
-
-			# [A-Z])
-
-			\'|\")  printf s && printwhile "[^\\$chr]" && unset cached ;;
-			['-+*/^&|<>!;=%']) printf 'c%s\0' "$chr";;
-			*) abort "unknown character '$chr' given."
-		esac
-
-		printf '\0'
+bug () { die "bug:" "$@"; }
+next_token () {
+	# if we haven't already been reading a line,
+	# then read the next one in.
+	while true
+	do
+		line=$(printf %s "$line" | sed 's/[][{}()[:blank:]:]*//')
+		line=${line##\#*}
+		[ -n "$line" ] && break
+		read -r line || die "nope"
 	done
+
+	# echo "pre: [$line]"
+	case "$(printf %c "$line")" in
+		[[:digit:]])
+			result=n$(expr "$line" : '\([[:digit:]]*\)')
+			#result=n${line%%[![:digit:]]*}
+			line=${line#${result#?}} ;;
+		[[:lower:]_])
+			result=i${line%%[![:lower:][:digit:]_]*}
+			line=${line#${result#?}} ;;
+		[\'\"])
+			quote=$(printf %c "$line")
+			line=${line#?}
+
+			case $line in
+				*$quote*)
+					result=s$(printf %s "$line" | \
+						awk -F"$quote" '{ print $1 }')
+					line=${line#*$quote} ;;
+				*)
+					tmp=$line
+					found=
+					while read -r line
+					do
+						case $line in
+							*$quote*)
+								found=1
+								break ;;
+							*) tmp=$tmp$line ;;
+						esac
+					done
+
+					if [ -z "$found" ]
+					then
+						die "missing closing quote: \
+$tmp$line"
+					fi
+
+					result=s$tmp$(printf %s "$line" | \
+						awk -F"$quote" '{ print $2 }')
+					line=${line#*$quote} ;;
+			esac ;;
+		*)
+			func=$(printf '%c' "$line")
+			result=$(printf 'f%c\034' "$func")
+
+			if printf %c "$func" | grep '[[:upper:]]' >/dev/null
+			then
+				# if we're not punctuation, delete the remaining upper chars
+				line=${line#"${line%%[![:upper:]]*}"}
+			else
+				# if we're punctuation, just delete that
+				line=${line#"$func"}
+			fi
+
+			case "$func" in
+				[NTFRP]) arity=0 ;;
+				["EBCQLO\`!"]) arity=1 ;;
+				["-*+/%^?><&|;W="]) arity=2 ;;
+				[GI]) arity=3 ;;
+				[S]) arity=4 ;;
+				*)
+					die "unknown token start '$func'" ;;
+			esac
+
+			eval "next_token_ret_${next_token_rec=0}=\$result";
+
+			for _ in $(seq 1 1 "$arity" 2>/dev/null)
+			do
+				next_token_rec=$((next_token_rec+1))
+				next_token
+				next_token_rec=$((next_token_rec-1))
+
+				eval "next_token_ret_$next_token_rec=$(printf "%s%s\034" \
+					"\${next_token_ret_$next_token_rec}" "\$result")"
+			done
+
+			next_token_ast=$((next_token_ast+1))
+			eval "ast_token_$next_token_ast=\$next_token_ret_$next_token_rec"
+			result=ast_token_$next_token_ast ;;
+	esac
 }
 
-tokenize '; = a 4'
-# tokenize '; (= a 4) (OUTPUT + "a=" a)'
+to_string () {
+	if [ 0 -eq $# ]
+	then
+		set -- "$result"
+	fi
+ 
+	case "$1" in
+		[sn]*) result="${1#?}" ;;
+		fT) result=true ;;
+		fF) result=false ;;
+		fN) result=null ;;
+		*) die "cannot convert '$1' to a string." ;;
+	esac
+}
 
+to_number () {
+	if [ 0 -eq $# ]
+	then
+		set -- "$result"
+	fi
 
-# # printwhile () {
-# # 	while read -u0 -n1; do
-# # 		if matches "$1"; then
-# # 			printf %q "$REPLY"
-# # 		else
-# # 			cached=$REPLY
-# # 			break
-# # 		fi
-# # 	done
+	case "$1" in
+		n*) result=${1#?} ;;
+		s*) result=$(echo "$1" | sed 's/s[[:blank:]]*\([[:digit:]]*\).*/\1/') ;;
+		fT) result=1 ;;
+		f[FN]) result=0 ;;
+		*) die "cannot convert '$1' to a number." ;;
+	esac
+}
 
-# # 	printf '\0'
-# # }
+to_boolean () {
+	if [ 0 -eq $# ]
+	then
+		set -- "$result"
+	fi
 
-# # tokenize () {
-# # 	while {
-# # 		if [[ -n "$cached" ]]; then
-# # 			chr=$cached && unset cached
-# # 		else
-# # 			read -u0 -n1 chr
-# # 			[[ -z "$REPLY" ]]
-# # 		fi
-# # 	}; do
-# # 		echo "'$chr'"
-# # 		exit 0
-# # 		case $chr in
-# # 			["$(printf '()\ \n\t\f')"]) ;;
-# # 			\#) read -r;;
-# # 			[a-z_]) printf i%s "$chr" && printwhile '[a-z_0-9]';;
-# # 			[0-9])  printf 0%s "$chr" && printwhile '[0-9]';;
-# # 			[A-Z])  printf c%s "$chr" && printwhile '[A-Z]';;
-# # 			\'|\")  printf s && printwhile "[^\\$chr]" && unset cached ;;
-# # 			['-+*/^&|<>!;=%']) printf 'c%s\0' "$chr";;
-# # 			*) abort "unknown character '$chr' given."
-# # 		esac
-# # 	done
-# # }
+	case "$1" in
+		n0|s|f[FN]) return 1 ;;
+		[ns]*|fT) return 0 ;;
+		*) die "cannot convert '$1' to a boolean." ;;
+	esac
+}
 
-# # gen_ast () {
-# # 	IFS=$(printf '\0') read -d $'\0' || return $?
-# # 	local ast=__knight_ast_${node:=0}
-# # 	eval $ast="($(printf %q "$REPLY"))"
-# # 	let node+=1
-# # 	if [ c = "$(car "$REPLY")" ]; then
-# # 		case "$(cdr "$REPLY")" in
-# # 			[PTFN] | PROMPT | TRUE | FALSE | NULL)
-# # 				;;
-# # 			[BCOQES!] | BLOCK | CALL | OUTPUT | QUIT | EVAL | SYSTEM)
-# # 				gen_ast && eval $ast+='("$last_ast")' ;;
-# # 			['-WR;+*/^<>&|='] | WHILE | RANDOM)
-# # 				gen_ast && eval $ast+='("$last_ast")' && gen_ast && eval $ast+='("$last_ast")' ;;
-# # 			I | IF)
-# # 				gen_ast && eval $ast+='("$last_ast")' && \
-# # 					gen_ast && eval $ast+='("$last_ast")' && \
-# # 					gen_ast && eval $ast+='("$last_ast")' ;;
-# # 			*)
-# # 				abort "unknown command '$(cdr "$REPLY")' given";;
-# # 		esac
-# # 	fi
-# # 	last_ast=$ast
-# # }
+evaluate () {
+	if [ 0 -eq $# ]
+	then
+		set -- "$result"
+	fi
 
-# # is_truthy () { ! matches '00 | s | cF* | cN*' last_result; }
-# # to_bool1 () { if [ "$1" = 0 ]; then printf cFALSE; else printf cTRUE; fi }
+	case "$1" in
+	ast_token_*)
+		: "${eval_recur=0}"
+		IFS="$(printf '\034')"
+		set -- $(eval echo '"${'"$1"'[*]}"')
+		unset IFS
+	esac
 
-# # to_bool () { 
-# # 	case ${1="$last_result"} in
-# # 		cT*) printf cTRUE ;;
-# # 		cF*) printf cFALSE ;;
-# # 		cN*) printf cNULL ;;
-# # 		s*) if [ -z "$(cdr "$1")" ]; then printf cFALSE; else printf cTRUE; fi ;;
-# # 		0*) if [ 0 = "$(cdr "$1")" ]; then printf cFALSE; else printf cTRUE; fi ;;
-# # 		*) abort "cannot convert '$1' to a boolean"
-# # 	esac
-# # }
+	case "$1" in
+		[sn]* | f[NTF])
+			result="$1" ;;
 
-# # to_string () {
-# # 	case ${1="$last_result"} in
-# # 		s*) printf %s "$1" ;;
-# # 		0*) printf s%s "$(cdr "$1")" ;;
-# # 		cT*) printf strue ;;
-# # 		cF*) printf sfalse ;;
-# # 		cN*) printf snull ;;
-# # 		*) abort "cannot convert '$1' to a string"
-# # 	esac
-# # }
+		i*)
+			result="$(eval printf %s \""\$_kn_env_${1#?}"\")" ;;
 
-# # to_num () {
-# # 	case ${1="$last_result"} in
-# # 		0*) printf %s "$1" ;;
-# # 		s*) printf 0%d "$(cdr "$1")" || abort "string isn't an int: $1";;
-# # 		cT*) printf 01 ;;
-# # 		cF* | cN*) printf 00 ;;
-# # 		*) abort "cant convert '$1' to a number."
-# # 	esac
-# # }
+		fR)
+			result=n$(awk 'BEGIN { srand(); printf "%d", rand() * 4294967295; }') ;;
 
-# # evaluate () {
-# # 	local IFS=$(printf '\0')
-# # 	set -- $(eval echo '"${'"$1"'[*]}"')
-# # 	unset IFS
-# # 	case ${1?} in 
-# # 		# Literals and Nullary Commands
-# # 		0* | s* | cT* | cF* | cN*)
-# # 			last_result="$1" ;;
-# # 		i*)
-# # 			last_result="${environment[$(cdr "$1")]?"unknown variable $(cdr "$1")"}" ;;
-# # 		cP*)
-# # 			read last_result && last_result=s$last_result ;;
-	
-# # 		# Unary Commands
-# # 		cB*)
-# # 			last_result=${2?} ;;
-# # 		cC*)
-# # 			evaluate ${2?} && evaluate $last_result ;;
-# # 		cQ*)
-# # 			evaluate ${2?} && exit "$(cdr "$last_result")" ;;
-# # 		cE*)
-# # 			evaluate ${2?} && last_result=s$(knight "$(cdr "$last_result")") ;;
-# # 		cS*)
-# # 			evaluate ${2?} && last_result=s$(eval "$(cdr "$last_result")") ;;
-# # 		c\!)
-# # 			evaluate ${2?} && if is_truthy; then last_result=cTRUE; else last_result=cFALSE; fi;;
-# # 		cO*)
-# # 			evaluate ${2?} || return $?
-# # 			arg=$(to_string)
-# # 			if [[ \\ == "$(echo "$arg" | tail -c1)" ]]; then
-# # 				printf %s ${arg:1:${#arg}-2}
-# # 			else
-# # 				printf '%s\n' "$(cdr "$arg")"
-# # 			fi ;;
+		fP)
+			read -r
+			result=s$REPLY ;;
 
-# # 		# Binary Commands
-# # 		c\;)
-# # 			evaluate ${2?} && evaluate ${3?} ;;
-# # 		c=)
-# # 			local ident=$(eval echo \$${2?}) || return $?
-# # 			evaluate ${3?} || return $?
-# # 			environment[${ident:1}]=$last_result ;;
-# # 		cR*)
-# # 			evaluate ${2?} && local min=$last_result || return $?
-# # 			evaluate ${3?} && local max=$last_result || return $?
-# # 			last_result=0$(($min + $RANDOM % $max)) ;;
-# # 		cW*)
-# # 			local toreturn=cNULL
-# # 			while true; do
-# # 				evaluate ${2?} || return $?;
-# # 				if ! is_truthy; then break; fi
-# # 				evaluate $3 && toreturn=$last_result || return $?
-# # 			done
-# # 			last_result=$toreturn ;;
-# # 		c['-+*/^<>&|'])
-# # 			evaluate ${2?} && local lhs=$last_result || return $?
-# # 			evaluate ${3?} && local rhs=$last_result || return $?
-# # 			local op=${1:1}
-# # 			case $op in
-# # 				['-*/^'])
-# # 					last_result=0$(( $(to_num $lhs) ${op/^/**} $(to_num $rhs) ));;
-# # 				\+) 
-# # 					if [[ ${lhs:0:1} == 's' ]]; then
-# # 						last_result=s"${lhs:1}${rhs:1}"
-# # 					else
-# # 						last_result=0$(( $(to_num $lhs) + $(to_num $rhs) ))
-# # 					fi ;;
-# # 				['&|'])
-# # 					case $lhs in
-# # 						s*)
-# # 							local op=${op/&/-a}
-# # 							local op=${op/|/-o}
-# # 							local rhs=$(to_string $rhs)
-# # 							eval '[[ (-n "${lhs:1}") '$op' (-n "${rhs:1}") ]]'
-# # 							last_result=$(to_bool1 $(echo $?)) ;;
-# # 						0*)
-# # 							local rhs=$(to_num $rhs)
-# # 							last_result=$(to_bool1 $(( ${lhs:1} $op$op ${rhs:1} ))) ;;
-# # 						cT* | cF*)
-# # 							local rhs=$(to_bool $rhs)
-# # 							! eval '[[ "${lhs:1:1}" == "T" ]] '$op$op' [[ "${rhs:1:1}" == "T" ]]'
-# # 							last_result=$(to_bool1 $(echo $?)) ;;
-# # 						*)
-# # 							abort "unknown lhs for '$op': '$lhs'" ;;
-# # 					esac 
-# # 					;;
-# # 				['<>'])
-# # 					if [[ "${lhs:0:1}" == 's' ]]; then
-# # 						local rhs=$(to_string $rhs)
-# # 						eval '[[ "${lhs:1}" '$op' "${rhs:1}" ]]'
-# # 						last_result=$(to_bool1 $(echo $?))
-# # 					else
-# # 						local lhs=$(to_num $lhs)
-# # 						local rhs=$(to_num $rhs)
-# # 						last_result=$(to_bool1 $(( ${lhs:1} $op ${rhs:1} )))
-# # 					fi
-# # 				 ;;
-# # 				*) abort "unknown op '$op'" ;;
-# # 			esac
+		fE)
+			evaluate "$2"
+			to_string
+			next_token <<<$result
+			evaluate ;;
 
-# # 			;;
-# # 		# Ternary Operators
-# # 		cI*)
-# # 			evaluate $2 || return $?
-# # 			if is_truthy; then
-# # 				evaluate $3
-# # 			else
-# # 				evaluate $4
-# # 			fi ;;
-# # 		*)
-# # 			abort "unknown thing to evaluate: '$1'" ;;
-# # 	esac
-# # }
+		fB) 
+			next_token_ast=$((next_token_ast+1))
+			eval "ast_token_$next_token_ast=\$2"
+			result=ast_token_$next_token_ast  ;;
 
-# # knight () {
-# # 	echo "$1" | tokenize | gen_ast
-# # 	# evaluate $last_ast
-# # }
+		fC)
+			evaluate "$2"
+			result=$(eval printf %s \"\$$result\")
+			evaluate ;;
 
-# # # declare -A environment
+		f\`)
+			evaluate "$2"
+			to_string
+			result=s$($result) ;;
 
-# # knight '; (= a 4) (OUTPUT + "a=" a)'
-# # # set | grep __knight_ast_
-# # # exit
-# # # knight '
-# # # ; = a 0
-# # # ; = b 1
-# # # ; = n 10
-# # # ; OUTPUT (+ (+ "fib(" n) ")=\")
-# # # ; WHILE (> n 1)
-# # #   ; = tmp b
-# # #   ; = b (+ b a)
-# # #   ; = a tmp
-# # #   = n (- n 1)
-# # # OUTPUT b
-# # # '
+		fQ)
+			evaluate "$2"
+			to_number
+			exit "$result" ;;
+
+		f\!)
+			evaluate "$2"
+
+			if to_boolean
+			then
+				result=fF
+			else
+				result=fT
+			fi ;;
+
+		fL)
+			evaluate "$2"
+			to_string
+			result=n${#result} ;;
+
+		fO)
+			evaluate "$2"
+			arg0=$result
+			to_string
+
+			if [ \\ = "$(printf %s "$result" | tail -c1)" ]
+			then
+				printf %s "${result%?}"
+			else
+				printf '%s\n' "$result"
+			fi
+
+			result=$arg0 ;;
+
+		f\+)
+			evaluate "$2"
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+			evaluate "$3"
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ s = "$(printf %c "$arg0")" ]
+			then
+				to_string
+				result="$arg0$result"
+			else
+				to_number
+				arg1=$result
+				to_number "$arg0"
+				result=n$((result + arg1))
+			fi ;;
+
+		f\-)
+			evaluate "$2"
+			to_number
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+			to_number
+
+			eval_recur=$((eval_recur-1))
+			result=n$((arg0 - result)) ;;
+
+		f\*)
+			evaluate "$2"
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ s = "$(printf %c "$arg0")" ]
+			then
+				to_string
+				result=s$(seq -f'\000' -s"${arg0#?}" 1 "$result" | sed s/\000//)
+			else
+				to_number
+				arg1=$result
+				to_number "$arg0"
+				result=n$((result * arg1))
+			fi ;;
+
+		f\/)
+			evaluate "$2"
+			to_number
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+			to_number
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ "$result" -eq 0 ]
+			then
+				die "cannot divide by zero!"
+			fi
+
+			result=n$((arg0 / result)) ;;
+
+		f\%)
+			evaluate "$2"
+			to_number
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+			to_number
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ "$result" -eq 0 ]
+			then
+				die "cannot modulo by zero!"
+			fi
+
+			result=n$((arg0 % result)) ;;
+
+		f\^)
+			evaluate "$2"
+			to_number
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+			to_number
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			result=n$((arg0 ** result)) ;;
+
+		f\?)
+			evaluate "$2"
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ "$result" = "$arg0" ]
+			then
+				result=fT
+			else
+				result=fF
+			fi ;;
+
+		f\<)
+			evaluate "$2"
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ s = "$(printf %c "$arg0")" ]
+			then
+				to_string
+
+				if [ "$arg0" < "$result" ]
+				then
+					result=fT
+				else
+					result=fF
+				fi
+			else
+				to_number
+				arg1=$result
+				to_number "$arg0"
+
+				if [ "$result" -lt "$arg1" ]
+				then
+					result=fT
+				else
+					result=fF
+				fi
+			fi ;;
+
+		f\>)
+			evaluate "$2"
+
+			eval "_arg0_$eval_recur=\$result"
+			eval_recur=$((eval_recur+1))
+
+			evaluate "$3"
+
+			eval_recur=$((eval_recur-1))
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+
+			if [ s = "$(printf %c "$arg0")" ]
+			then
+				to_string
+
+				if [ "$arg0" > "$result" ]
+				then
+					result=fT
+				else
+					result=fF
+				fi
+			else
+				to_number
+				arg1=$result
+				to_number "$arg0"
+
+				if [ "$result" -gt "$arg1" ]
+				then
+					result=fT
+				else
+					result=fF
+				fi
+			fi ;;
+
+		f\&)
+			evaluate "$2"
+
+			if to_boolean
+			then
+				evaluate "$3"
+			fi ;;
+
+		f\|)
+			evaluate "$2"
+
+			if ! to_boolean
+			then
+				evaluate "$3"
+			fi ;;
+
+		f\;)
+			evaluate "$2"
+			evaluate "$3" ;;
+
+		fW)
+			eval "_while_res$eval_recur=fN"
+
+			while true
+			do
+				eval_recur=$((eval_recur+1))
+				evaluate "$2"
+				eval_recur=$((eval_recur-1))
+
+				if ! to_boolean
+				then
+					break
+				fi
+
+				eval_recur=$((eval_recur+1))
+				evaluate "$3"
+				eval_recur=$((eval_recur-1))
+				eval "_while_res$eval_recur=\$result"
+			done
+
+			result=$(eval printf %s "\$_while_res$eval_recur") ;;
+
+		f=)
+			if [ i = "$(printf %c "$2")" ]
+			then
+				eval "_ident_$eval_recur=${2#?}"
+			else
+				evaluate "$2"
+				to_string
+				eval "_ident_$eval_recur=\$result"
+			fi
+
+			eval_recur=$((eval_recur+1))
+			evaluate "$3"
+			eval_recur=$((eval_recur-1))
+
+			eval "_kn_env_$(eval printf %s "\$_ident_$eval_recur")=\$result" ;;
+
+		fI)
+			evaluate "$2"
+			if to_boolean
+			then
+				evaluate "$3"
+			else
+				evaluate "$4"
+			fi ;;
+		fG)
+			evaluate "$2"
+			to_string
+			eval "_arg0_$eval_recur=\$result"
+
+			eval_recur=$((eval_recur+1))
+			evaluate "$3"
+			to_number
+			eval_recur=$((eval_recur-1))
+			eval "_arg1_$eval_recur=\$result"
+
+			eval_recur=$((eval_recur+1))
+			evaluate "$4"
+			to_number
+			eval_recur=$((eval_recur-1))
+
+			arg0="$(eval printf %s \""\$_arg0_$eval_recur\"")"
+			arg1=$(eval printf %s "\$_arg1_$eval_recur")
+			arg2=$result
+			
+			if (( ${#arg0} < (arg1 + arg2) ))
+			then
+				result=s$(printf %s "$arg0" | sed "s/.\{$arg1\}//")
+			else
+				result=s$(printf %s "$arg0" | sed "s/.\{$arg1\}\(.\{${arg2}\}\).*/\\1/")
+			fi ;;
+		fS)
+			evaluate "$2"
+			to_string
+			eval "_arg0_$eval_recur=\$result"
+
+			eval_recur=$((eval_recur+1))
+			evaluate "$3"
+			to_number
+			eval_recur=$((eval_recur-1))
+			eval "_arg1_$eval_recur=\$result"
+
+			eval_recur=$((eval_recur+1))
+			evaluate "$4"
+			to_number
+			eval_recur=$((eval_recur-1))
+			eval "_arg2_$eval_recur=\$result"
+
+			eval_recur=$((eval_recur+1))
+			evaluate "$5"
+			to_string
+			eval_recur=$((eval_recur-1))
+
+			arg0=$(eval printf %s \"\$_arg0_$eval_recur\")
+			arg1=$(eval printf %s \"\$_arg1_$eval_recur\")
+			arg2=$(eval printf %s \"\$_arg2_$eval_recur\")
+			arg3=$result
+
+			if (( ${#arg0} < (arg1 + arg2) ))
+			then
+				result=s$(printf %s "$arg0" | \
+					sed "s/\(.\{$arg1\}\).*/\1/")$arg3
+			else
+				result=s$(printf %s "$arg0" | \
+					sed "s/\(.\{$arg1\}\).\{${arg2}\}/\\1$(\
+						printf %s "$arg3" | sed 's|[&/\]|\\&|g'
+					)/"
+				)
+			fi ;;
+		*)
+			bug "unknown function '$1' encountered!" ;;
+	esac
+}
+
+next_token
+evaluate

@@ -1,5 +1,9 @@
 #!/bin/zsh
 
+# NOTE: This version of knight is a bit outdated, as it doesn't have the string
+# functions `GET`, `SET`, and `LENGTH` that were introduced later on. Since I
+# already have a sh implementation, I'm not going to bother updating this one.
+
 abort () { echo $@ >&2; exit 1; }
 matches () { eval 'case "$'${2:-REPLY}'" in '$1') true;; *) false ;; esac'; }
 
@@ -229,7 +233,7 @@ declare -A environment
 # fi
 
 
-knight $(<<EOS
+knight "${1:-"$(<<EOS
 ; = a 0
 ; = b 1
 ; = n 10
@@ -241,4 +245,4 @@ knight $(<<EOS
   : = n (- n 1)
 : OUTPUT b
 EOS
-)
+)"}"
