@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+include_once '../src/Knight.php';
+include_once '../src/Number.php';
+include_once '../src/Text.php';
+include_once '../src/Nil.php';
+
+$stream = "'a'123' 45";
+$val = \Knight\Text::parse($stream);
+
+// echo $val->eql(new \Knight\Number(98));
+// echo false;
+// echo $val->add(new \Knight\Integer(1));
+// echo $stream;
+
+// require_once 'Knight.php';
+
+$x="'3'";
+echo \Knight\Func::fetch('E')->run(\Knight\Value::parse($x));
