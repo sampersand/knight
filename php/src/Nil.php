@@ -1,14 +1,13 @@
 <?php
 namespace Knight;
 
-require_once 'Value.php';
 use \Knight\Value;
 
 class Nil extends Value
 {
 	public static function parse(string &$stream): ?Value
 	{
-		if (!preg_match('/\AN/', $stream, $match)) {
+		if (!preg_match('/\AN/', $stream)) {
 			return null;
 		}
 
@@ -31,4 +30,10 @@ class Nil extends Value
 	{
 		return false;
 	}
+
+	protected function _dataEql(Value $rhs): bool {
+		return true;
+	}
 }
+
+Value::$TYPES[] = Nil::class;

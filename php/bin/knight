@@ -9,8 +9,8 @@ include_once '../src/Nil.php';
 include_once '../src/Function.php';
 
 $stream = "abc'a'123' 45";
-// \Knight\run("; = a 3 : O + + `'ls - ..' ' ''' 'a*4=' * a 4");
-\Knight\run(`cat ../../knight.kn`);
+\Knight\run("; = a 3 : O + 'a*4=' * a 4");
+// \Knight\run(`cat ../../knight.kn`);
 exit;
 // $val = \Knight\Value::parse($stream)->run;
 

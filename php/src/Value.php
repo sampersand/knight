@@ -2,12 +2,32 @@
 namespace Knight;
 
 abstract class Value {
+	static $TYPES = [];
+
 	public static function parse(string &$stream): ?Value {
-		return Text::parse($stream) ?? 3;
+		$stream = preg_replace('/\A(?:[\]\[\s(){}:]+|\#[^\n]*\n)*/', '', $stream);
+
+		foreach (Value::$TYPES as $class) {
+			if (!is_null($value = $class::parse($stream))) {
+				// print_r($value);
+				return $value;
+			}
+		}
+
+		return Func::parse($stream);
 	}
 
 	abstract public function toInt(): int;
 	abstract public function toBool(): bool;
+	abstract protected function _dataEql(Value $rhs): bool;
+
+ 	public function __call(string $name, array $arguments) {
+ 		die("unknown function '$name'.");
+ 	}
+
+	public function run(): Value {
+		return clone $this;
+	}
 
 	public function add(Value $rhs): Value
 	{
@@ -21,7 +41,7 @@ abstract class Value {
 
 	public function mul(Value $rhs): Value
 	{
-		return new Number($this->toInt() - $rhs->toInt());
+		return new Number($this->toInt() * $rhs->toInt());
 	}
 
 	public function div(Value $rhs): Value
@@ -30,10 +50,10 @@ abstract class Value {
 		$rhs = $rhs->toInt();
 
 		if ($rhs === 0) {
-			throw new Exception("Cannot divide by zero");
+			throw new \Exception("Cannot divide by zero");
 		}
 
-		return new Number(intdiv($this->toInt(), $rhs->toInt()));
+		return new Number(intdiv($this, $rhs));
 	}
 
 	public function mod(Value $rhs): Value
@@ -42,10 +62,10 @@ abstract class Value {
 		$rhs = $rhs->toInt();
 
 		if ($rhs === 0) {
-			throw new Exception("Cannot modulo by zero");
+			throw new \Exception("Cannot modulo by zero");
 		}
 
-		return new Number($this->toInt() % $rhs->toInt());
+		return new Number($this % $rhs);
 	}
 
 	public function pow(Value $rhs): Value
@@ -53,7 +73,7 @@ abstract class Value {
 		return new Number($this->toInt() ** $rhs->toInt());
 	}
 
-	public function cmp(Value $rhs): int
+	protected function cmp(Value $rhs): int
 	{
 		return $this->toInt() <=> $rhs->toInt();
 	}
@@ -70,6 +90,7 @@ abstract class Value {
 
 	public function eql(Value $rhs): bool
 	{
-		return $this === get_class($rhs) && $this->data === $rhs->data;
+		return get_class($this) === get_class($rhs) && $this->_dataEql($rhs);
 	}
+
 }

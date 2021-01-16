@@ -38,4 +38,10 @@ class Number extends Value
 	{
 		return (bool) $this->data;
 	}
+
+	protected function _dataEql(Value $rhs): bool {
+		return $this->data === $rhs->data;
+	}
 }
+
+Value::$TYPES[] = Number::class;

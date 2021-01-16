@@ -38,4 +38,10 @@ class Boolean extends Value
 	{
 		return $this->data;
 	}
+
+	protected function _dataEql(Value $rhs): bool {
+		return $this->data === $rhs->data;
+	}
 }
+
+Value::$TYPES[] = Boolean::class;

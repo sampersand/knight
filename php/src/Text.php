@@ -1,7 +1,6 @@
 <?php
 namespace Knight;
 
-require_once 'Value.php';
 use \Knight\Value;
 
 class Text extends Value
@@ -15,7 +14,7 @@ class Text extends Value
 
 				return new self($match[1]);
 			case preg_match('/\A[\'"]/', $stream):
-				throw new Exception("Unterminated quote encountered!");
+				throw new \Exception("Unterminated quote encountered!");
 			default:
 				return null;
 		} 
@@ -53,8 +52,14 @@ class Text extends Value
 		return new Text(str_repeat($this, $rhs->toInt()));
 	}
 
-	public function cmp(Value $rhs): int
+	protected function cmp(Value $rhs): int
 	{
 		return strcmp($this, $rhs);
 	}
+
+	protected function _dataEql(Value $rhs): bool {
+		return $this->data === $rhs->data;
+	}
 }
+
+Value::$TYPES[] = Text::class;
