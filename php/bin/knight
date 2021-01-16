@@ -2,19 +2,34 @@
 <?php
 
 include_once '../src/Knight.php';
+include_once '../src/Boolean.php';
 include_once '../src/Number.php';
 include_once '../src/Text.php';
 include_once '../src/Nil.php';
+include_once '../src/Function.php';
 
-$stream = "'a'123' 45";
-$val = \Knight\Text::parse($stream);
+$stream = "abc'a'123' 45";
+// \Knight\run("; = a 3 : O + + `'ls - ..' ' ''' 'a*4=' * a 4");
+\Knight\run(`cat ../../knight.kn`);
+exit;
+// $val = \Knight\Value::parse($stream)->run;
 
-// echo $val->eql(new \Knight\Number(98));
-// echo false;
-// echo $val->add(new \Knight\Integer(1));
-// echo $stream;
+// // echo $val->eql(new \Knight\Number(98));
+// // echo false;
+// // echo $val->add(new \Knight\Integer(1));
+// // echo $stream;
 
-// require_once 'Knight.php';
+// // require_once 'Knight.php';
 
-$x="'3'";
-echo \Knight\Func::fetch('E')->run(\Knight\Value::parse($x));
+// use \Knight\Text;
+
+// $val->assign(\Knight\run("123"));
+// echo $val->run();
+// // echo 'a\b';
+// exit;
+// $x="'3'";
+// echo \Knight\Func::fetch('I')->run(
+// 	new \Knight\Text(""),
+// 	new \Knight\Number(123),
+// 	new \Knight\Boolean(true),
+// 	);
