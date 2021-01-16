@@ -1,9 +1,0 @@
-{
-    "name": "samp/knight",
-    "type": "project",
-    "require": {},
-    "autoload": {
-        "psr-4": {
-            "Knight\\": "src'/",
-        }
-}
