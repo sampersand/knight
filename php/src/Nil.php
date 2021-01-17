@@ -18,7 +18,7 @@ class Nil extends Value
 
 	function __toString(): string
 	{
-		return "null";
+		return 'null';
 	}
 
 	public function toInt(): int
@@ -31,9 +31,8 @@ class Nil extends Value
 		return false;
 	}
 
-	protected function _dataEql(Value $rhs): bool {
+	protected function dataEql(Value $rhs): bool
+	{
 		return true;
 	}
 }
-
-Value::$TYPES[] = Nil::class;

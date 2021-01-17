@@ -50,10 +50,9 @@ class Identifier extends Value
 		return $this->run()->toBool();
 	}
 
-	protected function _dataEql(Value $rhs): bool {
+	protected function _dataEql(Value $rhs): bool
+	{
 		die("this cant be calle d, as identifiers are always evaluated.");
 	}
 
 }
-
-Value::$TYPES[] = Identifier::class;

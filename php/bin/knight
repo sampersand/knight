@@ -2,14 +2,9 @@
 <?php
 
 include_once '../src/Knight.php';
-include_once '../src/Boolean.php';
-include_once '../src/Number.php';
-include_once '../src/Text.php';
-include_once '../src/Nil.php';
-include_once '../src/Function.php';
 
 $stream = "abc'a'123' 45";
-\Knight\run("; = a 3 : O + 'a*4=' * a 4");
+\Knight\run("; = a 3 : O ++ 'a*4=' T * a 4");
 // \Knight\run(`cat ../../knight.kn`);
 exit;
 // $val = \Knight\Value::parse($stream)->run;
@@ -21,7 +16,7 @@ exit;
 
 // // require_once 'Knight.php';
 
-// use \Knight\Text;
+// use \Knight\Str;
 
 // $val->assign(\Knight\run("123"));
 // echo $val->run();
@@ -29,7 +24,7 @@ exit;
 // exit;
 // $x="'3'";
 // echo \Knight\Func::fetch('I')->run(
-// 	new \Knight\Text(""),
+// 	new \Knight\Str(""),
 // 	new \Knight\Number(123),
 // 	new \Knight\Boolean(true),
 // 	);

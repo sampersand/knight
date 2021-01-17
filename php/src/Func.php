@@ -73,13 +73,14 @@ class Func extends Value
 		return $this->run()->toBool();
 	}
 
-	protected function _dataEql(Value $rhs): bool {
+	protected function _dataEql(Value $rhs): bool
+	{
 		die("this can't be called, as functions are always evaluated.");
 	}
 }
 
 Func::register('P', 0, function(): Value {
-	return new Text(chop(fgets(STDIN)));
+	return new Str(chop(fgets(STDIN)));
 });
 
 Func::register('R', 0, function(): Value {
@@ -99,7 +100,7 @@ Func::register('C', 1, function(Value $block): Value {
 });
 
 Func::register('`', 1, function(Value $command): Value {
-	return new Text(shell_exec($command->run()));
+	return new Str(shell_exec($command->run()));
 });
 
 Func::register('Q', 1, function(Value $block): Value {
@@ -207,7 +208,7 @@ Func::register('I', 3, function(Value $cond, Value $iftrue, Value $iffalse): Val
 });
 
 Func::register('G', 3, function(Value $string, Value $start, Value $length): Value {
-	return new Text(substr($string->run(), $start->run()->toInt(), $length->run()->toInt()));
+	return new Str(substr($string->run(), $start->run()->toInt(), $length->run()->toInt()));
 });
 
 Func::register('S', 4, function(Value $string, Value $start, Value $length, Value $replacement): Value {
@@ -217,5 +218,5 @@ Func::register('S', 4, function(Value $string, Value $start, Value $length, Valu
 	$replacement = $replacement->run();
 
 	// maybe
-	return new Text(substr_replace($string, $replacement, $start, $length));
+	return new Str(substr_replace($string, $replacement, $start, $length));
 });

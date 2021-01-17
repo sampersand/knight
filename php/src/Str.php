@@ -3,7 +3,7 @@ namespace Knight;
 
 use \Knight\Value;
 
-class Text extends Value
+class Str extends Value
 {
 	public static function parse(string &$stream): ?Value
 	{
@@ -14,7 +14,7 @@ class Text extends Value
 
 				return new self($match[1]);
 			case preg_match('/\A[\'"]/', $stream):
-				throw new \Exception("Unterminated quote encountered!");
+				throw new \Exception('Unterminated quote encountered!');
 			default:
 				return null;
 		} 
@@ -44,12 +44,12 @@ class Text extends Value
 
 	public function add(Value $rhs): Value
 	{
-		return new Text($this . $rhs);
+		return new Str($this . $rhs);
 	}
 
 	public function mul(Value $rhs): Value
 	{
-		return new Text(str_repeat($this, $rhs->toInt()));
+		return new Str(str_repeat($this, $rhs->toInt()));
 	}
 
 	protected function cmp(Value $rhs): int
@@ -57,9 +57,8 @@ class Text extends Value
 		return strcmp($this, $rhs);
 	}
 
-	protected function _dataEql(Value $rhs): bool {
+	protected function _dataEql(Value $rhs): bool
+	{
 		return $this->data === $rhs->data;
 	}
 }
-
-Value::$TYPES[] = Text::class;
