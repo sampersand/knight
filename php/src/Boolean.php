@@ -1,20 +1,15 @@
 <?php
 namespace Knight;
 
-require_once 'Value.php';
 use \Knight\Value;
 
 class Boolean extends Value
 {
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		if (!preg_match('/\A[TF]/', $stream, $match)) {
-			return null;
-		}
+		$match = $stream->match('[TF][A-Z]*');
 
-		$stream = preg_replace('/^[A-Z]*/', '', $stream);
-
-		return new self($match[0] === 'T');
+		return $match ? new self($match[0] === 'T') : null;
 	}
 
 	private $data;
@@ -39,7 +34,7 @@ class Boolean extends Value
 		return $this->data;
 	}
 
-	protected function _dataEql(Value $rhs): bool
+	protected function dataEql(Boolean $rhs): bool
 	{
 		return $this->data === $rhs->data;
 	}

@@ -7,15 +7,11 @@ class Identifier extends Value
 {
 	private static $VARIABLES = [];
 
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		if (!preg_match('/\A[a-z_][a-z_0-9]*/', $stream, $match)) {
-			return null;
-		}
+		$match = $stream->match('[a-z_][a-z_0-9]*');
 
-		$stream = preg_replace('/^[a-z0-9_]+/', '', $stream);
-
-		return new self($match[0]);
+		return is_null($match) ? null : new self($match);
 	}
 
 	private $data;
@@ -49,10 +45,4 @@ class Identifier extends Value
 	{
 		return $this->run()->toBool();
 	}
-
-	protected function _dataEql(Value $rhs): bool
-	{
-		die("this cant be calle d, as identifiers are always evaluated.");
-	}
-
 }

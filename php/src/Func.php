@@ -16,9 +16,11 @@ class Func extends Value
 		Func::$KNOWN[$name] = [$func, $arity];
 	}
 
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		if (!preg_match('/\A([A-Z]|\S)/', $stream, $match)) {
+		$match = $stream->match('[A-Z]+|\S');
+
+		if (is_null($match)) {
 			return null;
 		}
 
@@ -28,7 +30,6 @@ class Func extends Value
 			throw new \Exception("unknown function '$match[0]'");
 		}
 
-		$stream = preg_replace('/^([A-Z]+|\S)/', '', $stream);
 		$args = [];
 
 		for ($i=0; $i < $arity; $i++) { 
@@ -71,11 +72,6 @@ class Func extends Value
 	public function toBool(): bool
 	{
 		return $this->run()->toBool();
-	}
-
-	protected function _dataEql(Value $rhs): bool
-	{
-		die("this can't be called, as functions are always evaluated.");
 	}
 }
 

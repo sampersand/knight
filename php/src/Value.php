@@ -12,9 +12,9 @@ abstract class Value
 		\Knight\Func::class
 	];
 
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		$stream = preg_replace('/\A(?:[\]\[\s(){}:]+|\#[^\n]*\n)*/', '', $stream);
+		$stream->strip();
 
 		foreach (Value::$TYPES as $class) {
 			if (!is_null($value = $class::parse($stream))) {
@@ -31,6 +31,14 @@ abstract class Value
 	public function run(): Value
 	{
 		return clone $this;
+	}
+
+	public function lth(Value $rhs): bool {
+		return $this->cmp($rhs) < 0;
+	}
+
+	public function gth(Value $rhs): bool {
+		return $this->cmp($rhs) > 0;
 	}
 
 	public function eql(Value $rhs): bool

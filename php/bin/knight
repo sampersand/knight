@@ -3,9 +3,14 @@
 
 include_once '../src/Knight.php';
 
+// $stream = new \Knight\Stream("\"TRE\"E124");
+// \Knight\run("; = a 3 : O + 'a*4='* a 4");
+\Knight\run(`cat ../../knight.kn`);
+// echo \Knight\Str::parse($stream), "\n";
+exit;
+echo 1;
+exit;
 $stream = "abc'a'123' 45";
-\Knight\run("; = a 3 : O ++ 'a*4=' T * a 4");
-// \Knight\run(`cat ../../knight.kn`);
 exit;
 // $val = \Knight\Value::parse($stream)->run;
 

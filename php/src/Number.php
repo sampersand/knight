@@ -6,15 +6,11 @@ use \Knight\Value;
 
 class Number extends Value
 {
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		if (!preg_match('/\A\d+/', $stream, $match)) {
-			return null;
-		}
+		$match = $stream->match('\d+');
 
-		$stream = substr($stream, strlen($match[0]));
-
-		return new self((int) $match[0]);
+		return is_null($match) ? null : new self((int) $match);
 	}
 
 	private $data;
@@ -89,11 +85,6 @@ class Number extends Value
 	protected function cmp(Value $rhs): int
 	{
 		return $this->data <=> $rhs->toInt();
-	}
-
-	public function eql(Value $rhs): bool
-	{
-		return get_class($this) === get_class($rhs) && $this->_dataEql($rhs);
 	}
 }
 

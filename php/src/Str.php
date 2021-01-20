@@ -5,19 +5,19 @@ use \Knight\Value;
 
 class Str extends Value
 {
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		switch (1) {
-			case preg_match("/\A'([^']*)'/", $stream, $match):
-			case preg_match('/\A"([^"]*)"/', $stream, $match):
-				$stream = substr($stream, strlen($match[0]));
+		$match = $stream->match("([\"'])((?:(?!\\1).|\n)*)\\1", 2);
 
-				return new self($match[1]);
-			case preg_match('/\A[\'"]/', $stream):
+		if (is_null($match)) {
+			if ($stream->match("[\"']")) {
 				throw new \Exception('Unterminated quote encountered!');
-			default:
+			} else {
 				return null;
-		} 
+			}
+		}
+
+		return new self($match);
 	}
 
 	private $data;
@@ -57,7 +57,7 @@ class Str extends Value
 		return strcmp($this, $rhs);
 	}
 
-	protected function _dataEql(Value $rhs): bool
+	protected function dataEql(Value $rhs): bool
 	{
 		return $this->data === $rhs->data;
 	}

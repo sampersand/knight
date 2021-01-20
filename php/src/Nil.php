@@ -5,15 +5,9 @@ use \Knight\Value;
 
 class Nil extends Value
 {
-	public static function parse(string &$stream): ?Value
+	public static function parse(Stream $stream): ?Value
 	{
-		if (!preg_match('/\AN/', $stream)) {
-			return null;
-		}
-
-		$stream = preg_replace('/^[A-Z]*/', '', $stream);
-
-		return new self();
+		return is_null($stream->match('N[A-Z]*')) ? null : new self();
 	}
 
 	function __toString(): string
@@ -31,7 +25,7 @@ class Nil extends Value
 		return false;
 	}
 
-	protected function dataEql(Value $rhs): bool
+	protected function dataEql(Nil $rhs): bool
 	{
 		return true;
 	}
