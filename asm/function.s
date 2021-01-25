@@ -1,64 +1,39 @@
-# RDI, RSI, RDX, RCX, R8, R9
+.include "debug.s"
 
-.quad 0
-.global func_prompt
-func_prompt:
-	call die
+.macro define_function argc:req suffix:req
+.balign 16
+.space 15
+.byte \argc
+.global kn_func_\suffix
+kn_func_\suffix:
+.endm // define_function
 
-.quad 0
-.global func_random
-func_random:
+define_function 0, prompt
+	todo "kn_func_prompt"
+
+define_function 0, random
 	sub $8, %rsp
 	call _random
 	add $8, %rsp
 	mov %rax, %rdi
-	jmp value_new_integer
+	jmp kn_value_new_integer
 
-.quad 0
-.global func_true
-func_true:
-	mov $1, %edi
-	jmp value_new_boolean
+define_function 1, block
+	todo "kn_func_block"
 
-.quad 0
-.global func_false
-func_false:
-	mov $0, %edi
-	jmp value_new_boolean
+define_function 1, eval
+	todo "kn_func_eval"
 
-.quad 0
-.global func_null
-func_null:
-	jmp value_new_null
+define_function 1, call
+	todo "kn_func_call"
 
-.quad 1
-.global func_block
-func_block:
-	call die
+define_function 1, system
+	todo "kn_func_system"
 
-.quad 1
-.global func_eval
-func_eval:
-	call die
+define_function 1, quit
+	todo "kn_func_quit"
 
-.quad 1
-.global func_call
-func_call:
-	call die
-
-.quad 1
-.global func_system
-func_system:
-	call die
-
-.quad 1
-.global func_quit
-func_quit:
-	call die
-
-.quad 1
-.global func_not
-func_not:
+define_function 1, not
 	push %rbx
 	mov (%rdi), %rbx
 	mov (%rdi), %rdi
@@ -69,114 +44,76 @@ func_not:
 	mov %rbx, %rdi
 	test %rax, %rax
 	setne %al
-	movzbl %al, %ebx
-	call value_free # with the `edi` up above
+	movzb %al, %ebx
+	call kn_value_free // with the `edi` up above
 
 	mov %rbx, %rdi
 	pop %rbx
-	jmp value_new_boolean
+	jmp kn_value_new_boolean
 
-.quad 1
-.global func_length
-func_length:
-	#call die
+define_function 1, length
+	//todo "kn_func_length"
 	mov (%rdi), %rdi
 	call value_run
 	mov %rax, %rdi
 	call value_to_integer
 	mov %rax, %rdi
-	jmp value_new_integer
+	jmp kn_value_new_integer
 
 
-.quad 1
-.global func_output
-func_output:
-	call die
+define_function 1, output
+	todo "kn_func_output"
 
 
-.quad 2
-.global func_add
-func_add:
-	call die
+define_function 2, add
+	todo "kn_func_add"
 
-.quad 2
-.global func_sub
-func_sub:
-	call die
+define_function 2, sub
+	todo "kn_func_sub"
 
-.quad 2
-.global func_mul
-func_mul:
-	call die
+define_function 2, mul
+	todo "kn_func_mul"
 
-.quad 2
-.global func_div
-func_div:
-	call die
+define_function 2, div
+	todo "kn_func_div"
 
-.quad 2
-.global func_mod
-func_mod:
-	call die
+define_function 2, mod
+	todo "kn_func_mod"
 
-.quad 2
-.global func_pow
-func_pow:
-	call die
+define_function 2, pow
+	todo "kn_func_pow"
 
-.quad 2
-.global func_eql
-func_eql:
-	call die
+define_function 2, eql
+	todo "kn_func_eql"
 
-.quad 2
-.global func_lth
-func_lth:
-	call die
+define_function 2, lth
+	todo "kn_func_lth"
 
-.quad 2
-.global func_gth
-func_gth:
-	call die
+define_function 2, gth
+	todo "kn_func_gth"
 
-.quad 2
-.global func_then
-func_then:
-	call die
+define_function 2, then
+	todo "kn_func_then"
 
-.quad 2
-.global func_assign
-func_assign:
-	call die
+define_function 2, assign
+	todo "kn_func_assign"
 
-.quad 2
-.global func_while
-func_while:
-	call die
+define_function 2, while
+	todo "kn_func_while"
 
-.quad 2
-.global func_and
-func_and:
-	call die
+define_function 2, and
+	todo "kn_func_and"
 
-.quad 2
-.global func_or
-func_or:
-	call die
+define_function 2, or
+	todo "kn_func_or"
 
 
-.quad 3
-.global func_if
-func_if:
-	call die
+define_function 3, if
+	todo "kn_func_if"
 
-.quad 3
-.global func_get
-func_get:
-	call die
+define_function 3, get
+	todo "kn_func_get"
 
 
-.quad 4
-.global func_set
-func_set:
-	call die
+define_function 4, set
+	todo "kn_func_set"

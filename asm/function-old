@@ -1,0 +1,242 @@
+.include "debug.s"
+
+.balign 16
+.space 15
+.byte 0
+.global kn_func_prompt
+kn_func_prompt:
+	todo "kn_func_prompt"
+
+.balign 16
+.space 15
+.byte 0
+.global kn_func_random
+kn_func_random:
+	sub $8, %rsp
+	call _random
+	add $8, %rsp
+	mov %rax, %rdi
+	jmp kn_value_new_integer
+
+.balign 16
+.space 15
+.byte 0
+.global kn_func_true
+kn_func_true:
+	mov $1, %edi
+	jmp kn_value_new_boolean
+
+.balign 16
+.space 15
+.byte 0
+.global kn_func_false
+kn_func_false:
+	mov $0, %edi
+	jmp kn_value_new_boolean
+
+.balign 16
+.space 15
+.byte 0
+.global kn_func_null
+kn_func_null:
+	jmp kn_value_new_null
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_block
+kn_func_block:
+	todo "kn_func_block"
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_eval
+kn_func_eval:
+	todo "kn_func_eval"
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_call
+kn_func_call:
+	todo "kn_func_call"
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_system
+kn_func_system:
+	todo "kn_func_system"
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_quit
+kn_func_quit:
+	todo "kn_func_quit"
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_not
+kn_func_not:
+	push %rbx
+	mov (%rdi), %rbx
+	mov (%rdi), %rdi
+	call value_run
+	mov %rax, %rdi
+	call value_to_boolean
+
+	mov %rbx, %rdi
+	test %rax, %rax
+	setne %al
+	movzb %al, %ebx
+	call kn_value_free // with the `edi` up above
+
+	mov %rbx, %rdi
+	pop %rbx
+	jmp kn_value_new_boolean
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_length
+kn_func_length:
+	//todo "kn_func_length"
+	mov (%rdi), %rdi
+	call value_run
+	mov %rax, %rdi
+	call value_to_integer
+	mov %rax, %rdi
+	jmp kn_value_new_integer
+
+
+.balign 16
+.space 15
+.byte 1
+.global kn_func_output
+kn_func_output:
+	todo "kn_func_output"
+
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_add
+kn_func_add:
+	todo "kn_func_add"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_sub
+kn_func_sub:
+	todo "kn_func_sub"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_mul
+kn_func_mul:
+	todo "kn_func_mul"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_div
+kn_func_div:
+	todo "kn_func_div"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_mod
+kn_func_mod:
+	todo "kn_func_mod"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_pow
+kn_func_pow:
+	todo "kn_func_pow"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_eql
+kn_func_eql:
+	todo "kn_func_eql"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_lth
+kn_func_lth:
+	todo "kn_func_lth"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_gth
+kn_func_gth:
+	todo "kn_func_gth"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_then
+kn_func_then:
+	todo "kn_func_then"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_assign
+kn_func_assign:
+	todo "kn_func_assign"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_while
+kn_func_while:
+	todo "kn_func_while"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_and
+kn_func_and:
+	todo "kn_func_and"
+
+.balign 16
+.space 15
+.byte 2
+.global kn_func_or
+kn_func_or:
+	todo "kn_func_or"
+
+
+.balign 16
+.space 15
+.byte 3
+.global kn_func_if
+kn_func_if:
+	todo "kn_func_if"
+
+.balign 16
+.space 15
+.byte 3
+.global kn_func_get
+kn_func_get:
+	todo "kn_func_get"
+
+
+.balign 16
+.space 15
+.byte 4
+.global kn_func_set
+kn_func_set:
+	todo "kn_func_set"

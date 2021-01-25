@@ -1,85 +1,121 @@
-# RDI, RSI, RDX, RCX, R8, R9
-#.data
-#fmt:
-	#.asciz "arg = %s (%d bytes)\n"
-#fmt2:
-	#.asciz "arg = %c\n"
+// RDI, RSI, RDX, RCX, R8, R9
+.include "debug.s"
+
+.data
+source:
+	.asciz "; = a 3 : O + 'a*4=' * a 4"
 
 .text
 .globl _main
 _main:
-	push %rdi
-	push %rsi
-	push %r12
+	push %rbx
 
-	mov 16(%rsi), %rdi
-	call initalize_knight
-	call ast_parse
+	call process_arguments    // process command line arguments
+	mov %rax, %rbx
+	call kn_initialize        // Start up knight
 
-
-	mov %rax, %rdi
-	# # temporary
-	# mov %rax, %r12
-	# call value_dump
-	# mov %r12, %rdi
-	# # /temporary
-
-	call value_run
-	mov %rax, %rdi
-	call value_dump
+	mov %rbx, %rdi
+	call kn_run
 
 	xor %eax, %eax
-	pop %r12
-	pop %rsi
-	pop %rdi
+	pop %rbx
 	ret
 
-initalize_knight:
-	nop  # TODO
+process_arguments:
+	; mov 16(%rsi), %rdi
+	lea source(%rip), %rax
 	ret
-#	sub $8, %rsp
-#	mov (%rsi), %rdi
-#	call _strdup
-#	mov %rax, %rdi
-#	call string_new
-#	mov %rax, %rdi
-#	call string_clone
-#	call string_free
-#	xor %eax, %eax
-#	add $8, %rsp
-#	ret
 
-# 	push %rdi
-# 	xor %eax, %eax
-# 	mov $1, %rdi
-# 	call _malloc
-# 	pop %rdi
-# 	ret
-# 
-# 	mov %rsp, %rax
-# 	call ddebug
-# 	mov 16(%rsi), %rdi
-# 	mov %rdi, (%rsp)
-# 	call ast_parse
-# 	mov %rax, %rdi
-# 
-# 	mov %rax, %rbx # only temporary
-# 	call value_dump
-# 	mov %rbx, %rdi
-# 
-# 	call value_run
-# 	mov %rax, %rdi
-# 	#jmp ddebug
-# #	mov %rax, %rdi
-# 	call value_dump
-# 	#call free_value
-# 	add $8, %rsp
-# 	xor %eax, %eax
-# 	ret
+.globl kn_run
+kn_run:
+	push %rbx
+	call kn_parse      // parse the stream
+
+	mov %rax, %rbx     // save the parsed value for later so we can free it
+	mov %rax, %rdi
+	call kn_value_run  // execute the parsed value
+
+	mov %rbx, %rdi
+	mov %rax, %rbx     // record the result of running it
+
+.if DEBUG
+	call kn_value_dump
+.else
+	call kn_value_free // free the memory of the parsed value
+.endif
+
+	mov %rbx, %rax
+	pop %rbx
+	ret
+
+kn_initialize:
+	nop  // TODO
+	ret
+//	sub $8, %rsp
+//	mov (%rsi), %rdi
+//	call _strdup
+//	mov %rax, %rdi
+//	call kn_string_new
+//	mov %rax, %rdi
+//	call kn_string_clone
+//	call string_free
+//	xor %eax, %eax
+//	add $8, %rsp
+//	ret
+
+// 	push %rdi
+// 	xor %eax, %eax
+// 	mov $1, %rdi
+// 	call _malloc
+// 	pop %rdi
+// 	ret
+// 
+// 	mov %rsp, %rax
+// 	call ddebug
+// 	mov 16(%rsi), %rdi
+// 	mov %rdi, (%rsp)
+// 	call kn_parse
+// 	mov %rax, %rdi
+// 
+// 	mov %rax, %rbx // only temporary
+// 	call value_dump
+// 	mov %rbx, %rdi
+// 
+// 	call value_run
+// 	mov %rax, %rdi
+// 	//jmp ddebug
+// //	mov %rax, %rdi
+// 	call value_dump
+// 	//call free_value
+// 	add $8, %rsp
+// 	xor %eax, %eax
+// 	ret
+
+.globl xmalloc
+xmalloc:
+	sub $8, %rsp
+	call _malloc
+	cmp $0, %rax
+	je 0f
+	add $8, %rsp
+	ret
+0:
+	lea kn_allocation_failure(%rip), %rdi
+	call abort
+
+.pushsection .text, ""
+kn_allocation_failure:
+	.asciz "allocation failure occured!"
+.popsection
+
+.globl abort
+abort:
+	call _printf
+	call die
 
 .globl die
 die:
-	mov $192, %rdi
+	mov $1, %rdi
 	jmp _exit
 
 
@@ -110,8 +146,8 @@ dbg_fmt:
 
 .globl debug
 debug:
-# RDI, RSI, RDX, RCX, R8, R9
-	#sub $88, %rsp
+// RDI, RSI, RDX, RCX, R8, R9
+	//sub $88, %rsp
 	push %rsp
 	push %rsi
 	push %rdx
