@@ -1,33 +1,7 @@
 // RDI, RSI, RDX, RCX, R8, R9
 
 .include "debug.s"
-
-/*
-abuse the fact that `malloc` will allocate things that are 16-aligned.
-0...00000 = false
-0...XXX10 = 62-bit
-0...00100 = null
-0...01100 = true
-X...X0001 = function
-X...X0101 = string
-X...X1001 = ident
-*/
-
-.equ FALSE_BITS, 0b0000
-.equ NUM_BIT,    0b0010
-.equ NULL_BITS,  0b0100
-.equ TRUE_BITS,  0b1100
-
-.equ ALLOC_BIT,  0b0001
-.equ TAG_MASK,   0b1111
-
-.equ FUNC_BIT,   0b0100
-.equ FUNC_TAG,   FUNC_BIT | ALLOC_BIT
-.equ STRING_BIT, 0b1000
-.equ STRING_TAG, STRING_BIT | ALLOC_BIT
-.equ IDENT_TAG,  0b0000 | ALLOC_BIT
-
-
+.include "value_header.s"
 
 /* Creates a new number. */
 .globl kn_value_new_number
@@ -249,9 +223,51 @@ kn_value_to_string:
 	add $8, %rsp
 	jmp kn_value_to_string /* after running, try to parse the string again */
 integer_to_string:
-	sar %rdi
-	todo "integer to string"
+	sar $2, %rdi
+	sub $40, %rsp  /* allocate space for the string on the stack; it will be duped later */
+	mov %rsp, %rsi /* get a pointer to the base */
 
+	/* short circuit for if we are zero */
+	cmp $0, %rdi
+	jne 0f
+	lea kn_string_zero(%rip), %rax
+	add $40, %rsp
+	ret
+0: /* here we're a nonzero value */
+	/* add a leading `-` if necessary */
+	cmp $0, %rdi
+	jge 0f            /* if positive, skip this */
+	movb $'-', (%rsi) /* add the `-` */
+	inc %rsi          /* increase the pointer */
+	neg %rdi          /* remove the negative value */
+0: /* nonzero, positive integer; note i took this from gcc's output */
+	movabsq	$7378697629483820647, %r8
+1:
+	movq	%rdi, %rax
+	imulq	%r8
+	movq	%rdx, %rax
+	shrq	$63, %rax
+	sarq	$2, %rdx
+	addq	%rax, %rdx
+	leal	(%rdx,%rdx), %eax
+	leal	(%rax,%rax,4), %eax
+	movl	%edi, %ecx
+	subl	%eax, %ecx
+	movb	%cl, (%rsi)
+	incq	%rsi
+	addq	$9, %rdi
+	cmpq	$18, %rdi
+	movq	%rdx, %rdi
+	ja	1b
+/* done parsing the string */
+	sub %rsp, %rsi
+	mov %rsp, %rdi
+	call _strndup
+	mov %rax, %rdi
+	add $40, %rsp
+	jmp kn_string_new
+
+/* Converts a value to a number */
 .globl kn_value_to_number
 kn_value_to_number:
 	test $NUM_BIT, %rdi     /* see if we are a number */
@@ -271,7 +287,11 @@ kn_value_to_number:
 0: /* string, ident, or function */
 	test $STRING_BIT, %rdi
 	jz 0f
-	todo "kn_value_to_number for string"
+	and $~TAG_MASK, %rdi
+	mov (%rdi), %rdi
+	xor %esi, %esi
+	mov $10, %edx
+	jmp _strtoll
 0: /* otherwise, execute the value, and then convert the result to a number */
 	sub $8, %rsp
 	call kn_value_run
@@ -310,24 +330,59 @@ kn_value_clone:
 	jnz 0f
 	ret /* if it is not allocated, simply return the given value */
 0: /* string, ident, or function */
-	sub $8, %rsp
+	push %rbx /* for string and ident, we just need alignment. for func, we need rbx. */
 	and $~TAG_MASK, %rdi    /* remove the tag */
 	test $STRING_BIT, %rax
 	jz 0f
 	call kn_string_clone /* duplicate the string */
 	mov %rax, %rdi
-	add $8, %rsp
+	pop %rbx
 	jmp kn_value_new_string /* then create a new string */
 0: /* ident or function */
-	test $STRING_BIT, %rax
+	test $FUNC_BIT, %rax
 	jnz 0f
 	call _strdup /* duplicate the identifier */
-	add $8, %rsp
+	pop %rbx
 	mov %rax, %rdi
 	jmp kn_value_new_identifier
 0: /* function */
-	todo "clone a function"
-	add $8, %rsp
+	push %r12
+	push %r13
+
+	assert_test $FUNC_BIT, %rax
+ 	mov %rdi, %rbx /* Store the base address. */
+ 
+ 	mov (%rdi), %rax
+ 	movzb -1(%rax), %r12
+ 	lea 8(,%r12, 8), %r12 /* Load the length */
+ 	mov %r12, %rdi
+ 	call ddebug
+# 0: /* Because order does not matter when freeing, we can count backwards */
+# 	cmp %rbx, %r12
+# 	je 1f                 /* If our ending argument is equal to the starting one, we are done. */
+# 	mov (%r12), %rdi
+# 	call kn_value_free    /* Free the current argument */
+# 	sub $8, %r12          /* go one argument back */
+# 	jmp 0b
+# 1:
+# 	mov %rbx, %rdi /* prepare to free the function struct itself */
+# 	add $8, %rsp   /* restore previous values */
+# 	pop %r12
+# 	pop %rbx
+# 	jmp _free      /* free the entire struct, as it was malloced. */
+# 
+
+	pop %r13
+	pop %r12
+	pop %rbx
+# 	mov %rdi, %rax
+# 	movb -1(%rax), %rax /* load the arity */
+# 	lea (%rdi, %r12, 8), %r12 /* Load the last index into r12 */
+# 	call ddebug
+# 	pop %r13
+# 	pop %r12
+# 	todo "clone a function"
+# 	add $8, %rsp
 
 .globl kn_value_dump
 kn_value_dump:

@@ -4,10 +4,7 @@
 .data
 source:
 	# .asciz "; = a 3 : O + 'a*4=' * a 4"
-	.asciz "D E '- 3 4'"
-	.asciz "
-" # '"
-
+	.asciz "; D 1 D 2 D ? 'a' 'a'"
 .text
 .globl _main
 _main:
@@ -32,30 +29,24 @@ process_arguments:
 .globl kn_run
 kn_run:
 	push %rbx
-	call kn_parse      // parse the stream
-
-	mov %rax, %rbx     // save the parsed value for later so we can free it
+	call kn_parse      /* parse the stream */
+	mov %rax, %rbx     /* save the parsed value for later so we can free it */
 	mov %rax, %rdi
-	call kn_value_run  // execute the parsed value
+	call kn_value_run  /* execute the parsed value */
 	mov %rbx, %rdi
-	mov %rax, %rbx     // record the result of running it
-/*.ifdef KN_DEBUG
-	sub $8, %rsp
-	push %r13
-	mov %rdi, %r13
-	call kn_value_dump
-	mov %rbx, %rdi
-	call kn_value_dump
-	mov %r13, %rdi
-	pop %r13
-	add $8, %rsp
-.endif*/
-	call kn_value_free // free the memory of the parsed value
-	mov %rbx, %rax
+	mov %rax, %rbx     /* record the result of running it */
+	call kn_value_free /* free the memory of the parsed value */
+	mov %rbx, %rax     /* restore the return value */
 	pop %rbx
 	ret
 
 kn_initialize:
+	sub $8, %rsp
+	xor %edi, %edi
+	call _time
+	mov %eax, %edi
+	call _srand
+	add $8, %rsp
 	nop  // TODO
 	# TODO: SRAND
 	ret

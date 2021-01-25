@@ -186,7 +186,7 @@ function_if: // optimization because if is used so often.
 	lea kn_func_if(%rip), %rdi
 keyword_function:
 	peek %eax
-	advance
+	advance /* todo: D1 fails */
 	sub $'A', %al
 	cmp $('Z' - 'A'), %rax
 	jle keyword_function

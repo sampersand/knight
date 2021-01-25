@@ -86,7 +86,14 @@ kn_string_null:
 	.quad string_intern_null
 	.quad 0
 
+.balign 16
+.globl kn_string_zero
+kn_string_zero:
+	.quad string_intern_zero
+	.quad 0
+
 string_intern_empty: .asciz ""
 string_intern_true:  .asciz "true"
 string_intern_false: .asciz "false"
 string_intern_null:  .asciz "null"
+string_intern_zero:  .asciz "0"
