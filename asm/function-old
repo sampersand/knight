@@ -1,4 +1,4 @@
-.include "debug.s"
+/*.include "debug.s"
 
 .balign 16
 .space 15
@@ -240,3 +240,4 @@ kn_func_get:
 .global kn_func_set
 kn_func_set:
 	todo "kn_func_set"
+*/

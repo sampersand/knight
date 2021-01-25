@@ -34,31 +34,22 @@ define_function 1, quit
 	todo "kn_func_quit"
 
 define_function 1, not
-	push %rbx
-	mov (%rdi), %rbx
-	mov (%rdi), %rdi
-	call value_run
-	mov %rax, %rdi
-	call value_to_boolean
-
-	mov %rbx, %rdi
-	test %rax, %rax
-	setne %al
-	movzb %al, %ebx
-	call kn_value_free // with the `edi` up above
-
-	mov %rbx, %rdi
-	pop %rbx
-	jmp kn_value_new_boolean
+	sub $8, %rsp
+	mov (%rdi), %rdi          // fetch the first argument
+	call kn_value_to_boolean  // convert it to a boolean
+	cmp $0, %rax              // check to see if the value is false
+	je kn_value_new_true      // if they are, then return true
+	jmp kn_value_new_false    // otherwise, return false.
 
 define_function 1, length
-	//todo "kn_func_length"
+	todo "kn_func_length"
+	/*
 	mov (%rdi), %rdi
 	call value_run
 	mov %rax, %rdi
 	call value_to_integer
 	mov %rax, %rdi
-	jmp kn_value_new_integer
+	jmp kn_value_new_integer */
 
 
 define_function 1, output

@@ -3,7 +3,8 @@
 
 .data
 source:
-	.asciz "; = a 3 : O + 'a*4=' * a 4"
+	# .asciz "; = a 3 : O + 'a*4=' * a 4"
+	.asciz "! 0"
 
 .text
 .globl _main
@@ -34,11 +35,10 @@ kn_run:
 	mov %rax, %rbx     // save the parsed value for later so we can free it
 	mov %rax, %rdi
 	call kn_value_run  // execute the parsed value
-
 	mov %rbx, %rdi
 	mov %rax, %rbx     // record the result of running it
-
-.if DEBUG
+.ifdef KN_DEBUG
+	mov %rax ,%rdi
 	call kn_value_dump
 .else
 	call kn_value_free // free the memory of the parsed value

@@ -61,22 +61,22 @@ kn_value_new_null:
 // The string in `rdi` must have been created via functions in the kn_string file.
 .globl kn_value_new_string
 kn_value_new_string:
-/*.ifdef KN_DEBUG // ensure that the lower bits are not set.
+.ifdef KN_DEBUG // ensure that the lower bits are not set.
 	mov %edi, %ecx
 	and $TAG_MASK, %ecx
-	assert_z %ecx
-.endif // KN_DEBUG*/
+	assert_eq $0, %rcx
+.endif // KN_DEBUG
 	lea STRING_TAG(%rdi), %rax
 	ret
 
 // Creates a new identifier.
 .globl kn_value_new_identifier
 kn_value_new_identifier:
-/*.ifdef KN_DEBUG // ensure that the lower bits are not set.
+.ifdef KN_DEBUG // ensure that the lower bits are not set.
 	mov %edi, %ecx
 	and $TAG_MASK, %ecx
-	assert_z %ecx
-.endif // KN_DEBUG*/
+	assert_eq $0, %rcx
+.endif // KN_DEBUG
 	lea IDENT_TAG(%rdi), %rax
 	ret
 
@@ -85,11 +85,11 @@ kn_value_new_identifier:
 // A prereq is that `r12` contains the stream.
 .globl kn_value_new_function
 kn_value_new_function:
-/*.ifdef KN_DEBUG // ensure that the lower bits are not set.
+.ifdef KN_DEBUG // ensure that the lower bits are not set.
 	mov %edi, %ecx
 	and $TAG_MASK, %ecx
-	assert_z %ecx
-.endif // KN_DEBUG*/
+	assert_eq $0, %rcx
+.endif // KN_DEBUG
 	push %rbx
 	push %r13
 	push %r14
