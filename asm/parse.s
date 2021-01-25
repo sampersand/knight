@@ -16,8 +16,7 @@ handle_stream:
 	mov %rax, %rcx
 	imul $8, %rcx
 	add parse_table(%rip), %rcx
-	push (%rcx)
-	ret
+	jmp *(%rcx)
 
 done_parsing:
 	mov %r12, %rdi // just for troubleshooting.
@@ -55,7 +54,7 @@ integer:
 	jle 0b
 	lea done_parsing(%rip), %rax
 	push %rax
-	jmp kn_value_new_integer
+	jmp kn_value_new_number
 
 identifier:
 	dec %r12
@@ -142,45 +141,46 @@ literal_null:
 	jmp kn_value_new_null
 
 
-.macro decl_sym_function label:req, fn:req
-\label:
-	lea \fn(%rip), %rdi
+.macro decl_sym_function label:req
+function_\label:
+	lea kn_func_\label(%rip), %rdi
 	jmp function
 .endm
 
-.macro decl_kw_function label:req, fn:req
-\label:
-	lea \fn(%rip), %rdi
+.macro decl_kw_function label:req
+function_\label:
+	lea kn_func_\label(%rip), %rdi
 	jmp keyword_function
 .endm
 
-decl_sym_function function_not, kn_func_not
-decl_sym_function function_mod, kn_func_mod
-decl_sym_function function_and, kn_func_and
-decl_sym_function function_mul, kn_func_mul
-decl_sym_function function_add, kn_func_add
-decl_sym_function function_sub, kn_func_sub
-decl_sym_function function_div, kn_func_div
-decl_sym_function function_then, kn_func_then
-decl_sym_function function_lth, kn_func_lth
-decl_sym_function function_assign, kn_func_assign
-decl_sym_function function_gth, kn_func_gth
-decl_sym_function function_eql, kn_func_eql
-decl_sym_function function_pow, kn_func_pow
-decl_sym_function function_system, kn_func_system
-decl_sym_function function_or, kn_func_or
+decl_sym_function not
+decl_sym_function mod
+decl_sym_function and
+decl_sym_function mul
+decl_sym_function add
+decl_sym_function sub
+decl_sym_function div
+decl_sym_function then
+decl_sym_function lth
+decl_sym_function assign
+decl_sym_function gth
+decl_sym_function eql
+decl_sym_function pow
+decl_sym_function system
+decl_sym_function or
 
-decl_kw_function function_block, kn_func_block
-decl_kw_function function_call, kn_func_call
-decl_kw_function function_eval, kn_func_eval
-decl_kw_function function_get, kn_func_get
-decl_kw_function function_length, kn_func_length
-decl_kw_function function_output, kn_func_output
-decl_kw_function function_prompt, kn_func_prompt
-decl_kw_function function_quit, kn_func_quit
-decl_kw_function function_random, kn_func_random
-decl_kw_function function_set, kn_func_set
-decl_kw_function function_while, kn_func_while
+decl_kw_function block
+decl_kw_function debug
+decl_kw_function call
+decl_kw_function eval
+decl_kw_function get
+decl_kw_function length
+decl_kw_function output
+decl_kw_function prompt
+decl_kw_function quit
+decl_kw_function random
+decl_kw_function set
+decl_kw_function while
 
 function_if: // optimization because if is used so often.
 	lea kn_func_if(%rip), %rdi
@@ -205,131 +205,131 @@ unterminated_quote_msg:
 	.asciz "unterminated quote encountered: %s\n"
 parse_table:
 	.quad 	parse_table+8
-	.quad 	expected_token   // \x00
-	.quad 	invalid          // \x01
-	.quad 	invalid          // \x02
-	.quad 	invalid          // \x03
-	.quad 	invalid          // \x04
-	.quad 	invalid          // \x05
-	.quad 	invalid          // \x06
-	.quad 	invalid          // \a
-	.quad 	invalid          // \b
-	.quad 	whitespace       // \t
-	.quad 	whitespace       // \n
-	.quad 	whitespace       // \v
-	.quad 	whitespace       // \f
-	.quad 	whitespace       // \r
-	.quad 	invalid          // \x0E
-	.quad 	invalid          // \x0F
-	.quad 	invalid          // \x10
-	.quad 	invalid          // \x11
-	.quad 	invalid          // \x12
-	.quad 	invalid          // \x13
-	.quad 	invalid          // \x14
-	.quad 	invalid          // \x15
-	.quad 	invalid          // \x16
-	.quad 	invalid          // \x17
-	.quad 	invalid          // \x18
-	.quad 	invalid          // \x19
-	.quad 	invalid          // \x1A
-	.quad 	invalid          // \e
-	.quad 	invalid          // \x1C
-	.quad 	invalid          // \x1D
-	.quad 	invalid          // \x1E
-	.quad 	invalid          // \x1F
-	.quad 	whitespace       // <space>
-	.quad 	function_not     // !
-	.quad 	string           // "
-	.quad 	comment          // //
-	.quad 	invalid          // $
-	.quad 	function_mod     // %
-	.quad 	function_and     // &
-	.quad 	string           // '
-	.quad 	whitespace       // (
-	.quad 	whitespace       // )
-	.quad 	function_mul     // *
-	.quad 	function_add     // +
-	.quad 	invalid          // ,
-	.quad 	function_sub     // -
-	.quad 	invalid          // .
-	.quad 	function_div     // /
-	.quad 	integer          // 0
-	.quad 	integer          // 1
-	.quad 	integer          // 2
-	.quad 	integer          // 3
-	.quad 	integer          // 4
-	.quad 	integer          // 5
-	.quad 	integer          // 6
-	.quad 	integer          // 7
-	.quad 	integer          // 8
-	.quad 	integer          // 9
-	.quad 	whitespace       // :
-	.quad 	function_then    // ;
-	.quad 	function_lth     // <
-	.quad 	function_assign  // =
-	.quad 	function_gth     // >
-	.quad 	function_eql     // ?
-	.quad 	invalid          // @
-	.quad 	invalid          // A
-	.quad 	function_block   // B
-	.quad 	function_call    // C
-	.quad 	invalid          // D
-	.quad 	function_eval    // E
-	.quad 	literal_false    // F
-	.quad 	function_get     // G
-	.quad 	invalid          // H
-	.quad 	function_if      // I
-	.quad 	invalid          // J
-	.quad 	invalid          // K
-	.quad 	function_length  // L
-	.quad 	invalid          // M
-	.quad 	literal_null     // N
-	.quad 	function_output  // O
-	.quad 	function_prompt  // P
-	.quad 	function_quit    // Q
-	.quad 	function_random  // R
-	.quad 	function_set     // S
-	.quad 	literal_true     // T
-	.quad 	invalid          // U
-	.quad 	invalid          // V
-	.quad 	function_while   // W
-	.quad 	invalid          // X
-	.quad 	invalid          // Y
-	.quad 	invalid          // Z
-	.quad 	whitespace       // [
-	.quad 	invalid          // <backslash>
-	.quad 	whitespace       // ]
-	.quad 	function_pow     // ^
-	.quad 	identifier       // _
-	.quad 	function_system  // `
-	.quad 	identifier       // a
-	.quad 	identifier       // b
-	.quad 	identifier       // c
-	.quad 	identifier       // d
-	.quad 	identifier       // e
-	.quad 	identifier       // f
-	.quad 	identifier       // g
-	.quad 	identifier       // h
-	.quad 	identifier       // i
-	.quad 	identifier       // j
-	.quad 	identifier       // k
-	.quad 	identifier       // l
-	.quad 	identifier       // m
-	.quad 	identifier       // n
-	.quad 	identifier       // o
-	.quad 	identifier       // p
-	.quad 	identifier       // q
-	.quad 	identifier       // r
-	.quad 	identifier       // s
-	.quad 	identifier       // t
-	.quad 	identifier       // u
-	.quad 	identifier       // v
-	.quad 	identifier       // w
-	.quad 	identifier       // x
-	.quad 	identifier       // y
-	.quad 	identifier       // z
-	.quad 	whitespace       // {
-	.quad 	function_or      // |
-	.quad 	whitespace       // }
-	.quad 	invalid          // ~
-	.quad   invalid          // 0x7f
+	.quad 	expected_token   /* \x00 */
+	.quad 	invalid          /* \x01 */
+	.quad 	invalid          /* \x02 */
+	.quad 	invalid          /* \x03 */
+	.quad 	invalid          /* \x04 */
+	.quad 	invalid          /* \x05 */
+	.quad 	invalid          /* \x06 */
+	.quad 	invalid          /* \a   */
+	.quad 	invalid          /* \b   */
+	.quad 	whitespace       /* \t   */
+	.quad 	whitespace       /* \n   */
+	.quad 	whitespace       /* \v   */
+	.quad 	whitespace       /* \f   */
+	.quad 	whitespace       /* \r   */
+	.quad 	invalid          /* \x0E */
+	.quad 	invalid          /* \x0F */
+	.quad 	invalid          /* \x10 */
+	.quad 	invalid          /* \x11 */
+	.quad 	invalid          /* \x12 */
+	.quad 	invalid          /* \x13 */
+	.quad 	invalid          /* \x14 */
+	.quad 	invalid          /* \x15 */
+	.quad 	invalid          /* \x16 */
+	.quad 	invalid          /* \x17 */
+	.quad 	invalid          /* \x18 */
+	.quad 	invalid          /* \x19 */
+	.quad 	invalid          /* \x1A */
+	.quad 	invalid          /* \e   */
+	.quad 	invalid          /* \x1C */
+	.quad 	invalid          /* \x1D */
+	.quad 	invalid          /* \x1E */
+	.quad 	invalid          /* \x1F */
+	.quad 	whitespace       /* <space> */
+	.quad 	function_not     /* !    */
+	.quad 	string           /* "    */
+	.quad 	comment          /* #    */
+	.quad 	invalid          /* $    */
+	.quad 	function_mod     /* %    */
+	.quad 	function_and     /* &    */
+	.quad 	string           /* '    */
+	.quad 	whitespace       /* (    */
+	.quad 	whitespace       /* )    */
+	.quad 	function_mul     /* *    */
+	.quad 	function_add     /* +    */
+	.quad 	invalid          /* ,    */
+	.quad 	function_sub     /* -    */
+	.quad 	invalid          /* .    */
+	.quad 	function_div     /* /    */
+	.quad 	integer          /* 0    */
+	.quad 	integer          /* 1    */
+	.quad 	integer          /* 2    */
+	.quad 	integer          /* 3    */
+	.quad 	integer          /* 4    */
+	.quad 	integer          /* 5    */
+	.quad 	integer          /* 6    */
+	.quad 	integer          /* 7    */
+	.quad 	integer          /* 8    */
+	.quad 	integer          /* 9    */
+	.quad 	whitespace       /* :    */
+	.quad 	function_then    /* ;    */
+	.quad 	function_lth     /* <    */
+	.quad 	function_assign  /* =    */
+	.quad 	function_gth     /* >    */
+	.quad 	function_eql     /* ?    */
+	.quad 	invalid          /* @    */
+	.quad 	invalid          /* A    */
+	.quad 	function_block   /* B    */
+	.quad 	function_call    /* C    */
+	.quad 	function_debug   /* D    */
+	.quad 	function_eval    /* E    */
+	.quad 	literal_false    /* F    */
+	.quad 	function_get     /* G    */
+	.quad 	invalid          /* H    */
+	.quad 	function_if      /* I    */
+	.quad 	invalid          /* J    */
+	.quad 	invalid          /* K    */
+	.quad 	function_length  /* L    */
+	.quad 	invalid          /* M    */
+	.quad 	literal_null     /* N    */
+	.quad 	function_output  /* O    */
+	.quad 	function_prompt  /* P    */
+	.quad 	function_quit    /* Q    */
+	.quad 	function_random  /* R    */
+	.quad 	function_set     /* S    */
+	.quad 	literal_true     /* T    */
+	.quad 	invalid          /* U    */
+	.quad 	invalid          /* V    */
+	.quad 	function_while   /* W    */
+	.quad 	invalid          /* X    */
+	.quad 	invalid          /* Y    */
+	.quad 	invalid          /* Z    */
+	.quad 	whitespace       /* [    */
+	.quad 	invalid          /* \    */
+	.quad 	whitespace       /* ]    */
+	.quad 	function_pow     /* ^    */
+	.quad 	identifier       /* _    */
+	.quad 	function_system  /* `    */
+	.quad 	identifier       /* a    */
+	.quad 	identifier       /* b    */
+	.quad 	identifier       /* c    */
+	.quad 	identifier       /* d    */
+	.quad 	identifier       /* e    */
+	.quad 	identifier       /* f    */
+	.quad 	identifier       /* g    */
+	.quad 	identifier       /* h    */
+	.quad 	identifier       /* i    */
+	.quad 	identifier       /* j    */
+	.quad 	identifier       /* k    */
+	.quad 	identifier       /* l    */
+	.quad 	identifier       /* m    */
+	.quad 	identifier       /* n    */
+	.quad 	identifier       /* o    */
+	.quad 	identifier       /* p    */
+	.quad 	identifier       /* q    */
+	.quad 	identifier       /* r    */
+	.quad 	identifier       /* s    */
+	.quad 	identifier       /* t    */
+	.quad 	identifier       /* u    */
+	.quad 	identifier       /* v    */
+	.quad 	identifier       /* w    */
+	.quad 	identifier       /* x    */
+	.quad 	identifier       /* y    */
+	.quad 	identifier       /* z    */
+	.quad 	whitespace       /* {    */
+	.quad 	function_or      /* |    */
+	.quad 	whitespace       /* }    */
+	.quad 	invalid          /* ~    */
+	.quad   invalid          /* 0x7f */

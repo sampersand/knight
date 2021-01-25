@@ -4,7 +4,9 @@
 .data
 source:
 	# .asciz "; = a 3 : O + 'a*4=' * a 4"
-	.asciz "! 0"
+	.asciz "D E '- 3 4'"
+	.asciz "
+" # '"
 
 .text
 .globl _main
@@ -24,8 +26,8 @@ _main:
 
 process_arguments:
 	; mov 16(%rsi), %rdi
-	lea source(%rip), %rax
-	ret
+	lea source(%rip), %rdi
+	jmp _strdup
 
 .globl kn_run
 kn_run:
@@ -37,19 +39,25 @@ kn_run:
 	call kn_value_run  // execute the parsed value
 	mov %rbx, %rdi
 	mov %rax, %rbx     // record the result of running it
-.ifdef KN_DEBUG
-	mov %rax ,%rdi
+/*.ifdef KN_DEBUG
+	sub $8, %rsp
+	push %r13
+	mov %rdi, %r13
 	call kn_value_dump
-.else
+	mov %rbx, %rdi
+	call kn_value_dump
+	mov %r13, %rdi
+	pop %r13
+	add $8, %rsp
+.endif*/
 	call kn_value_free // free the memory of the parsed value
-.endif
-
 	mov %rbx, %rax
 	pop %rbx
 	ret
 
 kn_initialize:
 	nop  // TODO
+	# TODO: SRAND
 	ret
 //	sub $8, %rsp
 //	mov (%rsi), %rdi

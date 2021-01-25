@@ -2,94 +2,115 @@
 
 .include "debug.s"
 
+/*
+abuse the fact that `malloc` will allocate things that are 16-aligned.
+0...00000 = false
+0...XXX10 = 62-bit
+0...00100 = null
+0...01100 = true
+X...X0001 = function
+X...X0101 = string
+X...X1001 = ident
+*/
+
 .equ FALSE_BITS, 0b0000
-.equ NULL_BITS,  0b0010
-.equ TRUE_BITS,  0b0100
-.equ FUNC_TAG,   0b1000
-.equ STRING_TAG, 0b1100
-.equ IDENT_TAG,  0b1110
-.equ ALLOC_BIT,  0b1000
+.equ NUM_BIT,    0b0010
+.equ NULL_BITS,  0b0100
+.equ TRUE_BITS,  0b1100
+
+.equ ALLOC_BIT,  0b0001
 .equ TAG_MASK,   0b1111
-.equ ALLOC_MASK, 0b1001
 
-// abuse the fact that `malloc` will allocate things that are 16-aligned.
-// 0...00000 = false
-// 0...XXXX1 = 63-bit
-// 0...00010 = null
-// 0...00100 = true
-// X...X1000 = function
-// X...X1100 = string
-// X...X1110 = ident
+.equ FUNC_BIT,   0b0100
+.equ FUNC_TAG,   FUNC_BIT | ALLOC_BIT
+.equ STRING_BIT, 0b1000
+.equ STRING_TAG, STRING_BIT | ALLOC_BIT
+.equ IDENT_TAG,  0b0000 | ALLOC_BIT
 
-.globl kn_value_new_integer
-kn_value_new_integer:
+
+
+/* Creates a new number. */
+.globl kn_value_new_number
+kn_value_new_number:
+.ifdef KN_DEBUG
+.if 0
 	mov %rdi, %rax
 	shl %rax
-	or $1, %al
+	shr %rax
+	assert_eq %rax, %rdi /* ensure we are not massive. */
+.endif
+.endif /* KN_DEBUG */
+	shl $2, %rdi
+	lea 2(%rdi), %rax
 	ret
 
-// Create a new boolean.
-// 
-// if rdi is zero, false is returned. Otherwise, true is returned.
+/* Create a new boolean. 
+ *
+ * If rdi is zero, `False` is returned. Otherwise, `True` is returned.
+ */
 .globl kn_value_new_boolean
 kn_value_new_boolean:
 	cmp $0, %rdi
-	je kn_value_new_false // If the value given is zero, return 'false'.
-	// otherwise, fall through and reutnr 'true'.
+	je kn_value_new_false /* If the value given is zero, return 'false'. */
+	/* otherwise, fall through and return 'true'. */
 
-// Create a true value
+/* Create a true value. */
 .globl kn_value_new_true
 kn_value_new_true:
 	mov $TRUE_BITS, %eax
 	ret
 
-// Create a false value.
+/* Create a false value. */
 .globl kn_value_new_false
 kn_value_new_false:
 	xor %eax, %eax
 	assert_eq $FALSE_BITS, %rax
 	ret
 
-// Create a new null value.
+/* Create a null value. */
 .globl kn_value_new_null
 kn_value_new_null:
 	mov $NULL_BITS, %eax
 	ret
 
-// Creates a new string value from the given string.
-//
-// The string in `rdi` must have been created via functions in the kn_string file.
+.macro ensure_lower_bits_not_set src=%rdi, clobber=%rcx
+.ifdef KN_DEBUG
+	mov \src, \clobber
+	and $TAG_MASK, \clobber
+	assert_z \clobber
+.endif /* KN_DEBUG */
+.endm /* ensure_lower_bits_not_set */
+
+/* Creates a new string value from the given string.
+ *
+ * This doesn't accept c-style strings; it only accepts strings created from
+ * functions (or the interned strings) within `functions.s`.
+ */
 .globl kn_value_new_string
 kn_value_new_string:
-/*.ifdef KN_DEBUG // ensure that the lower bits are not set.
-	mov %edi, %ecx
-	and $TAG_MASK, %ecx
-	assert_z %ecx
-.endif // KN_DEBUG*/
+	ensure_lower_bits_not_set
 	lea STRING_TAG(%rdi), %rax
 	ret
 
-// Creates a new identifier.
+/* Creates a new identifier.
+ *
+ * This function accepts a single c-style string, which it will
+ * not modify, but will retain ownership of.
+ */
 .globl kn_value_new_identifier
 kn_value_new_identifier:
-/*.ifdef KN_DEBUG // ensure that the lower bits are not set.
-	mov %edi, %ecx
-	and $TAG_MASK, %ecx
-	assert_z %ecx
-.endif // KN_DEBUG*/
+	ensure_lower_bits_not_set
 	lea IDENT_TAG(%rdi), %rax
 	ret
 
-// NOTE: This function should only ever be called from `kn_parse`.
-//
-// A prereq is that `r12` contains the stream.
+/* Creates a new function
+ *
+ * NOTE: This function relies on the fact that the `r12` register
+ * is where the current stream is held.
+ */
 .globl kn_value_new_function
 kn_value_new_function:
-/*.ifdef KN_DEBUG // ensure that the lower bits are not set.
-	mov %edi, %ecx
-	and $TAG_MASK, %ecx
-	assert_z %ecx
-.endif // KN_DEBUG*/
+	ensure_lower_bits_not_set
 	push %rbx
 	push %r13
 	push %r14
@@ -97,10 +118,8 @@ kn_value_new_function:
 	mov %rdi, %rbx       // Save the function pointer
 	movzb -1(%rdi), %r13 // load the arity
 
-	mov %r13, %rdi
-	inc %rdi             // add one for the function pointer itself
-	imul $8, %rdi        // find the amount of bytes we need to allocate
-	call xmalloc         // allocate the memory for the struct
+	lea 8(, %rdi, 8), %rdi // fetch the amount of memory to allocate
+	call xmalloc           // allocate the memory for the struct
 
 	mov %rbx, (%rax)     // load the instruction pointer over.
 	mov %rax, %rbx       // save our malloc pointer.
@@ -115,6 +134,7 @@ kn_value_new_function:
 	mov %rax, (%r14)     // store the ast we just read
 	mov %rdi, %r12       // the handle_stream function returns the stream in rdi; a bit of a hack...
 	jmp 0b               // and
+
 1:
 	lea FUNC_TAG(%rbx), %rax // load the return value back
 	pop %r14             // and restore the registers
@@ -122,262 +142,199 @@ kn_value_new_function:
 	pop %rbx
 	ret
 
+/* Frees the memory associated with a value.
+ *
+ * After calling this function, the value should not be used again.
+ */
 .globl kn_value_free
 kn_value_free:
-	mov %edi, %eax
-	and $ALLOC_MASK, %eax
-	cmp $ALLOC_BIT, %eax  // check to see if it is allocated.
-	je 0f                 // if it is allocated, coninue on.
-	ret                   // No need to free literal values.
-0: // string or ident or function
-	mov %edi, %eax
-	and $TAG_MASK, %eax   // fetch the full tag again.
-	and $~TAG_MASK, %rdi  // remove the tag
-	cmp $STRING_TAG, %eax
-	je kn_string_free     // if we are a string, return to it.
-	cmp $IDENT_TAG, %eax
-	je _free              // if we are an ident, use `_free`, as those are "char *"s
-// otherwise, we are a function here
+	mov %rdi, %rax
+	test $ALLOC_BIT, %rax /* optimize for the case where it's a literal */
+	jnz 0f
+	ret                   /* No need to free literal values. */
+0: /* string or ident or function */
+	and $~TAG_MASK, %rdi  /* remove the tag */
+	test $STRING_BIT, %rax
+	jnz kn_string_free    /* if we are a string, free it */
+	test $FUNC_BIT, %rax
+	jz _free              /* if we are an ident, use `_free` */
+/* At this point, we are a function */
+	assert_test $FUNC_BIT, %rax
 	push %rbx
 	push %r12
-	sub $8, %rsp
-	mov %rdi, %rbx        // Store the base address.
-	movzb -1(%rdi), %r12  // get the arity...
-	imul $8, %r12         // ...then get the amount of bytes from rdi...
-	add %rdi, %r12        // ...and then calculate the last index.
-0:
+	sub $8, %rsp /* we only need two registers, but we need alignment */
+
+	mov %rdi, %rbx /* Store the base address. */
+
+	mov (%rdi), %rax
+	movzb -1(%rax), %r12
+	lea (%rdi, %r12, 8), %r12 /* Load the last index into r12 */
+0: /* Because order does not matter when freeing, we can count backwards */
 	cmp %rbx, %r12
-	je 1f                 // If our ending argument is equal to the starting one, we are done.
-	mov %r12, %rdi
-	call kn_value_free    // Free the current argument
-	sub $8, %r12          // go one argument back
+	je 1f                 /* If our ending argument is equal to the starting one, we are done. */
+	mov (%r12), %rdi
+	call kn_value_free    /* Free the current argument */
+	sub $8, %r12          /* go one argument back */
 	jmp 0b
 1:
-	mov %rbx, %rdi        // now free the ending value
-	add $8, %rsp          // Restore previous values
+	mov %rbx, %rdi /* prepare to free the function struct itself */
+	add $8, %rsp   /* restore previous values */
 	pop %r12
 	pop %rbx
-	jmp _free             // Now free this entire struct
+	jmp _free      /* free the entire struct, as it was malloced. */
 
-.globl kn_value_run_and_free
-kn_value_run_and_free:
-	push %rbx
-	mov %rdi, %rbx
-	call kn_value_run
-	mov %rbx, %rdi
-	pop %rbx
-	jmp kn_value_free
-
+/* Runs a value
+ *
+ * This will not free the value that is passed, and the return value must
+ * be freed independently of the passed value.
+ */
 .globl kn_value_run
 kn_value_run:
-	mov %edi, %eax
-	and $ALLOC_MASK, %eax
-	cmp $ALLOC_BIT, %eax    // check to see if we are an allocated type
-	je 0f                   // if so, continue onwards
-	mov %rdi, %rax          // otherwise, just copy the immediate value.
-	ret
-0: // string, ident, function
-	mov %edi, %eax
-	and $~TAG_MASK, %rdi
-	and $TAG_MASK, %eax
-	cmp $STRING_TAG, %eax
-	jne 0f                   // if we are not a string, continue onwards
+	mov %rdi, %rax        /* both prep for immediate return and the start of allocated runs */
+	test $ALLOC_BIT, %rdi /* check to see if we are an allocated type */
+	jnz 0f                /* if so, continue onwards */
+	ret                   /* otherwise, just return the immediate value. */
+0: /*string, ident, function */
+	and $~TAG_MASK, %rdi  /* remove the tag from the pointer */
+	test $FUNC_BIT, %rax
+	jnz 0f                /* if we are a function, jump to the end */
+	test $STRING_BIT, %rax
+	cmovz (%rdi), %rdi    /* if we are an identifier, fetch it... */
+	jz kn_env_get         /* ...and then run it */
+/* here we should be running a string */
+	assert_test $STRING_BIT, %rax
 	sub $8, %rsp
-	call kn_string_clone     // duplicate the string
+	call kn_string_clone    /* running a string duplicates it */
 	add $8, %rsp
 	mov %rax, %rdi
-	jmp kn_value_new_string   // create a new string with the return value.
-0: // ident, function
-	cmp $IDENT_TAG, %eax      // check to see if we are an ident
-	cmove (%rdi), %rdi        // if we are, fetch the ident, and run it
-	je kn_env_get
-	assert_eq $FUNC_TAG, %rax // sanity check
-	mov (%rdi), %rax
-	lea 8(%rdi), %rdi
-	push %rax
-	ret
+	jmp kn_value_new_string /* create a new string with the return value. */
+0: /* run a function */
+	assert_test $FUNC_BIT, %rax /* sanity check */
+	mov (%rdi), %rax          /* load the function pointer */
+	lea 8(%rdi), %rdi         /* load the arguments start */
+	jmp *%rax                 /* run the function */
 
+/* Converts a value to a string
+ *
+ * The returned string is completely distinct from the passed value---each
+ * must be individually freed.
+ */
+.globl kn_value_to_string
+kn_value_to_string:
+	test $ALLOC_BIT, %rdi   /* check to see if we are an allocated type */
+	jnz 1f                  /* if so, continue onwards */
+/* Here we are a literal */
+	test $NUM_BIT, %rdi     /* restore the tag bit */
+	jnz integer_to_string   /* if we are a number, go to that section */
+/* Either true, false, or null */
+	lea kn_string_true(%rip), %rax
+	cmp $TRUE_BITS, %rdi
+	je 0f                           /* if we are `true`, go to return. */
+	lea kn_string_false(%rip), %rax
+	cmp $FALSE_BITS, %rdi           /* if we are `false`, go to return. */
+	je 0f
+	assert_eq $NULL_BITS, %rdi      /* at this point, we should be null. */
+	lea kn_string_null(%rip), %rax
+0:
+	ret
+1: /* here, we are allocated */
+	test $STRING_BIT, %rdi
+	jz 0f
+	and $~TAG_MASK, %rdi
+	jmp kn_string_clone     /* if we are a string, simply clone it */
+0: /* otherwise, we execute the value, then convert that to a string. */
+	sub $8, %rsp
+	call kn_value_run
+	mov %rax, %rdi
+	add $8, %rsp
+	jmp kn_value_to_string /* after running, try to parse the string again */
+integer_to_string:
+	sar %rdi
+	todo "integer to string"
+
+.globl kn_value_to_number
+kn_value_to_number:
+	test $NUM_BIT, %rdi     /* see if we are a number */
+	jz 0f                   /* if we aren't, go forward */
+/* At this point, we have a number; optimize for number -> number conversion. */
+	sar $2, %rdi            /* remove number tag */
+	mov %rdi, %rax
+	ret
+0: /* anything but a number */
+	test $ALLOC_BIT, %rdi   /* check to see if we are an allocated type */
+	jnz 0f                  /* if so, continue onwards */
+/* at this point, we have a literal */
+	xor %eax, %eax
+	cmp $TRUE_BITS, %rdi
+	sete %al                /* if it is true, we have a value of one. otherwise, zero. */
+	ret
+0: /* string, ident, or function */
+	test $STRING_BIT, %rdi
+	jz 0f
+	todo "kn_value_to_number for string"
+0: /* otherwise, execute the value, and then convert the result to a number */
+	sub $8, %rsp
+	call kn_value_run
+	mov %rax, %rdi
+	add $8, %rsp
+	jmp kn_value_to_number/* after running, try to parse the number again */
+
+/*** TODO: this should return 0 or nonzero, not true/false. ***/
 .globl kn_value_to_boolean
 kn_value_to_boolean:
-	mov %edi, %ecx
-	and $ALLOC_MASK, %ecx // Check to see if we are an allocated value
-	cmp $ALLOC_BIT, %ecx
-	je 0f                 // If we are, go to that section.
-	cmp $2, %ecx
-	jle kn_value_new_false
-	jmp kn_value_new_true
-0: // string, identifier, function
-	mov %edi, %ecx
-	and $TAG_MASK, %ecx   // fetch the tag
-	and $~TAG_MASK, %rdi  // remove the tag from the pointer
-	cmp $STRING_TAG, %ecx
-	jne 0f                   // If we are not a string, continue onwards.
-	mov (%rdi), %rdi         // deref string struct
-	movzbl (%rdi), %ecx      // deref string pointer
-	jecxz kn_value_new_false // if the first byte is '\0', then the string is empty and we are false
-	jmp kn_value_new_true    // otherwise, the string is truthy
-0: // identifier, function
-	// if we are an ident or function, execute first, then calculate the truthiness,
-	// and then free the value we get from executing.
-	cmp $IDENT_TAG, %ecx
-	jne 0f                   // if we are not an ident, go to the function
-	push %rbx
-	call kn_env_get          // fetch the idents value
-	mov %rax, %rbx           // keep the return value so we can free it
-	mov %rax, %rdi
-	call kn_value_to_boolean // convert the evaluated value to a boolean.
-	mov %rbx, %rdi           // prepare to free the value we evaluted
-	mov %rax, %rbx           // save the returned value
-	call kn_value_free       // free the result of kn_value_to_boolean
-	mov %rbx, %rax           // restore the old called value
-	pop %rbx
+	test $ALLOC_BIT, %rdi
+	jnz 0f
+	xor %eax, %eax
+	cmp $4, %rdi /* false=0, zero = 2, null = 4; 1 and 3 are allocated. */
+	setg %al
 	ret
-0: // function
-	je kn_env_get // if we are an ident, get the variable
-	// otherwise, execute the function.
-	push 8(%rdi)
-	add $16, %rdi
-	jmp die
-
-/*
-.globl value_to_integer
-value_to_integer:
-	// Short circuit: If the value is `0` (ie false), `1` (ie the number zero), or `2` (ie
-	// `null`), then we return false. otherwise, return true.
-	mov %dil, %al
-	and $1, %al
-	cmp $1, %al
-	je 0f
-	mov %dil, %cl
-	cmp $ALLOC_BIT, %cl // if the allocated bit is set, jmp to not a literal.
-	jae 1f
-	and $1, %cl
-	jne 0f // optimize for the path of being an integer
-	shr %rdi
-	mov %rdi, %rax
-	ret
-0: // a literal, but not an integer
-	shr %dil
-	or $1, %dil
-	movzb %dil, %ecx
-	ret
-1: // either a string or a value that needs to be run.
-	and $TAG_MASK, %cl
-	cmp $STRING_TAG, %cl
-	jne 2f // if we are not a string, we must evaluate it.
-	and $~TAG_MASK, %rdi // remove the tag so we can deref it.
-	mov (%rdi), %rdi // deref the string struct ptr
-	jmp _strtoll
-2: // must run the value to get the result.
-	sub $8, %rsp
-	call value_run
-	mov %rax, %rdi
-	add $8, %rsp
-	jmp value_to_integer // do it over again.
-
-.globl value_to_string
-value_to_string:
-	mov %dil, %al
-	and $1, %al
-	cmp $1, %al
-	jne 0f
-	call die // todo: int to string
-0: // check for allocataed
-	mov %dil, %cl
-	cmp $ALLOC_BIT, %cl // if the allocated bit is set, jmp to not a literal.
-	jae 1f
-0: // check for false
-	cmp $FALSE_BITS, %dil
-	jne 0f
-	mov kn_string_false(%rip), %rax
-	ret
-0: // check for true
-	cmp $TRUE_BITS, %dil
-	jne 0f
-	mov kn_string_true(%rip), %rax
-	ret
-0: // we must be null here.
-	mov kn_string_null(%rip), %rax
-	ret
-1: // either a string or a value that needs to be run.
-	and $TAG_MASK, %cl
-	cmp $STRING_TAG, %cl
-	jne 2f // if weare not a string, we must evaluate it.
-	sub $STRING_TAG, %rdi // remove tag so we can pass it to clone correctly.
-	jmp kn_string_clone
-2: // must run the value to get the result.
-	sub $8, %rsp
-	call value_run
-	mov %rax, %rdi
-	add $8, %rsp
-	jmp value_to_string // do it over again.
-
-
-.globl value_run
-value_run:
-	mov %dil, %al
-	and $1, %al
-	cmp $1, %al
-	je 0f
-	mov %dil, %cl
-	cmp $ALLOC_BIT, %cl // if the allocated bit is set, jmp to not a literal.
-	jae 1f
 0:
-	mov %rdi, %rax
-	ret // do not need to run literal values.
-1: // string or ident or function
-	and $~TAG_MASK, %rdi // remove the tag
-	and $TAG_MASK, %cl
-	cmp $STRING_TAG, %cl
-	jne 2f // if it is not a string, go onwards
-	sub $8, %rsp
-	call kn_string_clone // duplicate the string
-	add $8, %rsp
-	jmp kn_value_new_string // then return the new string
-2: // ident or function
-	cmp $IDENT_TAG, %cl
-	je kn_env_get // if we are an ident, get the variable
-	// otherwise, execute the function.
-	push 8(%rdi)
-	add $16, %rdi
+	test $STRING_BIT, %rdi
+	jz 0f
+	and $~TAG_MASK, %rdi /* remove the string tag */
+	mov (%rdi), %rax      /* deref string struct */
+	movzb (%rax), %eax    /* deref first byte--0 means empty */
 	ret
-
-.globl value_clone
-value_clone:
-	mov %dil, %al
-	and $1, %al
-	cmp $1, %al
-	je 0f
-	mov %dil, %cl
-	cmp $ALLOC_BIT, %cl // if the allocated bit is set, jmp to not a literal.
-	jae 1f
-0:
-	mov %rdi, %rax
-	ret // do not need to clone literal values.
-1: // string or ident or function
+0: /* otherwise, execute the value, and then convert the result to a boolean */
 	sub $8, %rsp
-	and $~TAG_MASK, %rdi // remove the tag
-	and $TAG_MASK, %cl
-	cmp $STRING_TAG, %cl
-	jne 2f // if it is not a string, go onwards
-	call kn_string_clone // duplicate the string
+	call kn_value_run
+	mov %rax, %rdi
 	add $8, %rsp
-	jmp kn_value_new_string // then return the new string
-2: // ident or function
-	cmp $IDENT_TAG, %cl
-	jne 3f
-	call _strdup
+	jmp kn_value_to_boolean /* after running, try to parse the boolean again */
+
+/* Clones the given value. */
+.globl kn_value_clone
+kn_value_clone:
+	mov %rdi, %rax
+	test $ALLOC_BIT, %rdi
+	jnz 0f
+	ret /* if it is not allocated, simply return the given value */
+0: /* string, ident, or function */
+	sub $8, %rsp
+	and $~TAG_MASK, %rdi    /* remove the tag */
+	test $STRING_BIT, %rax
+	jz 0f
+	call kn_string_clone /* duplicate the string */
+	mov %rax, %rdi
 	add $8, %rsp
+	jmp kn_value_new_string /* then create a new string */
+0: /* ident or function */
+	test $STRING_BIT, %rax
+	jnz 0f
+	call _strdup /* duplicate the identifier */
+	add $8, %rsp
+	mov %rax, %rdi
 	jmp kn_value_new_identifier
-3:
-	call die
-*/
+0: /* function */
+	todo "clone a function"
+	add $8, %rsp
+
 .globl kn_value_dump
 kn_value_dump:
 	mov %rdi, %rsi
-	and $1, %sil
+	test $NUM_BIT, %rsi
 	jz 0f
-	shr %rsi
+	sar $2, %rsi
 	lea num_fmt(%rip), %rdi
 	jmp _printf
 0: // true, false, null, string, ident, function
@@ -421,6 +378,7 @@ kn_value_dump:
 	// first, print the start
 	and $~TAG_MASK, %rsi
 	mov %rsi, %rbx
+	mov (%rsi), %rsi
 	lea kn_func_start(%rip), %rdi
 	call _printf
 
@@ -444,6 +402,7 @@ kn_value_dump:
 	pop %r12
 	mov %rbx, %rsi
 	pop %rbx
+	mov (%rsi), %rsi
 	lea kn_func_stop(%rip), %rdi
 	jmp _printf
 0: // unknown
@@ -454,7 +413,7 @@ kn_value_dump:
 invalid_fmt: .asciz "unknown value type: '%d'\n"
 kn_func_start: .asciz "Func(%p):\n"
 kn_func_stop: .asciz "Func(%p)/\n"
-num_fmt: .asciz "Number(%ld)\n"
+num_fmt: .asciz "Number(%lli)\n"
 string_fmt: .asciz "String(%s)\n"
 ident_fmt: .asciz "Ident(%s)\n"
 true_fmt: .asciz "True\n"

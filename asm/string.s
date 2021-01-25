@@ -61,21 +61,26 @@ kn_string_clone:
 	ret
 
 .data
+
+.balign 16
 .globl kn_string_empty
 kn_string_empty:
 	.quad string_intern_empty
 	.quad 0
 
+.balign 16
 .globl kn_string_true
 kn_string_true:
 	.quad string_intern_true
 	.quad 0
 
+.balign 16
 .globl kn_string_false
 kn_string_false:
 	.quad string_intern_false
 	.quad 0
 
+.balign 16
 .globl kn_string_null
 kn_string_null:
 	.quad string_intern_null

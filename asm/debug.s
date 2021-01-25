@@ -21,14 +21,26 @@ kn_debug_todo_\@:
 .ifdef KN_DEBUG
 .macro assert_eq lhs:req rhs:req
 	cmp \lhs, \rhs
-	je .assert_eq_\@
-	// mov \lhs, %rsi
-	// mov \rhs, %rdi
+	je assert_eq_\@
+	// We just assume (for now) that lhs and rhs arent equal to rsi or rdi
+	mov \lhs, %rsi
+	mov \rhs, %rdi
 	lea assertion_failed(%rip), %rdi
 	jmp kn_debug_write_abort
-.assert_eq_\@:
-	nop
+assert_eq_\@:
 .endm // .macro assert_eq
+
+.macro assert_test lhs:req rhs:req
+	test \lhs, \rhs
+	jnz assert_test_\@
+	// We just assume (for now) that lhs and rhs arent equal to rsi or rdi
+	mov \lhs, %rsi
+	mov \rhs, %rdi
+	lea assertion_failed(%rip), %rdi
+	jmp kn_debug_write_abort
+assert_test_\@:
+.endm // .macro assert_test
+
 
 // Note that this is not a proper function, it takes arguments 
 // at `rsi` and `4dx`.
@@ -44,11 +56,13 @@ kn_debug_write_abort:
 
 .pushsection .data, ""
 assertion_failed:
-	.asciz "assertion failed" // : %1$ld (0x%1$lx) != %2$ld (0x%2$lx)\n
+	.asciz "assertion failed\n" // : %1$ld (0x%1$lx) != %2$ld (0x%2$lx)\n
 .popsection
 .else
-.macro assert_eq cond:req val=$0
+.macro assert_eq cond:req val:req
 .endm // .macro assert_eq
+.macro assert_test cond:req val:req
+.endm // .macro assert_test
 .endif // .ifdef KN_DEBUG
 
 .macro assert_z reg:req

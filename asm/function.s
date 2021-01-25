@@ -16,51 +16,107 @@ define_function 0, random
 	call _random
 	add $8, %rsp
 	mov %rax, %rdi
-	jmp kn_value_new_integer
+	jmp kn_value_new_number
 
 define_function 1, block
-	todo "kn_func_block"
-
-define_function 1, eval
-	todo "kn_func_eval"
+	jmp kn_value_clone // simply clone the value given
 
 define_function 1, call
-	todo "kn_func_call"
+	push %rbx
+	call kn_value_run  // execute the passed parameter
+	mov %rax, %rbx     // store the value so we can free it later.
+	mov %rax, %rdi     // prepare for calling the returned value
+	call kn_value_run  // execute the returend value
+	mov %rbx, %rdi     // prepare for freeing the first value
+	mov %rax, %rbx     // store the value to return
+	call kn_value_free // free the first value
+	mov %rbx, %rax     // restore the return value
+	pop %rbx
+	ret
+
+define_function 1, eval
+	push %rbx
+	mov (%rdi), %rdi
+	call kn_value_to_string // convert the passed parameter into a string
+	mov %rax, %rbx          // store the string to free it later
+	mov (%rax), %rdi        // prepare for calling kn_run
+	call kn_run             // execute the string and get the result
+	mov %rbx, %rdi          // prepare for calling kn_string_free
+	mov %rax, %rbx          // store the result of kn_run
+	call kn_string_free     // free the string that was evaluated
+	mov %rbx, %rax          // restore the return value
+	pop %rbx
+	ret
+
+define_function 1, debug
+	push %rbx
+	mov (%rdi), %rdi
+	mov %rdi, %rbx
+	call kn_value_dump
+	mov %rbx, %rdi
+	call kn_value_run
+	mov %rax, %rbx
+	mov %rax, %rdi
+	call kn_value_dump
+	mov %rbx, %rax
+	pop %rbx
+	ret
 
 define_function 1, system
 	todo "kn_func_system"
 
 define_function 1, quit
-	todo "kn_func_quit"
+	sub $8, %rsp
+	call kn_value_to_number
+	mov %rax, %rdi
+	call _exit
 
 define_function 1, not
 	sub $8, %rsp
 	mov (%rdi), %rdi          // fetch the first argument
 	call kn_value_to_boolean  // convert it to a boolean
+	add $8, %rsp
 	cmp $0, %rax              // check to see if the value is false
 	je kn_value_new_true      // if they are, then return true
 	jmp kn_value_new_false    // otherwise, return false.
 
 define_function 1, length
-	todo "kn_func_length"
-	/*
-	mov (%rdi), %rdi
-	call value_run
+	push %rbx
+	mov (%rdi), %rdi        // deref the first argument
+	call kn_value_to_string // convert it to a string
 	mov %rax, %rdi
-	call value_to_integer
-	mov %rax, %rdi
-	jmp kn_value_new_integer */
+	# pop %rbx
+#	call kn_value_new_string
+
+	mov %rax, %rbx          // save the returned string, so we can free later
+	mov (%rax), %rdi        // deref the string to get its char * ptr
+	call _strlen            // fetch the strings length
+	mov %rbx, %rdi          // prepare for freeing the string
+	mov %rax, %rbx          // save the length
+	call kn_string_free     // free the string
+	mov %rbx, %rdi          // restore the return value
+	pop %rbx
+	jmp kn_value_new_number
 
 
 define_function 1, output
 	todo "kn_func_output"
 
-
 define_function 2, add
 	todo "kn_func_add"
 
 define_function 2, sub
-	todo "kn_func_sub"
+	push %rbx
+	lea 8(%rdi), %rbx       /* Save the second arg for the future. */
+	mov (%rdi), %rdi
+	call kn_value_to_number /* Convert the first arg to a number. */
+	mov (%rbx), %rdi        /* Load the second arg. */
+	mov %rax, %rbx
+	call kn_value_to_number /* Convert the second arg to a number. */
+	sub %rax, %rbx
+	mov %rbx, %rdi
+	pop %rbx
+	jmp kn_value_new_number
 
 define_function 2, mul
 	todo "kn_func_mul"
