@@ -6,6 +6,7 @@ include_once '../src/Knight.php';
 // $stream = new \Knight\Stream("\"TRE\"E124");
 // \Knight\run("; = a 3 : O + 'a*4='* a 4");
 \Knight\run(`cat ../../knight.kn`);
+// \Knight\run(`cat ../../examples/fizzbuzz.kn`);
 // echo \Knight\Str::parse($stream), "\n";
 exit;
 echo 1;
