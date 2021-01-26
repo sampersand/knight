@@ -35,6 +35,15 @@ void kn_env_init(size_t capacity) {
 	};
 }
 
+void kn_env_free() {
+	for (size_t i = 0; i < ENV.length; ++i) {
+		free((char *) ENV.keys[i]);
+		kn_value_free(&ENV.vals[i]);
+	}
+	free(ENV.keys);
+	free(ENV.vals);
+}
+
 const struct kn_value_t *kn_env_get(const char *identifier) {
 	assert(identifier != NULL);
 

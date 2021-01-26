@@ -29,7 +29,7 @@ int kn_init() {
 }
 
 void kn_free() {
-	//kn_env_free();
+	kn_env_free();
 }
 
 struct kn_value_t kn_run(const char *stream) {

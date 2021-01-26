@@ -74,7 +74,7 @@ int main(int argc, const char **argv) {
 
 	kn_value_free(&ret);
 
-	kn_free();
+	// kn_free();
 
 	return 0;
 }

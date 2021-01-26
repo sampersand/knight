@@ -14,6 +14,11 @@
 void kn_env_init(size_t capacity);
 
 /*
+ * Frees all memory associated with the environment
+ */
+void kn_env_free(void);
+
+/*
  * Gets the value associated with the given identifier.
  *
  * If the identifier is unknown, `NULL` is returned.
