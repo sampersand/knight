@@ -28,6 +28,10 @@ int kn_init() {
 	return 1;
 }
 
+void kn_free() {
+	//kn_env_free();
+}
+
 struct kn_value_t kn_run(const char *stream) {
 	struct kn_ast_t ast = kn_ast_parse(&stream);
 	struct kn_value_t ret = kn_ast_run(&ast);

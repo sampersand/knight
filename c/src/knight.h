@@ -16,6 +16,14 @@
 int kn_init(void);
 
 /*
+ * Frees all resources associated with knight Knight.
+ *
+ * Technically, this function is not needed. But it's a way to prove to valgrind
+ * that i don't actually have unreachable memory.
+ */
+void kn_free(void);
+
+/*
  * Parses and runs the given string in the global namespace.
  *
  * If any errors occur during the parsing or execution of the string, the

@@ -1,13 +1,13 @@
 #include <string.h> /* strcmp, strdup */
 #include <assert.h> /* assert */
-
+#include <stdio.h>
 #include "env.h"    /* prototypes, kn_value_t, kn_value_free */
 #include "shared.h" /* xmalloc, xrealloc */
 
 /*
  * The type that holds all known variables within Knight.
  * 
- * Since all are global, there's a single static `KN_ENV` struct.
+ * Since all are global, there's a single static `ENV` struct.
  *
  * The current implementation is quite inefficient, and implementing a hashmap
  * would be a good place for improvement.
@@ -21,13 +21,13 @@ struct kn_env_t {
 };
 
 // The singleton value of `kn_env_t`.
-static struct kn_env_t KN_ENV;
+static struct kn_env_t ENV;
 
 void kn_env_init(size_t capacity) {
 	assert(capacity <= SIZE_MAX / sizeof(struct kn_value_t));
 	assert(capacity != 0);
 
-	KN_ENV = (struct kn_env_t) {
+	ENV = (struct kn_env_t) {
 		.length = 0,
 		.capacity = capacity,
 		.keys = xmalloc(capacity * sizeof(const char *)),
@@ -38,9 +38,23 @@ void kn_env_init(size_t capacity) {
 const struct kn_value_t *kn_env_get(const char *identifier) {
 	assert(identifier != NULL);
 
-	for (size_t idx = 0; idx < KN_ENV.length; ++idx) {
-		if (strcmp(KN_ENV.keys[idx], identifier) == 0) {
-			return &KN_ENV.vals[idx];
+	for (size_t idx = 0; idx < ENV.length; ++idx) {
+		if (strcmp(ENV.keys[idx], identifier) == 0) {
+			return &ENV.vals[idx];
+		}
+	}
+
+	fprintf(stderr, "null! %s\n", identifier);
+	fflush(stdout);
+	exit(19);
+	return NULL;
+}
+const struct kn_value_t *kn_env_get1(const char *identifier) {
+	assert(identifier != NULL);
+
+	for (size_t idx = 0; idx < ENV.length; ++idx) {
+		if (strcmp(ENV.keys[idx], identifier) == 0) {
+			return &ENV.vals[idx];
 		}
 	}
 
@@ -48,19 +62,16 @@ const struct kn_value_t *kn_env_get(const char *identifier) {
 }
 
 static void reallocate() {
-	assert(KN_ENV.capacity != 0);
+	assert(ENV.capacity != 0);
 
-	KN_ENV.capacity *= 2;
-	KN_ENV.keys = xrealloc(KN_ENV.keys,
-		sizeof(const char *) * KN_ENV.capacity);
-	KN_ENV.vals = xrealloc(KN_ENV.vals,
-		sizeof(struct kn_value_t) * KN_ENV.capacity);
+	ENV.capacity *= 2;
+	ENV.keys = xrealloc(ENV.keys, sizeof(const char *) * ENV.capacity);
+	ENV.vals = xrealloc(ENV.vals, sizeof(struct kn_value_t) * ENV.capacity);
 }
 
 void kn_env_set(const char *identifier, struct kn_value_t value) {
 	assert(identifier != NULL);
-
-	struct kn_value_t *prev = (struct kn_value_t *) kn_env_get(identifier);
+	struct kn_value_t *prev = (struct kn_value_t *) kn_env_get1(identifier);
 
 	if (prev != NULL) {
 		kn_value_free(prev);
@@ -68,12 +79,14 @@ void kn_env_set(const char *identifier, struct kn_value_t value) {
 		return;
 	}
 
-	if (KN_ENV.length == KN_ENV.capacity) {
+
+	if (ENV.length == ENV.capacity) {
+		printf("ident: %s\n", identifier);
 		reallocate();
 	}
 
-	KN_ENV.keys[KN_ENV.length] = strdup(identifier);
-	KN_ENV.vals[KN_ENV.length] = value;
+	ENV.keys[ENV.length] = strdup(identifier);
+	ENV.vals[ENV.length] = value;
 
-	++KN_ENV.length;
+	++ENV.length;
 }
