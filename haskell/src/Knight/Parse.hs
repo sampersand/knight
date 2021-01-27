@@ -34,31 +34,32 @@ literal = asum
   , Text <$> (text '\'' <|> text '"')
   ]
 
-
 -- | A helper function that allows functions to be called via their full name,
 -- or the first character.
 --
 -- If `a` is only a single character, that will be the only thing that's parsed.
 named :: a -> String -> Parser a
 named t (c:[]) = t <$ void (char c)
-named t text@(c:_) = t <$ (void (string text) <|> void (char c))
+named t text@(c:_) = t <$ (void (string text) <|> void (char c)) -- TODO: shortened names
 
 nullary :: Parser NullaryFn
 nullary = asum 
   [ Variable <$> variable
   , Literal <$> literal
   , named Prompt "PROMPT"
+  , named Random "RANDOM"
   ]
 
 -- | Parse the unary functions.
 unary :: Parser UnaryFn
 unary = asum
-  [ named FnDef "FNDEF"
+  [ named Block "BLOCK"
   , named Call "CALL"
   , named Output "OUTPUT"
   , named Quit "QUIT"
   , named Eval "Eval"
-  , named System "System"
+  , named System "`"
+  , named Length "LENGTH"
   , named Not "!"
   ]
 
@@ -66,7 +67,6 @@ unary = asum
 binary :: Parser BinaryFn
 binary = asum
   [ named While "WHILE"
-  , named Random "RANDOM"
   , named Endl ";"
   , named Assign "="
   , named Add "+"
@@ -74,6 +74,7 @@ binary = asum
   , named Mul "*"
   , named Div "/"
   , named Pow "^"
+  , named Eql "?"
   , named Lth "<"
   , named Gth ">"
   , named And "&"
@@ -81,7 +82,11 @@ binary = asum
 
 -- | Parse the ternary functions.
 ternary :: Parser TernaryFn
-ternary = named If "IF"
+ternary = asum [named If "IF", named Get "GET"]
+
+-- | Parse the quaternary functions.
+quaternary :: Parser QuaternaryFn
+quaternary = named Set "SET"
 
 -- | Removes comments, which start with `#` and go to the end of the line.
 stripComment :: Parser ()
@@ -106,4 +111,5 @@ value = strip *> asum
   , Unary   <$> unary   <*> value
   , Binary  <$> binary  <*> value <*> value
   , Ternary <$> ternary <*> value <*> value <*> value
+  , Quaternary <$> quaternary <*> value <*> value <*> value <*> value
   ]

@@ -2,12 +2,12 @@ name:                knight
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/knight#readme
+homepage:            https://github.com/sampersand/knight#readme
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2020 Author name here
+author:              Sam Westerman
+maintainer:          sam@sampersand.me
+copyright:           2021 Sam Westerman
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
