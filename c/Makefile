@@ -8,7 +8,7 @@ CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-zero-variadic-macro-arguments
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-CFLAGS += -g
+override CFLAGS += -g -fsanitize=address
 else
 CEXEFLAGS += -Wl,-stack_size,1600000 -O2 -DNDEBUG
 endif

@@ -218,6 +218,7 @@ void kn_value_free(struct kn_value_t *value) {
 
 	case KN_VT_AST:
 		kn_ast_free(value->ast);
+		free(value->ast);
 		break;
 
 	case KN_VT_INTEGER:
