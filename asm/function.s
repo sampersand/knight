@@ -325,14 +325,21 @@ define_function 2, then
 
 define_function 2, assign
 	push %rbx
-	mov 8(%rdi), %rbx
 	mov (%rdi), %eax
 	and $TAG_MASK, %eax
 	cmp $IDENT_TAG, %eax
-
-	// jne 0f /* ie its not an identifier */
-	// test $ALLOC_BIT
-	todo "kn_func_assign"
+	jne 0f
+/* we are an identifier */
+	mov (%rdi), %rbx
+	mov 8(%rdi), %rdi
+	call kn_value_run
+	mov %rax, %rsi
+	mov %rbx, %rdi
+	and $~TAG_MASK, %rdi
+	pop %rbx
+	jmp kn_env_set
+0:
+	todo "kn_func_assign for non-identifiers"
 
 define_function 2, while
 	todo "kn_func_while"

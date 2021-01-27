@@ -369,7 +369,7 @@ EOS
 			then
 				to_string
 
-				if [ "$arg0" < "$result" ]
+				if [ "$arg0" \< "$result" ]
 				then
 					result=fT
 				else

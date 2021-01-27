@@ -2,12 +2,12 @@
 /*
 abuse the fact that `malloc` will allocate things that are 16-aligned.
 0...00000 = false
-0...XXX10 = 62-bit
+0...XXX10 = 62-bit integer
 0...00100 = null
 0...01100 = true
-X...X0001 = function
-X...X0101 = string
-X...X1001 = ident
+X...X0001 = ident
+X...X0101 = function
+X...X1001 = string
 */
 
 .equ FALSE_BITS, 0b0000

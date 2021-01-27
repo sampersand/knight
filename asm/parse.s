@@ -6,6 +6,10 @@
 	inc %r12
 .endm
 
+.macro unadvance
+	dec %r12
+.endm
+
 .globl kn_parse
 kn_parse:
 	push %r12
@@ -13,51 +17,47 @@ kn_parse:
 handle_stream:
 	peek %eax
 	advance
-	mov %rax, %rcx
-	imul $8, %rcx
+	lea (,%rax,8), %rcx
 	add parse_table(%rip), %rcx
 	jmp *(%rcx)
 
 done_parsing:
-	mov %r12, %rdi // just for troubleshooting.
+	mov %r12, %rdi /* this is used by kn_value_new_function */
 	pop %r12
 	ret
 
-// A token was expected, but could not be found.
+/* A token was expected, but could not be found. */
 expected_token:
 	lea expected_token_fmt(%rip), %rdi
 	jmp abort
 
 .equ whitespace, handle_stream
 
+/* parse a comment out */
 comment:
-	peek %eax
+	peek %ecx
 	advance
-	cmp $'\n', %rax
-	je handle_stream
-	cmp $'\0', %rax
-	jne comment
-	jmp expected_token // We hit EOF before finding a valid token.
+	cmp $'\n', %ecx      /* check to see if we're at end of line */
+	je handle_stream     /* if we are, go find the next token */
+	jecxz expected_token /* if we are at eof, we expected a token */
+	jmp comment          /* otherwise, get the next character */
 
 integer:
-	xor %rdi, %rdi
-	sub $'0', %rax
-	jmp 1f
-0:
-	advance
-1:
-	imul $10, %rdi
-	add %rax, %rdi
-	peek %eax
-	sub $'0', %al
-	cmp $9, %rax
-	jle 0b
+	lea -'0'(%rax), %rdi
 	lea done_parsing(%rip), %rax
 	push %rax
-	jmp kn_value_new_number
+0:
+	peek %eax
+	sub $'0', %eax
+	cmp $9, %rax
+	jg kn_value_new_number
+	advance
+	imul $10, %rdi
+	add %rax, %rdi
+	jmp 0b
 
 identifier:
-	dec %r12
+	unadvance
 	mov %r12, %rdi
 0:
 	peek %eax
@@ -111,33 +111,39 @@ invalid:
 	jmp abort
 
 literal_true:
+	lea done_parsing(%rip), %rax
+	push %rax
+0:
 	peek %eax
 	advance
 	sub $'A', %al
 	cmp $('Z' - 'A'), %rax
-	jle literal_true
-	lea done_parsing(%rip), %rax
-	push %rax
+	jle 0b
+	unadvance
 	jmp kn_value_new_true
 
 literal_false:
+	lea done_parsing(%rip), %rax
+	push %rax
+0:
 	peek %eax
 	advance
 	sub $'A', %al
 	cmp $('Z' - 'A'), %rax
-	jle literal_false
-	lea done_parsing(%rip), %rax
-	push %rax
+	jle 0b
+	unadvance
 	jmp kn_value_new_false
 
 literal_null:
+	lea done_parsing(%rip), %rax
+	push %rax
+0:
 	peek %eax
 	advance
 	sub $'A', %al
 	cmp $('Z' - 'A'), %rax
-	jle literal_null
-	lea done_parsing(%rip), %rax
-	push %rax
+	jle 0b
+	unadvance
 	jmp kn_value_new_null
 
 
@@ -186,10 +192,11 @@ function_if: // optimization because if is used so often.
 	lea kn_func_if(%rip), %rdi
 keyword_function:
 	peek %eax
-	advance /* todo: D1 fails */
+	advance
 	sub $'A', %al
 	cmp $('Z' - 'A'), %rax
 	jle keyword_function
+	unadvance
 function:
 	lea done_parsing(%rip), %rax
 	push %rax

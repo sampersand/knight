@@ -4,7 +4,11 @@
 .data
 source:
 	# .asciz "; = a 3 : O + 'a*4=' * a 4"
-	.asciz "; D 1 D 2 D ? 'a' 'a'"
+	.asciz "
+# foo bar
+; = a 3
+: D a
+"
 .text
 .globl _main
 _main:
@@ -46,49 +50,10 @@ kn_initialize:
 	call _time
 	mov %eax, %edi
 	call _srand
+	mov $4096, %edi /* amount of identifiers to start with */
+	call kn_env_initialize
 	add $8, %rsp
-	nop  // TODO
-	# TODO: SRAND
 	ret
-//	sub $8, %rsp
-//	mov (%rsi), %rdi
-//	call _strdup
-//	mov %rax, %rdi
-//	call kn_string_new
-//	mov %rax, %rdi
-//	call kn_string_clone
-//	call string_free
-//	xor %eax, %eax
-//	add $8, %rsp
-//	ret
-
-// 	push %rdi
-// 	xor %eax, %eax
-// 	mov $1, %rdi
-// 	call _malloc
-// 	pop %rdi
-// 	ret
-// 
-// 	mov %rsp, %rax
-// 	call ddebug
-// 	mov 16(%rsi), %rdi
-// 	mov %rdi, (%rsp)
-// 	call kn_parse
-// 	mov %rax, %rdi
-// 
-// 	mov %rax, %rbx // only temporary
-// 	call value_dump
-// 	mov %rbx, %rdi
-// 
-// 	call value_run
-// 	mov %rax, %rdi
-// 	//jmp ddebug
-// //	mov %rax, %rdi
-// 	call value_dump
-// 	//call free_value
-// 	add $8, %rsp
-// 	xor %eax, %eax
-// 	ret
 
 .globl xmalloc
 xmalloc:
@@ -104,7 +69,7 @@ xmalloc:
 
 .pushsection .text, ""
 kn_allocation_failure:
-	.asciz "allocation failure occured!"
+	.asciz "allocation failure occured!\n"
 .popsection
 
 .globl abort

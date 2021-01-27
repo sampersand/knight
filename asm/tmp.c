@@ -1,11 +1,21 @@
-int check(long l, long r) {
-	return l % r;
+long tak(long x, long y, long z) {
+	if (y < x) {
+		return tak(
+			tak(x-1, y, z),
+			tak(y-1, z, x),
+			tak(z-1, x, y)
+		);
+	} else {
+		return z;
+	}
 }
-int main(int argc, char **argv) {
-	long lhs = strtol(argv[1], 0, 10);
-	long rhs = strtol(argv[2], 0, 10);
 
-	return lhs % rhs;
+int main(int argc, char **argv) {
+	printf("%lu\n", tak(
+		strtol(argv[1], 0, 10),
+		strtol(argv[2], 0, 10),
+		strtol(argv[3], 0, 10)
+	));
 }
 
 
