@@ -1,36 +1,15 @@
 #!/usr/bin/env php
 <?php
 
-include_once '../src/Knight.php';
+include_once __DIR__ . '/../src/Knight.php';
 
-// $stream = new \Knight\Stream("\"TRE\"E124");
-// \Knight\run("; = a 3 : O + 'a*4='* a 4");
-\Knight\run(`cat ../../knight.kn`);
-// \Knight\run(`cat ../../examples/fizzbuzz.kn`);
-// echo \Knight\Str::parse($stream), "\n";
-exit;
-echo 1;
-exit;
-$stream = "abc'a'123' 45";
-exit;
-// $val = \Knight\Value::parse($stream)->run;
-
-// // echo $val->eql(new \Knight\Number(98));
-// // echo false;
-// // echo $val->add(new \Knight\Integer(1));
-// // echo $stream;
-
-// // require_once 'Knight.php';
-
-// use \Knight\Str;
-
-// $val->assign(\Knight\run("123"));
-// echo $val->run();
-// // echo 'a\b';
-// exit;
-// $x="'3'";
-// echo \Knight\Func::fetch('I')->run(
-// 	new \Knight\Str(""),
-// 	new \Knight\Number(123),
-// 	new \Knight\Boolean(true),
-// 	);
+switch(count($argv) === 3 ? $argv[1] : null) {
+	case '-e':
+		\Knight\run($argv[2]);
+		break;
+	case '-f':
+		\Knight\run(file_get_contents($argv[2]));
+		break;
+	default:
+		die("USAGE: $argv[0] (-e 'code' | -f file)\n");
+}

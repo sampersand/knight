@@ -452,23 +452,39 @@ Func::register('I', 3, function(Value $cond, Value $iftrue, Value $iffalse): Val
 });
 
 /**
- * Executes code depending on the condition.
+ * Fetches a substring of a string.
  *
- * @param Value $cond The condition to check against.
- * @param Value $iftrue The code to execute if the condition is true.
- * @param Value $iffalse The code to execute if the condition is true.
- * @return Value The result of executing either `iftrue` or `iffalse`.
+ * If `$start` is greater than `$string`'s length, an empty string is returned.
+ * If `$length` is greater than `$string`'s length, it's assumed to be `$string`'s length.
+ *
+ * @param Value $string The string to fetch from.
+ * @param Value $start The start of the substring.
+ * @param Value $length The length of the substring.
+ * @return Value The substring specified.
  **/
 Func::register('G', 3, function(Value $string, Value $start, Value $length): Value {
 	return new Str(substr($string->run(), $start->run()->toInt(), $length->run()->toInt()));
 });
 
+/**
+ * Returns a new string with a specific range replaced by a substring.
+ *
+ * If `$start` is greater than `$string`'s length, the substring is appended to the end.
+ * If `$length` is greater than `$string`'s length, it's assumed to be the length of the string
+ *
+ * Note that this actually returns a new string; the original string is unmodified.
+ *
+ * @param Value $string The string to replace.
+ * @param Value $start The start of the replacement region.
+ * @param Value $length The length of the replacement region.
+ * @param Value $replacement The substring to use when replacing.
+ * @return Value The updated sstring.
+ **/
 Func::register('S', 4, function(Value $string, Value $start, Value $length, Value $replacement): Value {
 	$string = $string->run();
 	$start = $start->run()->toInt();
 	$length = $length->run()->toInt();
 	$replacement = $replacement->run();
 
-	// maybe
 	return new Str(substr_replace($string, $replacement, $start, $length));
 });
