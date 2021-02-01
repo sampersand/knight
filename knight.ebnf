@@ -5,3 +5,4 @@ expr
    | <binary fn> <expr> <expr>
    | <ternary fn> <expr> <expr> <expr>
    | <quatenary fn> <expr> <expr> <expr> <expr>
+   ;
