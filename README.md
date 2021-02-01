@@ -79,6 +79,8 @@ binary
 
 ternary := 'I' | 'G' ;
 quaternary := 'S' ;
+
+UPPER := [A-Z]
 ```
 
 ## Functions
