@@ -156,9 +156,8 @@ module Kn
 
 		define 'SET' do |string, start, count, repl|
 			ret = string.to_s.dup
-			ret[start.to_i..count.to_i] = repl.to_s
+			ret[start.to_i, count.to_i] = repl.to_s
 			ret
 		end
 	end
 end
-

@@ -91,10 +91,6 @@ module Kn
 			stream.slice!(/\AN[A-Z]*/) and new(nil)
 		end
 
-		# def self.new = super(nil)
-
-		# def initialize = super(nil)
-
 		def to_s = "null"
 		def to_i = 0
 		def to_b = false
