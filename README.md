@@ -1,4 +1,4 @@
-# knight
+# Knight
 An extremely simple programming language that I've designed to be easy to implement in a variety of languages. It's not actually meant to be used, though it is a fully-functional lang.
 
 # Examples
