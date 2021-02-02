@@ -10,31 +10,43 @@ Knight does not have a distinction between statements and expressions: Every sin
 
 All characters other than those mentioned in this document are considered invalid within Knight: Both within source code, and strings. Notably, the NUL character (`\0`) is not permissible within Knight strings, and can be used as a deliminator within implementations.
 
-# Whitespace
-The following characters are the only recognized whitespace characters. (Because all functions have a fixed arity (see `Functions`), all forms of parenthesis in Knight are considered whitespace.):
+## Whitespace
+The following characters are the only recognized whitespace characters:
 - Tab (`0x09`, ie `\t`)
 - Newline (`0x0a`, ie `\n`)
 - Carriage return (`0x0d`, ie `\r`)
 - Space (`0x20`, ie a space---` `)
-- All parenthesis (`(`, `)`, `[`, `]`,
-- Other whitespace characters (`(`, `)`, `[`, `]`, `{`, `}`)
-- All digits (ie `0x30` through `0x39`)
-- All upper-case letters (ie `0x41` through `0x5a`)
-- All lower-case letters (ie `0x61` through `0x7a`)
-- Any symbols defined in the specs, ie `` + - * / % ^ & | < > ? = ; : ! `
-- `#` (ie `0x23`)
+- All parentheses (`(`, `)`, `[`, `]`, `{`, `}`).
+(Because all functions have a fixed arity (see `Built-in Functions`), all forms of parentheses in Knight are considered whitespace.) Implementations may define other characters as whitespace if they wish---notably, this means that you may use regex's `\s` to strip away whitespace.
 
-## Whitespace
-In knight, whitespace is mostly irrelevant---it's used as an aid to the programmer to make their programs easier to read. Instead of writing `OUTPUT+'-x='-0x`, you can write `OUTPUT + '-x=' - 0 x`. In Knight, the following "normal whitespace characters" characters are considered whitespace:
-- Space (0x20, ` `)
-- Newline (0x0a, `\n`)
-- Tab (0x09, `\t`)
-Implementations may define additional
-As all functions have a fixed arity (see the `Functions` section for more details), all forms of
-
-As all functions have a fixed arity (more on user-defined functions later), all forms of parenthesis (ie `(`, `)`, `[`, `]`, `{`, `}`) are considered whitespace in addition to "normal" whitespace.
-
+Additionally, the `:` function is a no op, and as such may safely be considered whitespace as well.
 
 ## Comments
+Comments in Knight start with `#` and go until a newline character (`\n`) is encountered, or the end of the file; everything after the `#` is ignored.
+
+There are no multiline or embedded comments in Knight.
+
 ## Literals
+In Knight, there are two literals: Numbers and Strings.
+
+Number literals are simply a sequence of ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)). Leading `0`s do not indicate octal numbers (eg, `011` is the number eleven, not nine). No other bases are supported, and only integral numbers are allowed.
+
+String literals in Knight begin with with either a single quote (`'`) or a double quote (`"`). All characters are taken literally until the opening close is encountered again. This means that there are no escape sequences within string literals; if you want a newline character, you will have to do:
+```text
+OUTPUT "this is a newline:
+cool, right?"
+```
+Due to the lack of escape sequences, each string may only contain one of the two types of quotes (as the other quote will denote the end of the string.)
+
+There are also boolean and null values within Knight. See `Functions` for more details on them.
+
+## Variables
+In Knight, all variables are lower case---upper case letters are reserved for functions. Variable names must start with an ASCII lower case letter (ie `a` (`0x61`) through `z` (`0x7a`)) or an underscore (`_` (`0x5f`)). After the initial letter, variable names may also include ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)).
+
 ## Functions
+In Knight, there are two different styles of functions: symbolic and word-based functions.
+
+# Details
+## Types
+### Number
+In Knight, only integral numbers exist.
