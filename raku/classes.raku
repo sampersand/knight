@@ -1,131 +1,136 @@
-#unit module Knight;
+unit module Knight;
 
+#class Identifier { ... }
 
-my $Identifier;
+#	method new($value, --> ::?CLASS) { self.bless :$value }
+#
+#	method Str(--> Str) { $.run.value.Str }
+#	method Bool(--> Bool) { $.run.value.Bool }
+#	method Int(--> Int) { $.run.value.Int }
+#
+#	method run(--> Value) is pure { self }
+#
 
-class Value {
-	method new($value) { self.bless :$value }
-
-	method Str(--> Str) { $.run.value.Str }
-	method Bool(--> Bool) { $.run.value.Bool }
-	method Int(--> Int) { $.run.value.Int }
-	method run(--> Value) { self }
-
-	method assign(Value $value, --> Value) {
-		$Identifier.new($.Str).assign($value);
+role Value {
+	method assign(Value $value --> Value) {
+		#Identifier.new($.Str).assign($value);
 	}
 
-	method lth(Value $rhs, --> Bool) {
+	method lth(Value $rhs --> Bool) {
 		$.cmp($rhs) === Less
 	}
 
-	method gth(Value $rhs, --> Bool) {
+	method gth(Value $rhs --> Bool) {
 		$.cmp($rhs) === More
 	}
 
-	multi method eql(Value $, --> Bool) {
-		False
+	multi method eql(Value $ --> False) is pure {}
+}
+
+role TypedValue[::T, $cmp, $eql] does Value {
+	has T $.value;
+
+	method new(T $value) {
+		self.bless :$value;
+	}
+
+	method BUILD(T :$value) is pure {
+		$!value = $value;
+	}
+
+	method cmp(Value $rhs --> Order) {
+		$cmp($!value, T($rhs))
+	}
+
+	multi method eql(::?CLASS $rhs --> Bool) {
+		$eql($!value, T($rhs))
+	}
+
+	method Str(--> Str) is pure {
+		$!value.Str
+	}
+
+	method Bool(--> Bool) is pure {
+		$!value.Bool
+	}
+
+	method Int(--> Int) is pure {
+		$!value.Int
+	}
+
+	method run(--> Value) is pure {
+		self
 	}
 }
 
-class Boolean is Value {
-	has Bool $.value;
 
-	method Str(--> Str) {
-		$.value ?? "true" !! "false"
-	}
-
-	method cmp(Value $rhs, --> Order) {
-		$.value <=> ?$rhs
-	}
-
-	multi method eql(Boolean $rhs, --> Bool) {
-		$.value == $rhs.value
+class Boolean does TypedValue[Bool, * <=> *, * == *] {
+	method Str(--> Str) is pure {
+		$!value ?? "true" !! "false"
 	}
 }
 
-class Null is Value {
-	method new() { self.bless }
+class Null { ... }
+class Null does TypedValue[ Null, $, $ ] {
+	method new() is pure { self.bless }
 
-	method Str(--> Str) { "null" }
-	method Bool(--> Bool) { False }
-	method Int(--> Int) { 0 }
+	method Str(--> "null") is pure { }
+	method Bool(--> False) is pure { }
+	method Int(--> 0) is pure { }
 
-	method cmp($) {
-		die "Cannot compare Null."
-	}
+	method cmp(Value $) is pure { die "Cannot compare Null." }
 
-	multi method eql(Null $, --> Bool) {
-		True
-	}
+	multi method eql(Null $ --> True) is pure { }
 }
 
-class String is Value {
-	has Str $.value;
-
-	method Int(--> Int) {
+class String does TypedValue[Str, * cmp *, * eq *] {
+	method Int(--> Int) is pure {
 		$!value ~~ /^ <[\d]>* /;
 		$<>.Int
 	}
 
-	method add(Value $rhs, --> String) {
+	method add(Value $rhs --> String) {
 		String.new: $!value ~ $rhs.Str
 	}
 
-	method mul(Value $rhs, --> String) {
+	method mul(Value $rhs --> String) {
 		String.new: $!value x $rhs.Str
-	}
-
-	method cmp(Value $rhs, --> Order) {
-		$!value cmp $rhs.Str
-	}
-
-	multi method eql(String $rhs, --> Bool) {
-		$!value === $rhs.Str
 	}
 }
 
-class Number is Value {
-	has Int $.value;
-
-	method add(Value $rhs, --> Number) {
+class Number does TypedValue[Int, * <=> *, * == *] {
+	method add(Value $rhs --> Number) {
 		Number.new: $!value + $rhs.Int
 	}
 
-	method sub(Value $rhs, --> Number) {
+	method sub(Value $rhs --> Number) {
 		Number.new: $!value - $rhs.Int
 	}
 
-	method mul(Value $rhs, --> Number) {
+	method mul(Value $rhs --> Number) {
 		Number.new: $!value * $rhs.Int
 	}
 
-	method div(Value $rhs, --> Number) {
-		Number.new: $!value div ($rhs.Int or die "Cannot divide by zero!")
+	method div(Value $rhs --> Number) {
+		Number.new: $!value div ($rhs.Int or die "Cannot divide by zero!");
 	}
 
-	method mod(Value $rhs, --> Number) {
+	method mod(Value $rhs --> Number) {
 		Number.new: $!value mod ($rhs.Int or die "Cannot modulo by zero!")
 	}
 
-	method pow(Value $rhs, --> Number) {
+	method pow(Value $rhs --> Number) {
 		Number.new: $!value ** $rhs.Int
-	}
-
-	method cmp(Value $rhs, --> Order) {
-		$!value <=> $rhs.Int
-	}
-
-	multi method eql(Number $rhs, --> Bool) {
-		$!value == $rhs.Int
 	}
 }
 
-class Identifier is Value {
-	has Str $!ident;
+say Number.new(34).div(Number.new(0));
 
-	# todo: make this private
-	constant %ENV = (a => 3);
+=finish
+class Identifier is Value {
+	has Str $.ident;
+
+	my %ENV;
 
 	method new(Str $ident) {
 		self.bless :$ident
