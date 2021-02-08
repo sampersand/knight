@@ -1,34 +1,25 @@
 unit module Knight;
 
-#class Identifier { ... }
-
-#	method new($value, --> ::?CLASS) { self.bless :$value }
-#
-#	method Str(--> Str) { $.run.value.Str }
-#	method Bool(--> Bool) { $.run.value.Bool }
-#	method Int(--> Int) { $.run.value.Int }
-#
-#	method run(--> Value) is pure { self }
-#
+class Identifier { ... }
 
 role Value {
-	method assign(Value $value --> Value) {
-		#Identifier.new($.Str).assign($value);
+	method assign(Value $value, --> Value) {
+		Identifier.new($.Str).assign($value);
 	}
 
-	method lth(Value $rhs --> Bool) {
+	method lth(Value $rhs, --> Bool) {
 		$.cmp($rhs) === Less
 	}
 
-	method gth(Value $rhs --> Bool) {
+	method gth(Value $rhs, --> Bool) {
 		$.cmp($rhs) === More
 	}
 
-	multi method eql(Value $ --> False) is pure {}
+	multi method eql(Value $, --> False) is pure {}
 }
 
 role TypedValue[::T, $cmp, $eql] does Value {
-	has T $.value;
+	has T $!value is built;
 
 	method new(T $value) {
 		self.bless :$value;
@@ -38,11 +29,11 @@ role TypedValue[::T, $cmp, $eql] does Value {
 		$!value = $value;
 	}
 
-	method cmp(Value $rhs --> Order) {
+	method cmp(Value $rhs, --> Order) {
 		$cmp($!value, T($rhs))
 	}
 
-	multi method eql(::?CLASS $rhs --> Bool) {
+	multi method eql(::?CLASS $rhs, --> Bool) {
 		$eql($!value, T($rhs))
 	}
 
@@ -80,7 +71,7 @@ class Null does TypedValue[ Null, $, $ ] {
 
 	method cmp(Value $) is pure { die "Cannot compare Null." }
 
-	multi method eql(Null $ --> True) is pure { }
+	multi method eql(Null $, --> True) is pure { }
 }
 
 class String does TypedValue[Str, * cmp *, * eq *] {
@@ -89,46 +80,43 @@ class String does TypedValue[Str, * cmp *, * eq *] {
 		$<>.Int
 	}
 
-	method add(Value $rhs --> String) {
+	method add(Value $rhs, --> String) {
 		String.new: $!value ~ $rhs.Str
 	}
 
-	method mul(Value $rhs --> String) {
+	method mul(Value $rhs, --> String) {
 		String.new: $!value x $rhs.Str
 	}
 }
 
 class Number does TypedValue[Int, * <=> *, * == *] {
-	method add(Value $rhs --> Number) {
+	method add(Value $rhs, --> Number) {
 		Number.new: $!value + $rhs.Int
 	}
 
-	method sub(Value $rhs --> Number) {
+	method sub(Value $rhs, --> Number) {
 		Number.new: $!value - $rhs.Int
 	}
 
-	method mul(Value $rhs --> Number) {
+	method mul(Value $rhs, --> Number) {
 		Number.new: $!value * $rhs.Int
 	}
 
-	method div(Value $rhs --> Number) {
+	method div(Value $rhs, --> Number) {
 		Number.new: $!value div ($rhs.Int or die "Cannot divide by zero!");
 	}
 
-	method mod(Value $rhs --> Number) {
+	method mod(Value $rhs, --> Number) {
 		Number.new: $!value mod ($rhs.Int or die "Cannot modulo by zero!")
 	}
 
-	method pow(Value $rhs --> Number) {
+	method pow(Value $rhs, --> Number) {
 		Number.new: $!value ** $rhs.Int
 	}
 }
 
-say Number.new(34).div(Number.new(0));
-
-=finish
 class Identifier is Value {
-	has Str $.ident;
+	has Str $!ident is built;
 
 	my %ENV;
 
@@ -146,47 +134,45 @@ class Identifier is Value {
 	}
 }
 
-say String.new("a").assign(Number.new(3));
-
 class Function is Value {
-	has $!func;
-	has @!args;
+	has $!func is built;
+	has @!args is built;
 
-	constant %FUNCS = (
+	our %FUNCS = (
 		'P' => sub (--> Value) {
-			String.new: get
+			String.new: get;
 		}
 
 		'R' => sub (--> Value) {
-			Number.new: (^0xffff_ffff).pick
+			Number.new: (^0xffff_ffff).pick;
 		}
 
 		'E' => sub (Value $str, --> Value) {
-			Knight::run $str.Str
+			Knight::run $str.Str;
 		}
 
 		'B' => sub (Value $block, --> Value) {
-			$block
+			$block;
 		}
 
 		'C' => sub (Value $block, --> Value) {
-			$block.run.run
+			$block.run.run;
 		}
 
-		'`' => sub (Value $str, --> Value) {
-			String.new: qx<$str>
+		'`' => sub (Value $str, --> String) {
+			String.new: qx<$str>;
 		}
 
 		'Q' => sub (Value $code) {
-			exit $code
+			exit $code;
 		}
 
-		'!' => sub (Value $bool, --> Value) {
-			Boolean.new: !$bool
+		'!' => sub (Value $bool, --> Boolean) {
+			Boolean.new: !$bool;
 		}
 
-		'L' => sub (Value $str, --> Value) {
-			Number.new: $str.Str.chars
+		'L' => sub (Value $str, --> Number) {
+			Number.new: $str.Str.chars;
 		}
 
 		'O' => sub (Value $str, --> Value) {
@@ -203,88 +189,89 @@ class Function is Value {
 		}
 
 		'+' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs = 1;
-			if $lhs.isa(String) {
-				String.new: $lhs ~ $rhs
-			} else {
-
-			}
-			$lhs.run + $rhs.run
+			$lhs.run.add: $rhs.run;
 		}
 
 		'-' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run - $rhs.run
+			$lhs.run.sub: $rhs.run;
 		}
 
 		'*' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run * $rhs.run
+			$lhs.run.mul: $rhs.run;
 		}
 
 		'/' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run div $rhs.run
+			$lhs.run.div: $rhs.run;
 		}
 
 		'%' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run mod $rhs.run
+			$lhs.run.mod: $rhs.run;
 		}
 
 		'^' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run ** $rhs.run
+			$lhs.run.pow: $rhs.run;
 		}
 
 		'<' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run < $rhs.run
+			Boolean.new: $lhs.run.lth: $rhs.run;
 		}
 
 		'>' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run > $rhs.run
+			Boolean.new: $lhs.run.gth: $rhs.run;
 		}
 
 		'?' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run._eql($rhs.run)
+			Boolean.new: $lhs.run.eql: $rhs.run;
 		}
 
 		'&' => sub (Value $lhs, Value $rhs, --> Value) {
-			$lhs.run._eql($rhs.run)
+			($lhs = $lhs.run) ?? $rhs.run !! $lhs;
 		}
 
-		'&' => sub (Value $lhs, Value $rhs, --> Value) { $lhs=$lhs.run; $lhs.to_bool ?? $rhs.run !! $lhs },
-		'|' => sub (Value $lhs, Value $rhs, --> Value) { $lhs=$lhs.run; $lhs.to_bool ?? $lhs !! $rhs.run },
-		';' => sub (Value $lhs, Value $rhs, --> Value) { $lhs.run; $rhs.run },
-		'=' => sub (Value $lhs, Value $rhs, --> Value) { die "eql" },
-		W => sub (Value $cond, Value $body, --> Value) {
-			my $ret = Null.new;
-			$ret = $body.run while $cond;
-			$ret;
-		},
+		'|' => sub (Value $lhs, Value $rhs, --> Value) {
+			($lhs = $lhs.run) ?? $lhs !! $rhs.run;
+		}
 
-		I => sub ($cond, $iftrue, $iffalse) { $cond.run.to_bool ?? $iftrue.run !! $iffalse.run },
-		G => sub ($str, $idx, $len) { die "todo: get"},
-		S => sub ($str, $idx, $len, $repl) { die "todo: set"},
+		';' => sub (Value $lhs, Value $rhs, --> Value) {
+			$lhs.run;
+			$rhs.run;
+		}
+
+		'=' => sub (Value $lhs, Value $rhs, --> Value) {
+			$lhs.assign: $rhs;
+		}
+
+		'W' => sub (Value $cond, Value $body, --> Value) {
+			my $ret = Null.new;
+
+			$ret = $body.run while $cond.run;
+
+			$ret;
+		}
+
+		'I' => sub (Value $cond, Value $iftrue, Value $iffalse, --> Value) {
+			$cond.run ?? $iftrue.run !! $iffalse.run
+		}
+
+		'G' => sub (Value $str, Value $idx, Value $len, --> Value) {
+			String.new: $str.Str.substr($idx.Int, $len.Int)
+		}
+
+		'S' => sub (Value $str, Value $idx, Value $len, Value $repl, --> Value) {
+			my $tostr = $str.Str.clone;
+
+			$tostr.substr-rw($idx.Int, $len.Int) = $repl.Str;
+
+			String.new: $tostr
+		}
 	);
 
 	method new($name, *@args) {
 		my $func = %FUNCS{$name} or die "unknown function '$name'";
-		self.bless: :$func, args => @args
+		self.bless: :$func, :@args
 	}
 
 	method run(--> Value) {
-		$!func(|self.args);
+		$!func(|@!args);
 	}
-}
-
-my &func = %Function::FUNCS{'+'};
-#say func(Stri, 4;
-
-
-#say 34.^methods.map(*.gist).grep(/<[A..Z]>/);
-#say 34.BUILDALL: 3, 9;
-#say 34.ACCEPTS ;
-#say &sub(String.new("34\\"));
-#.new("O", [Number.new(34)]).run
-
-=finish
-sub run(Str $input) {
-	# my $match = Knight::Syntax.parse($source, actions => Knight::Syntax-Exec);
-	die "todo";
 }
