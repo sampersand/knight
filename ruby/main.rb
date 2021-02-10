@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
-require_relative 'knight/knight'
+require_relative 'knight/lib/knight'
+require 'stringio'
+$stdin = StringIO.new '../examples/fizzbuzz.kn'
+Kn.run!(open('../knight.kn', &:read))
 
 # Knight::Identifier['a'] = 3
 # p Knight::Identifier.new('a').run
