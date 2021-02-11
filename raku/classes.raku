@@ -61,8 +61,7 @@ class Boolean does TypedValue[Bool, * <=> *, * == *] {
 	}
 }
 
-class Null { ... }
-class Null does TypedValue[ Null, $, $ ] {
+class Null {
 	method new() is pure { self.bless }
 
 	method Str(--> "null") is pure { }
