@@ -6,7 +6,7 @@ unit module Knight;
 class Identifier { ... }
 
 role Value {
-	method assign(Value $value, --> Value) {my $x = $.Str; say "[$x]]"; Identifier.new($x).assign: $value }
+	method assign(Value $value, --> Value) {my $x = $.Str;say self; say "[$x]]"; Identifier.new($x).assign: $value }
 	#method assign(Value $value, --> Value) { Identifier.new($.Str).assign: $value }
 	method lth(Value $rhs, --> Bool) { $.cmp($rhs) === Less }
 	method gth(Value $rhs, --> Bool) { $.cmp($rhs) === More }
@@ -168,7 +168,10 @@ class Function is NonLiteral {
 	}
 
 	method run(--> Value) {
-		$!func(|@!args)
+		my $ret = $!func(|@!args);
+		say 'input', @!args, 'output', $ret.gist;
+		die "oop" if $ret.Str eq '_v';
+		$ret
 	}
 }
 
