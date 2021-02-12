@@ -6,10 +6,10 @@ unit module Knight;
 class Identifier { ... }
 
 role Value {
-	method assign(Value $value, --> Value) { Identifier.new($.Str).assign($value) }
+	method assign(Value $value, --> Value) {my $x = $.Str; say "[$x]]"; Identifier.new($x).assign: $value }
+	#method assign(Value $value, --> Value) { Identifier.new($.Str).assign: $value }
 	method lth(Value $rhs, --> Bool) { $.cmp($rhs) === Less }
 	method gth(Value $rhs, --> Bool) { $.cmp($rhs) === More }
-	method run(--> Value) is pure { self }
 
 	multi method eql(Value $, --> False) is pure {}
 }
@@ -26,6 +26,7 @@ role TypedValue[::T, $cmp, $eql] does Value {
 	method Str(--> Str) is pure   { $!value.Str }
 	method Bool(--> Bool) is pure { $!value.Bool }
 	method Int(--> Int) is pure   { $!value.Int }
+	method run(--> Value) is pure { self }
 }
 
 class Boolean does TypedValue[Bool, * <=> *, * == *] {
@@ -39,6 +40,8 @@ class Null does Value {
 
 	method cmp(Value $) is pure { die 'Cannot compare Null.' }
 	multi method eql(Null $, --> True) is pure { }
+
+	method run(--> Value) { self }
 }
 
 class String does TypedValue[Str, * cmp *, * eq *] {
@@ -60,7 +63,16 @@ class Number does TypedValue[Int, * <=> *, * == *] {
 	method pow(Value $rhs, --> Number) { Number.new: $!value ** $rhs.Int }
 }
 
-class Identifier is Value {
+class NonLiteral is Value {
+	method cmp(Value $rhs, --> Order) { $.run.cmp($rhs) }
+	multi method eql(::?CLASS $rhs, --> Bool) { $.run.cmp($rhs) }
+
+	method Str(--> Str)   { $.run.Str }
+	method Bool(--> Bool) { $.run.Bool }
+	method Int(--> Int)   { $.run.Int }
+}
+
+class Identifier is NonLiteral {
 	has Str $!ident is built;
 
 	my %ENV;
@@ -68,17 +80,23 @@ class Identifier is Value {
 	method new(Str $ident) { self.bless :$ident }
 
 	method run(--> Value)  {
-		die "unknown variable '$!ident'" unless $!ident ~~ %ENV;
+		unless $!ident ~~ %ENV {
+			say %ENV.keys;
+			die "unknown variable '$!ident'" unless $!ident ~~ %ENV;
+		}
 		%ENV{$!ident}
 	}
 
 	method assign(Value $value, --> Value) {
-		%ENV{$!ident.Str} = $value;
+		say $!ident;
+		%ENV{$!ident} = $value;
 		$value
 	}
 }
 
-class Function is Value {
+sub run($) { ... }
+
+class Function is NonLiteral {
 	has $!func is built;
 	has @!args is built;
 
@@ -86,8 +104,9 @@ class Function is Value {
 		'P' => sub (--> Value) { String.new: get }
 		'R' => sub (--> Value) { Number.new: (^0xffff_ffff).pick }
 
-		'E' => sub (Value $str, --> Value)    { Knight::run $str.Str }
-		'B' => sub (Value $block, --> Value)  { $block.run }
+		#'E' => sub (Value $str, --> Value)    { Knight::run $str.Str }
+		'E' => sub (Value $str, --> Value)    { run $str.Str }
+		'B' => sub (Value $block, --> Value)  { $block }
 		'C' => sub (Value $block, --> Value)  { $block.run.run }
 		'`' => sub (Value $str, --> String)   { String.new: qqx<$str> }
 		'Q' => sub (Value $code)              { exit $code }
@@ -115,9 +134,9 @@ class Function is Value {
 		'<' => sub (Value $lhs, Value $rhs, --> Value) { Boolean.new: $lhs.run.lth: $rhs.run }
 		'>' => sub (Value $lhs, Value $rhs, --> Value) { Boolean.new: $lhs.run.gth: $rhs.run }
 		'?' => sub (Value $lhs, Value $rhs, --> Value) { Boolean.new: $lhs.run.eql: $rhs.run }
-		'&' => sub (Value $lhs, Value $rhs, --> Value) { ($lhs = $lhs.run) ?? $rhs.run !! $lhs }
-		'|' => sub (Value $lhs, Value $rhs, --> Value) { ($lhs = $lhs.run) ?? $lhs !! $rhs.run }
-		'=' => sub (Value $lhs, Value $rhs, --> Value) { $lhs.assign: $rhs }
+		'&' => sub (Value $lhs is copy, Value $rhs, --> Value) { ($lhs = $lhs.run) ?? $rhs.run !! $lhs }
+		'|' => sub (Value $lhs is copy, Value $rhs, --> Value) { ($lhs = $lhs.run) ?? $lhs !! $rhs.run }
+		'=' => sub (Value $lhs, Value $rhs, --> Value) { $lhs.assign: $rhs.run }
 		';' => sub (Value $lhs, Value $rhs, --> Value) {
 			$lhs.run;
 			$rhs.run;
@@ -126,7 +145,7 @@ class Function is Value {
 		'W' => sub (Value $cond, Value $body, --> Value) {
 			my $ret = Null.new;
 
-			$ret = $body.run while $cond.run;
+			$ret = $body.run while $cond;
 
 			$ret;
 		}
@@ -148,7 +167,9 @@ class Function is Value {
 		self.bless: :$func, :@args
 	}
 
-	method run(--> Value) { $!func(|@!args) }
+	method run(--> Value) {
+		$!func(|@!args)
+	}
 }
 
 grammar Syntax {
@@ -226,7 +247,7 @@ class SyntaxAction {
 
 	method literal:sym«identifier»($/) { make Knight::Identifier.new: $/.Str }
 	method literal:sym«number»($/)     { make Knight::Number.new: $/.Int }
-	method literal:sym«string»($/)     { make Knight::String.new: $/.Str }
+	method literal:sym«string»($/)     { make Knight::String.new: $/.Str.substr(1, *-1) }
 	method literal:sym«null»($/)       { make Knight::Null.new }
 	method literal:sym«boolean»($/)    { make Knight::Boolean.new: $/[0] eq 'T' }
 
@@ -268,30 +289,33 @@ class SyntaxAction {
 	method quatenary:sym«set»($/)   { make 'S' }
 }
 
-#my $stream = qqx<cat ../examples/fizzbuzz.kn>.Str;
-my $stream = q:to/EOS/;
-# 	; = fizzbuzz BLOCK
-# 		; = n 0
-# 		; = max + 1 max
-# 		: WHILE < (= n + 1 n) max
-# 		:	OUTPUT
-# 		:		IF ! (% n 15)
-# 		:			"FizzBuzz"
-# 		: 	IF ! (% n 5)
-# 		:			"Fizz"
-# 		:		IF ! (% n 3)
-# 		:			"Buzz"
-# 		:			n
-# 	; = max 100
-# 	: CALL fizzbuzz
+sub run($input --> Value) {
+	my $stream = $input.Str;	
+	my $func = Syntax.parse($stream, actions => SyntaxAction).made;
 
-	; = x BLOCK 
-		; = n 9
-		: OUTPUT n
-	; OUTPUT x
-	; OUTPUT CALL x
-	; OUTPUT C CALL x
-	: NULL
+	die 'Syntax error encountered somewhere.' unless $func;
+	$func.run;
+}
+
+#run "; = + 'a' 'b' 2 : OUTPUT ab";
+
+run qqx<cat ../knight.kn>.Str;
+=begin comment
+my $stream = q:to/EOS/;
+	; = fizzbuzz BLOCK
+		; = n 0
+		; = max + 1 max
+		: WHILE < (= n + 1 n) max
+		:	OUTPUT
+		:		IF ! (% n 15)
+		:			"FizzBuzz"
+		: 	IF ! (% n 5)
+		:			"Fizz"
+		:		IF ! (% n 3)
+		:			"Buzz"
+		:			n
+	; = max 100
+	: CALL fizzbuzz
 #	; O 9
 #	: Q 0
 #	; = x BLOCK 3
@@ -302,11 +326,12 @@ my $stream = q:to/EOS/;
 #	; OUTPUT a
 #	: OUTPUT + "A" 3
 EOS
+=end comment
 
-my $func = Syntax.parse($stream, actions => SyntaxAction).made;
-
-$func.run;
-#say $func;
+#my $func = Syntax.parse($stream, actions => SyntaxAction).made;
+#
+#$func.run;
+##say $func;
 
 =finish
 class Syntax-Exec {
