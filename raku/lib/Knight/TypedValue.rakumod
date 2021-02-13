@@ -4,6 +4,7 @@
 # - `::T` type should be the builtin type, such as `Bool` or `Str`.
 # - `$cmp` should be a binary function that returns an `Order` describing the first value's relation to the second.
 unit role TypedValue[::T, $cmp, $eql] does Value;
+
 has T $!value is built;
 
 method new(T $value)    { self.bless :$value }

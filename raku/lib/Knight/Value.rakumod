@@ -18,16 +18,19 @@ method assign(Value $value, --> Value) {
 	Identifier.new($.Str).assign: $value
 }
 
-
 # Checks to see if `self` is less than `$rhs`.
 #
 # This method simply checks to see if `cmp` is `Less`.
-method lth(Value $rhs, --> Bool) { $.cmp($rhs) === Less }
+method lth(Value $rhs, --> Bool) {
+	$.cmp($rhs) === Less
+}
 
 # Checks to see if `self` is greater than `$rhs`.
 #
 # This method simply checks to see if `cmp` is `More`.
-method gth(Value $rhs, --> Bool) { $.cmp($rhs) === More }
+method gth(Value $rhs, --> Bool) {
+	$.cmp($rhs) === More
+}
 
 # Executes `self` and returns its result.
 #
