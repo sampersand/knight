@@ -1,4 +1,3 @@
-require "/users/samp/me/knight/raku/classes.raku";
-require "/users/samp/me/knight/raku/parser.raku";
+use lib 'lib';
 
-say Knight::Syntax;
+say Knight::Null.new;
