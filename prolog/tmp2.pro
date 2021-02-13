@@ -26,7 +26,7 @@ to_boolean(boolean(B), B).
 to_boolean(null, false).
 
 add(string(L), R, string(O)) :-
-	to_string(R, string(RS)),
+	to_string(R, RS),
 	append(L, RS, O).
 add(L, R, integer(O)) :-
 	to_integer(L, LI),
@@ -55,9 +55,9 @@ pow(L, R, integer(O)) :-
 	O is integer(LI ** RI).
 
 main :- 
-	L = integer(10),
+	L = string(10),
 	R = integer(3),
-	pow(L, R, integer(Q)),
+	add(L, R, string(Q)),
 	%atom_codes(A, Q),
 	write(Q).
 %
