@@ -1,4 +1,5 @@
-unit module Knight;
+unit module Parser;
+use Classes;
 
 grammar Syntax {
 	rule TOP { <expr> .* }
@@ -117,7 +118,7 @@ class SyntaxAction {
 	method quatenary:sym«set»($/)   { make 'S' }
 }
 
-sub run($input --> Value) {
+sub run($input --> Value) is export {
 	my $stream = $input.Str;	
 	my $func = Syntax.parse($stream, actions => SyntaxAction).made;
 

@@ -1,3 +1,5 @@
-use lib 'lib';
+use lib 'Knight';
+use Classes;
+use Parser;
 
-say Knight::Null.new;
+say Classes;

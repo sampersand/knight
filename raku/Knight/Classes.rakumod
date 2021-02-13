@@ -1,7 +1,11 @@
-unit module Knight;
+unit module Classes;
+#use Parser;
+
+#sub Parser::run($) { ... }
+
 
 # A stub class for Identifier so `Value::assign` can access it
-class Identifier { ... }
+class Identifier is export { ... }
 
 # All types in Knight are `Value`s.
 #
@@ -10,7 +14,7 @@ class Identifier { ... }
 # not be very idiomatic: One would expect `Knight::String.new("12") + Knight::String.new("34")` to return a 
 # `Knight::Integer.new(46)`, _not_ `Knight::String.new("1234")`. Thus, I've opted to use methods, such as `add`, `mul`,
 # `eql`, etc.
-role Value {
+role Value is export {
 	# Assigns a value to `self`.
 	#
 	# All values (asides from `Identifier`s) are first converted to `Str`s, after which an `Identifier` is created and
@@ -49,7 +53,7 @@ role Value {
 # The "null" type within Knight.
 #
 # Like null it other langues, `Null` is a unit type, and as such all of its methods are pure.
-class Null does Value {
+class Null does Value is export {
 	# `Null`'s string representation is simply `null`.
 	method Str(--> 'null') is pure { }
 
@@ -89,11 +93,11 @@ role TypedValue[::T, $cmp, $eql] does Value {
 	method run(--> Value) is pure { self }
 }
 
-class Boolean does TypedValue[Bool, * <=> *, * == *] {
+class Boolean does TypedValue[Bool, * <=> *, * == *] is export {
 	method Str(--> Str) is pure { $!value ?? 'true' !! 'false' }
 }
 
-class String does TypedValue[Str, * cmp *, * eq *] {
+class String does TypedValue[Str, * cmp *, * eq *] is export {
 	method Int(--> Int) is pure {
 		$!value ~~ /^ <[\d]>* /;
 		$<>.Int
@@ -103,7 +107,7 @@ class String does TypedValue[Str, * cmp *, * eq *] {
 	method mul(Value $rhs, --> String) { String.new: $!value x $rhs.Str }
 }
 
-class Number does TypedValue[Int, * <=> *, * == *] {
+class Number does TypedValue[Int, * <=> *, * == *] is export {
 	method add(Value $rhs, --> Number) { Number.new: $!value + $rhs.Int }
 	method sub(Value $rhs, --> Number) { Number.new: $!value - $rhs.Int }
 	method mul(Value $rhs, --> Number) { Number.new: $!value * $rhs.Int }
@@ -112,7 +116,7 @@ class Number does TypedValue[Int, * <=> *, * == *] {
 	method pow(Value $rhs, --> Number) { Number.new: $!value ** $rhs.Int }
 }
 
-role NonLiteral does Value {
+role NonIdempotent does Value {
 	method cmp(Value $rhs, --> Order) { $.run.cmp($rhs) }
 	multi method eql(::?CLASS $rhs, --> Bool) { $.run.cmp($rhs) }
 	method run(--> Value) { ... }
@@ -122,7 +126,7 @@ role NonLiteral does Value {
 	method Int(--> Int)   { $.run.Int }
 }
 
-class Identifier does NonLiteral {
+class Identifier does NonIdempotent is export {
 	has Str $!ident is built;
 
 	my %ENV;
@@ -144,9 +148,7 @@ class Identifier does NonLiteral {
 	}
 }
 
-sub run($) { ... }
-
-class Function does NonLiteral {
+class Function does NonIdempotent is export {
 	has $!func is built;
 	has @!args is built;
 
