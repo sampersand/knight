@@ -1,50 +1,45 @@
-whitespace([C|T], T) :- member(C, " \t\n").
-comment([0'#|T], R) :- append(_, [0'\n|R], T) . % :- .
-quote(C) :- member(C, "'\"").
-digit(C) :- member(C, "0123456789").
-upper(C) :- member(C, "ABCDEFGHIJKLMNOPQRSTUVWXYZ").
-lower(C) :- member(C, "abcdefghijklmnopqrstuvwxyz_").
+whitespace([Chr|Tail], Tail) :- member(Chr, " \t\n").
+comment([0'#|Tail], Rest) :- append(_, [0'\n|Rest], Tail) . % :- .
+quote(Chr) :- member(Chr, "'\"").
+digit(Chr) :- member(Chr, "0123456789").
+upper(Chr) :- member(Chr, "ABCDEFGHIJKLMNOPQRSTUVWXYZ").
 
+integer(integer(Int), [Chr|Stream], Rest) :-
+	digit(Chr),
+	append(Bytes, Rest, Stream),
+	(
+		Rest == [];
+		[NonDigit|_] = Rest, \+digit(NonDigit)
+	),
+	number_codes(Int, [Chr|Bytes]).
 
-empty([]).
+keyword(Stream, Rest) :-
+	append(_, Rest, Stream),
+	(Rest = []; Rest = [N|_], \+upper(N)).
 
-number(integer(V), [D|S], R) :-
-	digit(D),
-	append(Bytes, R, S),
-	(empty(R); R = [N|_], \+digit(N)),
-	number_codes(V, [D|Bytes]).
+boolean(true, [0'T|Tail], Rest)  :- keyword(Tail, Rest).
+boolean(false, [0'F|Tail], Rest) :- keyword(Tail, Rest).
+null(null, [0'N|Tail], Rest)     :- keyword(Tail, Rest).
+string(string(String), [Quote|Tail], Rest) :-
+	quote(Quote),
+	append(String, [Quote|Rest], Tail).
 
-keyword(S, R) :-
-	append(_, R, S),
-	(empty(R); R = [N|_], \+upper(N)).
-
-boolean(true, [0'T|T], R)  :- keyword(T, R).
-boolean(false, [0'F|T], R) :- keyword(T, R).
-null(null, [0'N|T], R)     :- keyword(T, R).
-string(string(V), [Q|T], R) :- quote(Q), append(V, [Q|R], T).
-
-
+identifier(identifier(I))
 
 % Strip whitespace.
-expr(V) --> 
-	whitespace, expr(V);
-	comment, expr(V);
-	number(V);
-	boolean(V);
-	string(V);
-	null(V).
-
+expr(Value) --> 
+	whitespace, expr(Value);
+	comment, expr(Value);
+	integer(Value);
+	boolean(Value);
+	string(Value);
+	null(Value);
+	identifier(Value).
 
 main :-
-	%Stream = "#1\n T456a",
-	Stream = "'TRUE' 3",
-	%Stream = [35, 10, 32, 49, 50,51, 52,10,49],
+	Stream = "#1\n N456a",
 	expr(V, Stream, Out),
 	!,
 	nl,write(V), 
 	nl,write(Out),nl
 	.
-	%parse(O, _, Q), write(Q).
-	%write(Stream1).
-	%Z = kn_string([]),
-	%write(Z).
