@@ -1,5 +1,5 @@
-use lib 'Knight';
-use Classes;
-use Parser;
+use lib 'lib';
+use Knight::Classes;
+use Knight::Parser;
 
 say Classes;
