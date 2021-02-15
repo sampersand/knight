@@ -1,15 +1,33 @@
-unit role NonIdempotent;
+use Knight::Value;
 
-method run(--> Value) { ... }
+#| A role used to indicate that, when run, a value may yield different results.
+unit role Knight::NonIdempotent;
 
-method cmp(Value $rhs, --> Order) {
-	$.run.cmp($rhs)
+#| NonIdempotent types must implement `run`.
+method run(--> Knight::Value) { … }
+
+#| Runs `self` and compares it against `$rhs`.
+method cmp(Knight::Value $rhs, --> Order) {
+	$.run.cmp: $rhs
 }
 
+#| Runs `self` and checks to see if it's return value is equal to `$rhs`.
 multi method eql(::?CLASS $rhs, --> Bool) {
-	$.run.cmp($rhs)
+	$.run.cmp: $rhs
 }
 
-method Str(--> Str)   { $.run.Str }
-method Bool(--> Bool) { $.run.Bool }
-method Int(--> Int)   { $.run.Int }
+#| Runs `self` and converts the result to a `Str`.
+method Str(--> Str) {
+	$.run.Str
+}
+
+#| Runs `self` and converts the result to a `Bool`.
+method Bool(--> Bool) {
+	$.run.Bool
+}
+
+#| Runs `self` and converts the result to an `Int`.
+method Int(--> Int) {
+	$.run.Int
+}
+

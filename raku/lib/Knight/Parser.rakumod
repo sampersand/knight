@@ -1,5 +1,12 @@
-unit module Parser;
-use Classes;
+use Knight::Value;
+use Knight::Boolean;
+use Knight::Null;
+use Knight::Number;
+use Knight::String;
+use Knight::Identifier;
+use Knight::Function;
+
+unit module Knight::Parser;
 
 grammar Syntax {
 	rule TOP { <expr> .* }
@@ -74,8 +81,8 @@ class SyntaxAction {
 	method TOP($/)  { make $<expr>.made; }
 	method expr($/) { make $/.values[0].made; }
 
-	method literal:sym«identifier»($/) { make Knight::Identifier.new: $/.Str }
-	method literal:sym«number»($/)     { make Knight::Number.new: $/.Int }
+	method literal:sym«identifier»($/) { make Knight::Identifier.new: ~$/ }
+	method literal:sym«number»($/)     { make Knight::Number.new: +$/ }
 	method literal:sym«string»($/)     { make Knight::String.new: $/.Str.substr(1, *-1) }
 	method literal:sym«null»($/)       { make Knight::Null.new }
 	method literal:sym«boolean»($/)    { make Knight::Boolean.new: $/[0] eq 'T' }
@@ -95,19 +102,19 @@ class SyntaxAction {
 	method unary:sym«output»($/) { make 'O' }
 
 	method function:«binary»($/) { make Knight::Function.new: $<binary>.made, |$<expr>».made }
-	method binary:sym«+»($/)     { make $<sym>.Str }
-	method binary:sym«-»($/)     { make $<sym>.Str }
-	method binary:sym«*»($/)     { make $<sym>.Str }
-	method binary:sym«/»($/)     { make $<sym>.Str }
-	method binary:sym«%»($/)     { make $<sym>.Str }
-	method binary:sym«^»($/)     { make $<sym>.Str }
-	method binary:sym«?»($/)     { make $<sym>.Str }
-	method binary:sym«&»($/)     { make $<sym>.Str }
-	method binary:sym«|»($/)     { make $<sym>.Str }
-	method binary:sym«;»($/)     { make $<sym>.Str }
-	method binary:sym«=»($/)     { make $<sym>.Str }
-	method binary:sym«<»($/)     { make $<sym>.Str }
-	method binary:sym«>»($/)     { make $<sym>.Str }
+	method binary:sym«+»($/)     { make ~$<sym> }
+	method binary:sym«-»($/)     { make ~$<sym> }
+	method binary:sym«*»($/)     { make ~$<sym> }
+	method binary:sym«/»($/)     { make ~$<sym> }
+	method binary:sym«%»($/)     { make ~$<sym> }
+	method binary:sym«^»($/)     { make ~$<sym> }
+	method binary:sym«?»($/)     { make ~$<sym> }
+	method binary:sym«&»($/)     { make ~$<sym> }
+	method binary:sym«|»($/)     { make ~$<sym> }
+	method binary:sym«;»($/)     { make ~$<sym> }
+	method binary:sym«=»($/)     { make ~$<sym> }
+	method binary:sym«<»($/)     { make ~$<sym> }
+	method binary:sym«>»($/)     { make ~$<sym> }
 	method binary:sym«while»($/) { make 'W' }
 
 	method function:«ternary»($/) { make Knight::Function.new: $<ternary>.made, |$<expr>».made }
@@ -118,46 +125,10 @@ class SyntaxAction {
 	method quatenary:sym«set»($/)   { make 'S' }
 }
 
-sub run($input --> Value) is export {
-	my $stream = $input.Str;	
-	my $func = Syntax.parse($stream, actions => SyntaxAction).made;
+sub parse-and-run($input --> Knight::Value) is export {
+	my $func = Syntax.parse(~$input, actions => SyntaxAction).made;
 
-	die 'Syntax error encountered somewhere.' unless $func;
-	$func.run;
+	die 'Syntax error encountered somewhere.' unless defined $func;
+
+	$func.run
 }
-
-#run "; = + 'a' 'b' 2 : OUTPUT ab";
-
-run qqx<cat ../knight.kn>.Str;
-=begin comment
-my $stream = q:to/EOS/;
-	; = fizzbuzz BLOCK
-		; = n 0
-		; = max + 1 max
-		: WHILE < (= n + 1 n) max
-		:	OUTPUT
-		:		IF ! (% n 15)
-		:			"FizzBuzz"
-		: 	IF ! (% n 5)
-		:			"Fizz"
-		:		IF ! (% n 3)
-		:			"Buzz"
-		:			n
-	; = max 100
-	: CALL fizzbuzz
-#	; O 9
-#	: Q 0
-#	; = x BLOCK 3
-#	; OUTPUT CALL x
-#	; Q 0
-#	; = a 0
-#	; = max + 1 max
-#	; OUTPUT a
-#	: OUTPUT + "A" 3
-EOS
-=end comment
-
-#my $func = Syntax.parse($stream, actions => SyntaxAction).made;
-#
-#$func.run;
-##say $func;

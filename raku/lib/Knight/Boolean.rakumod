@@ -1,4 +1,9 @@
-# The Boolean class within Knight
-unit class Boolean does TypedValue[Bool, * <=> *, * == *];
+use Knight::TypedValue;
 
-method Str(--> Str) is pure { $!value ?? 'true' !! 'false' }
+#| The Boolean class within Knight.
+unit class Knight::Boolean does Knight::TypedValue[Bool, * <=> *, * == *];
+
+#| Returns either `true` or `false`, depending on whether we are empty.
+method Str(--> Str) is pure {
+	$!value ?? 'true' !! 'false'
+}

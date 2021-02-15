@@ -1,9 +1,18 @@
-unit class String does TypedValue[Str, * cmp *, * eq *];
+use Knight::TypedValue;
+use Knight::Value;
 
-method Int(--> Int) is pure {
+unit class Knight::String does Knight::TypedValue[Str, * cmp *, * eq *];
+
+method Int(--> Int) #`(is pure) {
 	$!value ~~ /^ <[\d]>* /;
 	$<>.Int
 }
 
-method add(Value $rhs, --> String) { String.new: $!value ~ $rhs.Str }
-method mul(Value $rhs, --> String) { String.new: $!value x $rhs.Str }
+method add(Knight::Value $rhs, --> ::?CLASS) {
+	::?CLASS.new: $!value ~ $rhs.Str
+}
+
+method mul(Knight::Value $rhs, --> ::?CLASS) {
+	::?CLASS.new: $!value x $rhs.Str
+}
+

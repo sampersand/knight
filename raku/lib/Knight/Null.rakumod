@@ -1,24 +1,33 @@
-# The "null" type within Knight.
-#
-# Like null it other langues, `Null` is a unit type, and as such all of its methods are pure.
-unit module Knight::Null;
+use Knight::Value;
+use Knight::TypedValue;
 
-# `Null`'s string representation is simply `null`.
+#| The "null" type within Knight.
+unit class Knight::Null does Knight::Value;
+
+#| The sole instance of this class.
+my ::?CLASS \INSTANCE = ::?CLASS.bless; # ::?CLASS.bless;
+
+#| Creates a new Null instance.
+method new(--> ::?CLASS) is pure { INSTANCE }
+
+#| Simply returns `"null"`.
 method Str(--> 'null') is pure { }
 
-# `Null` is always falsey.
-method Bool(--> False) is pure { }
-
-# `Null`s are always zero.
+#| Simply returns `0`.
 method Int(--> 0) is pure { }
 
-# You're not allowed to compare nulls to other values.
-method cmp(Value $) {
-	die 'Cannot compare Null.'
+#| Simply returns `False`.
+method Bool(--> False) is pure { }
+
+#| Comparison to Null is invalid.
+#|
+#| If attempted the program will `die`.
+method cmp(Knight::Value $, --> Order) {
+	die 'Cannot compare Null.';
 }
 
-# `Null` is always equal to itself.
-multi method eql(Null $, --> True) is pure { }
+#| All Nulls are equal to eachother.
+multi method eql(::?CLASS $, --> True) is pure { }
 
-# Running `Null` is a no op.
-method run(--> Value) is pure { self }
+#| Running a `Null` simply returns itself.
+method run(--> Knight::Value) is pure { self }

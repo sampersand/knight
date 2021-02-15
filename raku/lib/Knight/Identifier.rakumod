@@ -1,21 +1,36 @@
-unit class Identifier does NonIdempotent does Value;
+use Knight::Value;
+use Knight::NonIdempotent;
 
+#| An identifier within Knight.
+#|
+#| As per the Knight specs, all variables are global.
+unit class Knight::Identifier does Knight::Value does Knight::NonIdempotent;
+
+#| The list of all known identifiers.
+my %ALL;
+
+#| The identifier for this string.
 has Str $!ident is built;
 
-my %ENV;
-
-method new(Str $ident) {
+#| Creates a new identifier with the given variable name.
+method new(Str $ident, --> ::?CLASS) {
 	self.bless :$ident
 }
 
-method run(--> Value)  {
-	die "unknown variable '$!ident'" unless $!ident ~~ %ENV;
+#| Fetches the value associated with this identifier.
+#|
+#| If the identifier hasn't been assigned before, the program `die`s.
+method run(--> Knight::Value)  {
+	die "unknown variable '$!ident'" unless $!ident ~~ %ALL;
 
-	%ENV{$!ident}
+	%ALL{$!ident}
 }
 
-method assign(Value $value, --> Value) {
-	say $!ident;
-	%ENV{$!ident} = $value;
+
+#| Assigns a value to this identifier.
+#|
+#| Note that `$value` is evaluated.
+method assign(Knight::Value $value, --> Knight::Value) {
+	%ALL{$!ident} = $value.run; # needs to be evaluated so `= a O 3` will have `3` printed.
 	$value
 }
