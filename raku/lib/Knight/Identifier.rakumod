@@ -26,11 +26,10 @@ method run(--> Knight::Value)  {
 	%ALL{$!ident}
 }
 
-
 #| Assigns a value to this identifier.
 #|
 #| Note that `$value` is evaluated.
 method assign(Knight::Value $value, --> Knight::Value) {
-	%ALL{$!ident} = $value.run; # needs to be evaluated so `= a O 3` will have `3` printed.
+	%ALL{$!ident} = $value; # needs to be evaluated so `= a O 3` will have `3` printed.
 	$value
 }

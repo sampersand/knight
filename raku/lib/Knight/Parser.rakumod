@@ -6,15 +6,34 @@ use Knight::String;
 use Knight::Identifier;
 use Knight::Function;
 
+#| The module that contains all things for parsing Knight programs.
 unit module Knight::Parser;
 
+#| The Syntax of Knight.
 grammar Syntax {
+	#| A knight program is a single expression, followed by any amount of characters.
 	rule TOP { <expr> .* }
+
+	#| An expression is any amount of whitespace, followed by a literal or a function call.
 	rule expr { <.ws> [<literal> | <function>] }
 
+	#| Whitespace in Knight is:
+	#| - Normal whitespace and newlines (`\s` and `\n`)
+	#| - All parenthesis (`(`, `)`, `{`, `}`, `[`, and `]`) and the colon `:`.
+	#| - Comments, which start with a `#` and go until end of line.
 	token ws { [ <[(){}[\]:\s\n]> | '#' \N* \n? ]* }
+
+	#| A helper token used to discard trailing uppercase letters in keyword functions.
 	token kw-rest { <[A..Z]>* }
 
+	#| Literal tokens in Knight are:
+	#| - Identifiers, which start with a lower case letter, or `_`, followed by any amount of lower-case letters, `_`,
+	#|   or digits.
+	#| - Numbers, which are just a sequence of digits.
+	#| - Strings, which are a quote (`'` or `"`), followed by any amount of characters until the same quote is
+	#|   encountered. Note that there are absolutely no escapes whatsoever.
+	#| - Booleans, which are just `T` or `F` followed by any amount of upper-case letters,
+	#| - Null, which is just `N` followed by any amount of upper-case letters.
 	proto token literal { * }
 	      token literal:sym«identifier» { <[a..z_]> <[a..z0..9_]>* }
 	      token literal:sym«number»     { \d+ }
@@ -22,13 +41,22 @@ grammar Syntax {
 	      token literal:sym«null»       { 'N' <.kw-rest> }
 	      token literal:sym«boolean»    { (<[TF]>) <.kw-rest> }
 
+	#| In Knight, everything that is not a literal is a function, including things like `;` and `=`.
+	#|
+	#| Functions all have a known arity, and as such they can easily be parsed: `IF x (OUTPUT "yup") (OUTPUT "nop")`.
+	#|
+	#| There are two types of functions: Symbolic ones (such as `+`, `?`, `!`, etc) which are exactly a single character,
+	#| and keyword functions. Keyword functions are identified by their first character, and may have any amount of
+	#| upper-case letters following it.
 	proto rule function { * }
 
+	#| Nullary functions take no arguments.
 	rule function:«nullary»         { <nullary> }
 	proto token nullary             { * }
 	      token nullary:sym«prompt» { 'P' <.kw-rest> }
 	      token nullary:sym«random» { 'R' <.kw-rest> }
 
+	#| Unary functions take a single argument.
 	rule function:«unary»         { <unary> <expr> }
 	proto token unary             { * }
 	      token unary:sym«eval»   { 'E' <.kw-rest> }
@@ -40,6 +68,7 @@ grammar Syntax {
 	      token unary:sym«length» { 'L' <.kw-rest> }
 	      token unary:sym«output» { 'O' <.kw-rest> }
 
+	#| Binary functions take two arguments.
 	rule function:«binary»        { <binary> <expr> <expr> }
 	proto token binary            { * }
 	      token binary:sym«+»     { <sym> }
@@ -57,11 +86,13 @@ grammar Syntax {
 	      token binary:sym«>»     { <sym> }
 	      token binary:sym«while» { 'W' <.kw-rest> }
 
+	#| Ternary functions take three arguments.
 	rule function:«ternary»      { <ternary> <expr> <expr> <expr> }
 	proto token ternary          { * }
 	      token ternary:sym«if»  { 'I' <.kw-rest> }
 	      token ternary:sym«get» { 'G' <.kw-rest> }
 
+	#| Quatenary functions take four arguments.
 	rule function:«quatenary»      { <quatenary> <expr> <expr> <expr> <expr> }
 	proto token quatenary          { * }
 	      token quatenary:sym«set» { 'S' <.kw-rest> }
@@ -77,6 +108,9 @@ grammar Syntax {
 #	}
 }
 
+#| Actions that happen with `Syntax`.
+#|
+#| These simply construct the AST, and dont anything fancy.
 class SyntaxAction {
 	method TOP($/)  { make $<expr>.made; }
 	method expr($/) { make $/.values[0].made; }
@@ -125,6 +159,7 @@ class SyntaxAction {
 	method quatenary:sym«set»($/)   { make 'S' }
 }
 
+#| Parses a stringy input into Knight code, and then executes it.
 sub parse-and-run($input --> Knight::Value) is export {
 	my $func = Syntax.parse(~$input, actions => SyntaxAction).made;
 

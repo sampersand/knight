@@ -1,9 +1,10 @@
+#!/usr/bin/env raku
 use lib 'lib';
 use Knight;
-use Knight::Null;
 
-say Knight::Null.new;
-=finish
+#say Knight::run '; = a B O 3 : O + 3 C a';
+
+#=finish
 multi sub MAIN(Str :$ef) is hidden-from-USAGE {
 	say $*USAGE;
 }
@@ -16,6 +17,6 @@ multi sub MAIN(Str :e(:$expr)) {
 }
 
 #| the file to execute
-multi sub MAIN(IO::Path :f(:$file)) {
-	MAIN expr => $file.slurp
+multi sub MAIN(Str :f(:$file)) {
+	MAIN expr => $file.IO.slurp
 }

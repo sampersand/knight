@@ -6,11 +6,25 @@ use Knight::Number;
 use Knight::Null;
 use Knight::NonIdempotent;
 
-unit class Knight::Function does Knight::NonIdempotent;
+#| The function type within Knight.
+#|
+#| Functions are registered via the `register` function.
+unit class Knight::Function does Knight::Value does Knight::NonIdempotent;
 
 has $!func is built;
 has @!args is built;
 
+#`(
+my %FUNCS;
+
+sub register(&func) is export {
+	say &func.gist;
+	exit;
+	%FUNCS{&func.^name} = &func;
+}
+
+register anon sub «nullary»{ Knight::String.new: get };
+)
 my %FUNCS = (
 	'P' => { Knight::String.new: get },
 	'R' => { Knight::Number.new: (^0xffff_ffff).pick },
@@ -22,8 +36,6 @@ my %FUNCS = (
 	'!' => { Knight::Boolean.new: !$_ },
 	'L' => { Knight::Number.new: .Str.chars },
 	'O' => {
-		state $x = 0;
-		die if $x++;
 		my $result = $^a.run;
 		my $to-output = $result.Str;
 
@@ -40,7 +52,7 @@ my %FUNCS = (
 	'-' => { $^a.run.sub: $^b.run },
 	'*' => { $^a.run.mul: $^b.run },
 	'/' => { $^a.run.div: $^b.run },
-	'&' => { $^a.run.mod: $^b.run },
+	'%' => { $^a.run.mod: $^b.run },
 	'^' => { $^a.run.pow: $^b.run },
 	'<' => { Knight::Boolean.new: $^a.run.lth: $^b.run },
 	'>' => { Knight::Boolean.new: $^a.run.gth: $^b.run },
