@@ -44,7 +44,10 @@ There are also boolean and null values within Knight. See `Functions` for more d
 In Knight, all variables are lower case---upper case letters are reserved for functions. Variable names must start with an ASCII lower case letter (ie `a` (`0x61`) through `z` (`0x7a`)) or an underscore (`_` (`0x5f`)). After the initial letter, variable names may also include ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)).
 
 ## Functions
-In Knight, there are two different styles of functions: symbolic and word-based functions.
+In Knight, there are two different styles of functions: symbolic and word-based functions. In both cases, the function is uniquely 
+
+Word-based functions start with a single uppercase letter, such as `I` for `if` or `R` for `random`, and may contain any amount of upper case letters afterwards. (Notably, this does _not_ include `_`). 
+Symbolic functions are functions that are composed of a single symbol
 
 # Details
 ## Types
