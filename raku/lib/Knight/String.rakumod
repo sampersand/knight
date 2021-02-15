@@ -12,6 +12,8 @@ method Int(--> Int) is pure {
 	$<>.Int
 }
 
+method Bool(--> Bool) { $!value ne ""; }
+
 #| Concatenates `$rhs` to `self`, returning a new String.
 method add(Knight::Value $rhs, --> ::?CLASS) {
 	::?CLASS.new: $!value ~ $rhs

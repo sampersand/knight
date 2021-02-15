@@ -59,7 +59,7 @@ my %FUNCS = (
 	'?' => { Knight::Boolean.new: $^a.run.eql: $^b.run },
 	'&' => { $^a.run and $^b.run },
 	'|' => { $^a.run or $^b.run },
-	'=' => { $^a.assign: $^b.run },
+	'=' => { $^a.assign: $^b },
 	';' => { $^a.run; $^b.run; },
 
 	'W' => {
@@ -77,6 +77,7 @@ my %FUNCS = (
 		my $tostr = $^a.Str.clone;
 
 		$tostr.substr-rw($^b.Int, $^c.Int) = $^d.Str;
+		say "<$tostr>";
 
 		Knight::String.new: $tostr
 	},

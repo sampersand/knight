@@ -37,7 +37,7 @@ grammar Syntax {
 	proto token literal { * }
 	      token literal:sym«identifier» { <[a..z_]> <[a..z0..9_]>* }
 	      token literal:sym«number»     { \d+ }
-	      token literal:sym«string»     { '"' .*? '"' | "'" .*? "'" }
+	      token literal:sym«string»     { '"' [.|\n]*? '"' | "'" [.|\n]*? "'" }
 	      token literal:sym«null»       { 'N' <.kw-rest> }
 	      token literal:sym«boolean»    { (<[TF]>) <.kw-rest> }
 
