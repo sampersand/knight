@@ -9,18 +9,16 @@ unit class Knight::String does Knight::TypedValue[Str, * cmp *, * eq *];
 #| An empty string, or a string that doesn't begin with digits, is zero.
 method Int(--> Int) is pure {
 	$!value ~~ /^ \d* /;
-	$<>.Int
+	+$<>
 }
-
-method Bool(--> Bool) { $!value ne ""; }
 
 #| Concatenates `$rhs` to `self`, returning a new String.
 method add(Knight::Value $rhs, --> ::?CLASS) {
-	::?CLASS.new: $!value ~ $rhs
+	::?CLASS.new: $!value ~ $rhs.Str
 }
 
 #| Duplicates `self` by `$rhs` times.
 method mul(Knight::Value $rhs, --> ::?CLASS) {
-	::?CLASS.new: $!value x $rhs
+	::?CLASS.new: $!value x $rhs.Int
 }
 

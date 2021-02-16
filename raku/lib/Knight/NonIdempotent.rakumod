@@ -18,16 +18,16 @@ multi method eql(::?CLASS $rhs, --> Bool) {
 
 #| Runs `self` and converts the result to a `Str`.
 method Str(--> Str) {
-	$.run.Str
+	~$.run
 }
 
 #| Runs `self` and converts the result to a `Bool`.
 method Bool(--> Bool) {
-	$.run.Bool
+	?$.run
 }
 
 #| Runs `self` and converts the result to an `Int`.
 method Int(--> Int) {
-	$.run.Int
+	+$.run
 }
 

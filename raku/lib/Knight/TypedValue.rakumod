@@ -4,9 +4,9 @@ use Knight::Value;
 #| That we're essentially wrapping.
 #|
 #| - `::T` type should be the builtin type, such as `Bool` or `Str`.
-#| - `$cmp` should be a function that takes two `T`s, and returns the first's ordering to the second.
-#| - `$eql` should be a function that takes two `T`s, and returns whether they are equal.
-unit role Knight::TypedValue[::T, $cmp, $eql] does Knight::Value;
+#| - `&cmp` should be a function that takes two `T`s, and returns the first's ordering to the second.
+#| - `&eql` should be a function that takes two `T`s, and returns whether they are equal.
+unit role Knight::TypedValue[::T, &cmp, &eql] does Knight::Value;
 
 #| The value that the implementor has
 #|
@@ -18,41 +18,28 @@ method new(T $value) {
 	self.bless :$value
 }
 
-#| Builds a new `self` with the given value.
-method BUILD(T :$value) {
-	$!value = $value
-}
-
 #| Compares `self` with the `$rhs`.
 #|
 #| This simply calls `$cmp` with our `$!value` and `$rhs` transformed into a `T`.
 method cmp(Knight::Value $rhs, --> Order) {
-	$cmp($!value, T($rhs))
+	&cmp($!value, T($rhs))
 }
 
 #| Checks to see if `self` is equal to `$rhs`.
 #|
 #| According to the Knight specifications, only values that have the same type and values are equal.
 multi method eql(::?CLASS $rhs, --> Bool) {
-	$eql($!value, T($rhs))
+	&eql($!value, T($rhs))
 }
 
-|# Converts `self` to a string by converting `$!value` to a `Str`.
-method Str(--> Str) is pure {
-	$!value.Str
-}
+#| Converts `self` to a string by converting `$!value` to a `Str`.
+method Str(--> Str) is pure { ~$!value }
 
 #| Converts `self` to a boolean by converting `$!value` to a `Bool`.
-method Bool(--> Bool) is pure {
-	$!value.Bool
-}
+method Bool(--> Bool) is pure { ?$!value }
 
 #| Converts `self` to an integer by converting `$!value` to an `Int`.
-method Int(--> Int) is pure {
-	$!value.Int
-}
+method Int(--> Int) is pure { $!value.Int }
 
 #| Running a `TypedValue` simply returns `self`.
-method run(--> Knight::Value) is pure {
-	self
-}
+method run(--> Knight::Value) is pure { self }

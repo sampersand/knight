@@ -46,13 +46,13 @@ method cmp(Knight::Value $rhs, --> Order) { … }
 #|
 #| As per the Knight specs, `eql` is the only function that does not automatically coerce the `$rhs`. As such, `$rhs`
 #| must be the same type as `self`. Implementors should also use `multi`
-multi method eql(Knight::Value $rhs, --> False) #`(#`(is pure)) {}
+multi method eql(Knight::Value $rhs, --> False) is pure { }
 
 #| All `Value`s must be convertible to an `Int`.
 method Int(--> Int) { … }
 
 #| All `Value`s must be convertible to a `Str`.
-method Str(--> Int) { … }
+method Str(--> Str) { … }
 
 #| All `Value`s must be convertible to a `Bool`.
-method Bool(--> Int) { … }
+method Bool(--> Bool) { … }

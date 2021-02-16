@@ -125,7 +125,7 @@ class SyntaxAction {
 	method nullary:sym«prompt»($/) { make 'P' }
 	method nullary:sym«random»($/) { make 'R' }
 
-	method function:«unary»($/)  { make Knight::Function.new: $<unary>.made, |[$<expr>]».made }
+	method function:«unary»($/)  { make Knight::Function.new: $<unary>.made, $<expr>.made }
 	method unary:sym«eval»($/)   { make 'E' }
 	method unary:sym«block»($/)  { make 'B' }
 	method unary:sym«call»($/)   { make 'C' }

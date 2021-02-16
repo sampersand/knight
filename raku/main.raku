@@ -1,8 +1,7 @@
 #!/usr/bin/env raku
+
 use lib 'lib';
 use Knight;
-
-#signal(SIGINT).tap( { say Backtrace.new.summary; exit 0 } );
 
 multi sub MAIN(Str :$) is hidden-from-USAGE {
 	say $*USAGE;
