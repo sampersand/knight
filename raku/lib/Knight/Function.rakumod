@@ -12,7 +12,7 @@ use Knight::NonIdempotent;
 unit class Knight::Function does Knight::Value does Knight::NonIdempotent;
 
 #| The function associated with this instance.
-has Callable &!func is built;
+has #`(Callable) &!func is built;
 
 #| The arguments to pass to the function.
 has #`(Array[Knight::Value]) @!args is built;
@@ -58,7 +58,7 @@ register 'O', {
 	my $result = $^a.run;
 	my $to-output = $result.Str;
 
-	if $to-output.substr(* - 1) eq '\\' {
+	if $to-output && $to-output.substr(* - 1) eq '\\' {
 		print $to-output.substr(0, * - 1);
 	} else {
 		say $to-output;
@@ -124,7 +124,7 @@ register 'I', { $^a ?? $^b.run !! $^c.run };
 #|
 #| The substring starts at the second argument, and has the length of the third.
 register 'G', {
-	Knight::String.new: $^a.Str.substr(+$^b, +$^c)
+	Knight::String.new: $^a.Str.substr($^b.Int, $^c.Int)
 };
 
 #| Returns a new string with the substring replaced.
@@ -133,8 +133,7 @@ register 'G', {
 register 'S', {
 	my $tostr = $^a.Str.clone;
 
-	$tostr.substr-rw(+$^b, +$^c) = ~$^d;
-	say "<$tostr>";
+	$tostr.substr-rw($^b.Int, $^c.Int) = $^d.Str;
 
 	Knight::String.new: $tostr
 };

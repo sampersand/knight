@@ -341,10 +341,7 @@
 			: = (+ 'while_ret_' run_ast_recur) CALL eval_arg1
 		: EVAL + 'while_ret_'  run_ast_recur
 	: IF ? '=' value_kind
-		; O value_data
-		; Q 0
-		; = value O EVAL O run_ast_arg0
-		; Q 0 
+		; = value EVAL run_ast_arg0
 		; CALL categorize_value
 		: IF ? 'i' value_kind
 			: = (+ '_v' value_data) CALL eval_arg1
