@@ -36,11 +36,11 @@ def prompt():
 
 @function()
 def random():
-	return randint(0, 0xff_ff_ff_ff)
+	return randint(0, 0xff_ff_ff_ff) # return random between 0 and 4294967295
 
 @function()
 def eval_(text):
-	return knight.Value.parse(str(text.run())).run()
+	return knight.Value.parse(str(text.run())).run() # evaluate as knight code
 
 @function()
 def block(blk):
@@ -61,21 +61,21 @@ def quit_(code):
 
 @function('!')
 def not_(arg):
-	return not arg.run()
+	return not arg.run() # not
 
 @function()
 def length(arg):
-	return len(str(arg.run()))
+	return len(str(arg.run())) # return lenght
 
 @function()
-def output(arg):
+def output(arg): # print
 	ret = arg.run()
 	s = str(ret)
 
 	if s[-1] == '\\':
 		print(s[:-2], end='')
 	else:
-		print(s)
+		print(s) 
 
 	return ret
 
@@ -140,14 +140,14 @@ def while_(cond, body):
 
 	return ret
 
-@function('=')
+@function('=') # assignment
 def assign(name, value):
 	name = name.data if isinstance(name, knight.Identifier) else str(name.run())
 	value = value.run()
 	knight.ENVIRONMENT[name] = value
 	return value 
 
-@function()
+@function() # if statments
 def if_(cond, iftrue, iffalse):
 	return (iftrue if cond.run() else iffalse).run()
 
