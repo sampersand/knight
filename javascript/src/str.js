@@ -4,24 +4,22 @@ export class Str extends Value {
 	#data;
 
 	static parse(stream) {
-		let match = stream.match(/^(["'])(.*?)\1/, 2);
+		const match = stream.match(/^(["'])(.*?)\1/, 2);
 
-		if (match === null) {
-			if (stream.match(/^['"]/) !== null) {
-				throw `Unterminated quote encountered: ${stream}`;
-			} else {
-				return null;
-			}
+		if (match) {
+			return new Str(match);
 		}
 
-		return new Str(match);
+		if (stream.match(/^['"]/)) {
+			throw `Unterminated quote encountered: ${stream}`;
+		}
 	}
 
 	constructor(data) {
 		super();
 
 		if (typeof data !== 'string') {
-			throw `Expected a string, got ${typeof data}`;
+			throw new Error(`Expected a string, got ${typeof data}`);
 		}
 
 		this.#data = data;

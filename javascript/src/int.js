@@ -12,7 +12,7 @@ export class Int extends Value {
 	constructor(data) {
 		super();
 
-		if (!Number.isInt(data)) {
+		if (!Number.isInteger(data)) {
 			throw `Expected an integer, got ${typeof data}`;
 		}
 

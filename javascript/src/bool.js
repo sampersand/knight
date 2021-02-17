@@ -13,7 +13,7 @@ export class Bool extends Value {
 		super();
 
 		if (typeof data !== 'boolean') {
-			throw `Expected a boolean, got ${typeof data}`;
+			throw new Error(`Expected a boolean, got ${typeof data}`);
 		}
 
 		this.#data = data;

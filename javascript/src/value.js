@@ -2,15 +2,15 @@ export class Value {
 	static TYPES = [];
 
 	static parse(stream) {
+		stream.stripWhitespace();
+
 		for (var i = 0; i < Value.TYPES.length; i++) {
 			const match = Value.TYPES[i].parse(stream);
 
-			if (match !== null) {
+			if (match) {
 				return match;
 			}
 		}
-
-		return null;
 	}
 
 	lth(rhs) {

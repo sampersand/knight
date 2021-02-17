@@ -10,9 +10,9 @@ import { Stream } from './stream.js';
 export function run(input) {
 	let value = Value.parse(new Stream(input.toString()))
 
-	if (value === null) {
-		throw 'No value could be parsed!';
-	} else {
+	if (value) {
 		return value.run();
+	} else {
+		throw new Error('No value could be parsed!');
 	}
 }

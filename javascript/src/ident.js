@@ -6,7 +6,7 @@ export class Ident extends Value {
 	#ident;
 
 	static parse(stream) {
-		let match = stream.match(/^[a-z_][a-z0-9_]*/);
+		const match = stream.match(/^[a-z_][a-z0-9_]*/);
 
 		return match && new Ident(match);
 	}
@@ -28,10 +28,10 @@ export class Ident extends Value {
 	run() {
 		const value = Ident.KNOWN[this.#ident];
 
-		if (value === undefined) {
-			throw `Unknown identifier '${this.#ident}'`;
-		} else {
+		if (value) {
 			return value;
+		} else {
+			throw `Unknown identifier '${this.#ident}'`;
 		}
 	}
 }

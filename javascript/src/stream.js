@@ -10,13 +10,11 @@ export class Stream {
 	}
 
 	match(regex, idx=0) {
-		let match = regex.exec(this.#source);
+		const match = regex.exec(this.#source);
 
-		if (match === null) {
-			return null;
+		if (match !== null) {
+			this.#source = this.#source.substr(match[0].length);
+			return match[idx];
 		}
-
-		this.#source = this.#source.substr(match[0].length);
-		return match[idx];
 	}
 }
