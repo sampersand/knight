@@ -1,12 +1,12 @@
-import { Value } from './value.js';
+import { Value, TYPES } from './value.js';
 
 export class Str extends Value {
 	#data;
 
 	static parse(stream) {
-		const match = stream.match(/^(["'])(.*?)\1/, 2);
+		const match = stream.match(/^(["'])((?:.|\n)*?)\1/m, 2);
 
-		if (match) {
+		if (match !== null) {
 			return new Str(match);
 		}
 
@@ -54,4 +54,4 @@ export class Str extends Value {
 	}
 }
 
-Value.TYPES.push(Str);
+TYPES.push(Str);

@@ -1,4 +1,4 @@
-import { Value } from './value.js';
+import { Value, TYPES } from './value.js';
 
 export class Int extends Value {
 	#data;
@@ -72,8 +72,8 @@ export class Int extends Value {
 	}
 
 	cmp(rhs) {
-		return sub(rhs); // comparison is the same as subtraction
+		return this.sub(rhs); // comparison is the same as subtraction
 	}
 }
 
-Value.TYPES.push(Int);
+TYPES.push(Int);

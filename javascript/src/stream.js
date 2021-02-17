@@ -12,9 +12,13 @@ export class Stream {
 	match(regex, idx=0) {
 		const match = regex.exec(this.#source);
 
-		if (match !== null) {
-			this.#source = this.#source.substr(match[0].length);
-			return match[idx];
+		if (match === null) {
+			return null;
 		}
+
+		this.#source = this.#source.substr(match[0].length);
+		return match[idx];
 	}
+
+	toString() { return this.#source; }
 }

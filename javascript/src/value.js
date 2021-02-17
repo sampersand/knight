@@ -1,24 +1,26 @@
-export class Value {
-	static TYPES = [];
+export const TYPES = [];
 
+export class Value {
 	static parse(stream) {
 		stream.stripWhitespace();
 
-		for (var i = 0; i < Value.TYPES.length; i++) {
-			const match = Value.TYPES[i].parse(stream);
+		for (var i = 0; i < TYPES.length; i++) {
+			const match = TYPES[i].parse(stream);
 
 			if (match) {
 				return match;
 			}
 		}
+
+		return null;
 	}
 
 	lth(rhs) {
-		return this.run().cmp(rhs.run()) < 0;
+		return this.cmp(rhs) < 0;
 	}
 
 	gth(rhs) {
-		return this.run().cmp(rhs.run()) > 0;
+		return this.cmp(rhs) > 0;
 	}
 
 	run() {
@@ -26,16 +28,14 @@ export class Value {
 	}
 
 	toString() {
-		this.run().toString();
+		return this.run().toString();
 	}
 
 	toInt() {
-		this.run().toInt();
+		return this.run().toInt();
 	}
 
 	toBool() {
-		this.run().toBool();
+		return this.run().toBool();
 	}
 }
-
-//import { Bool } from './Bool.js';

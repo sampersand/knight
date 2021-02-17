@@ -1,4 +1,4 @@
-import { Value } from './value.js';
+import { Value, TYPES } from './value.js';
 
 export class Nil extends Value {
 	static parse(stream) {
@@ -22,4 +22,4 @@ export class Nil extends Value {
 	}
 }
 
-Value.TYPES.push(Nil);
+TYPES.push(Nil);

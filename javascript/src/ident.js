@@ -1,8 +1,8 @@
-import { Value } from './value.js';
+import { Value, TYPES } from './value.js';
+
+const ENVIRONMENT = {};
 
 export class Ident extends Value {
-	static KNOWN = {};
-
 	#ident;
 
 	static parse(stream) {
@@ -18,15 +18,11 @@ export class Ident extends Value {
 	}
 
 	assign(value) {
-		const result = value.run()
-
-		Ident.KNOWN[this.#ident] = result;
-
-		return result;
+		ENVIRONMENT[this.#ident] = value;
 	}
 
 	run() {
-		const value = Ident.KNOWN[this.#ident];
+		const value = ENVIRONMENT[this.#ident];
 
 		if (value) {
 			return value;
@@ -36,4 +32,4 @@ export class Ident extends Value {
 	}
 }
 
-Value.TYPES.push(Ident);
+TYPES.push(Ident);

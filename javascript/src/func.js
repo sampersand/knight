@@ -1,4 +1,4 @@
-import { Value } from './value.js';
+import { Value, TYPES } from './value.js';
 import { Bool } from './bool.js';
 import { Ident } from './ident.js';
 import { Int } from './int.js';
@@ -13,17 +13,16 @@ export class Func extends Value {
 	#func;
 
 	static parse(stream) {
-		const match = stream.match(/^([A-Z]+|.)/);
+		const match = stream.match(/^([A-Z\p{P}\p{S}])(?:(?<=[A-Z])[A-Z]*)?/u, 1);
 
-		if (!match) {
+		if (match === null) {
 			return;
 		}
 
-		const funcname = match[0]; // only the first character.
-		const func = FUNCTIONS[funcname];
+		const func = FUNCTIONS[match];
 
-		if (func === undefined) {
-			throw `Unknown function '${funcname}'`;
+		if (!func) {
+			throw new Error(`Unknown function '${match}'`);
 		}
 
 		let args = [];
@@ -31,17 +30,18 @@ export class Func extends Value {
 			const arg = Value.parse(stream);
 
 			if (!arg) {
-				throw new Error(`Missing argument ${i} for func '${funcname}'`);
+				throw new Error(`Missing argument ${i+1} for function '${match}'`);
 			}
 
 			args.push(arg);
 		}
 
-		return new Func(func, ...args);
+		return new Func(func, match, ...args);
 	}
 
-	constructor(func, ...args) {
+	constructor(func, n,...args) {
 		super();
+		this.n=n;
 
 		this.#func = func;
 		this.#args = args;
@@ -52,7 +52,7 @@ export class Func extends Value {
 	}
 }
 
-Value.TYPES.push(Func);
+TYPES.push(Func);
 
 export function register(name, func)  {
 	if (name.length !== 1) {
@@ -62,63 +62,83 @@ export function register(name, func)  {
 	FUNCTIONS[name] = func;
 }
 
-register('P', () => { throw "todo" });
+import { readSync } from 'fs';
+import { execSync } from 'child_process';
+import { run } from './index.js';
+
+register('P', () => {
+	let line = '';
+	let buf = Buffer.alloc(1);
+
+	while (buf[0] != 0x0a) {	
+		line += buf;
+		readSync(0, buf, 0, 1);
+	}
+
+	return new Str(line);
+});
 register('R', () => new Ident(Math.floor(Math.random() * 0xffff_ffff)));
 
-import { exec } from 'child_process';
-register('E', str => knight.run(str.toString()));
+register('E', string => run(string.toString()));
 register('B', block => block);
 register('C', block => block.run().run());
-register('`', block => { throw "todo"; } ); //exec(block.toString(), block.run().run());
-register('Q', code => process.exit(code.toInt()));
+register('`', block => new Str(execSync(block.toString()).toString()));
+register('Q', status => process.exit(status.toInt()));
 register('!', arg => new Bool(!arg.toBool()));
 register('L', str => new Int(arg.toString().length));
 register('O', input => {
 	const result = input.run();
 	const str = result.toString();
 
-	if (str.substr(-1) === '\\') {
-		process.stdout.write(str.substr(0, str.length - 1));
-	} else {
-		process.stdout.write(`${str}\n`);
-	}
-
+	process.stdout.write(str.substr(-1) === '\\' ? str.substr(0, str.length - 1) :`${str}\n`);
+ 
 	return result;
 });
 
-register('+', (l, r) => l.run().add(r.run()));
-register('-', (l, r) => l.run().sub(r.run()));
-register('*', (l, r) => l.run().mul(r.run()));
-register('/', (l, r) => l.run().div(r.run()));
-register('%', (l, r) => l.run().mod(r.run()));
-register('^', (l, r) => l.run().pow(r.run()));
-register('<', (l, r) => new Bool(l.run().lth(r.run())));
-register('>', (l, r) => new Bool(l.run().gth(r.run())));
-register('?', (l, r) => new Bool(l.run().eql(r.run())));
-register('&', (l, r) => l.run() && r.run());
-register('|', (l, r) => l.run() || r.run());
-register(';', (l, r) => (l.run(), r.run()));
-register('=', (i, v) => {
-	if (!(i instanceof Ident)) {
-		i = new Ident(i.toString());
+register('+', (lhs, rhs) => lhs.run().add(rhs.run()));
+register('-', (lhs, rhs) => lhs.run().sub(rhs.run()));
+register('*', (lhs, rhs) => lhs.run().mul(rhs.run()));
+register('/', (lhs, rhs) => lhs.run().div(rhs.run()));
+register('%', (lhs, rhs) => lhs.run().mod(rhs.run()));
+register('^', (lhs, rhs) => lhs.run().pow(rhs.run()));
+register('<', (lhs, rhs) => new Bool(lhs.run().lth(rhs.run())));
+register('>', (lhs, rhs) => new Bool(lhs.run().gth(rhs.run())));
+register('?', (lhs, rhs) => new Bool(lhs.run().eql(rhs.run())));
+register('&', (lhs, rhs) => lhs.run() && rhs.run());
+register('|', (lhs, rhs) => lhs.run() || rhs.run());
+register(';', (lhs, rhs) => (lhs.run(), rhs.run()));
+register('=', (ident, value) => {
+	if (!(ident instanceof Ident)) {
+		ident = new Ident(ident.toString());
 	}
 
-	v = v.run();
-	i.assign(v);
-	return v;
+	const ran = value.run();
+	ident.assign(ran);
+
+	return ran;
 });
-register('W', (c, b) => {
+register('W', (condition, body) => {
 	let ret;
 
-	while (b.toBool()) {
-		ret = c.run();
+	while (condition.toBool()) {
+		ret = body.run();
 	}
 
 	return ret || new Nil(); 
 });
 
-register('I', (cond, iftrue, iffalse) => cond.toBool() ? iftrue.run() : iffalse.run());
-register('G', (str, start, len) => new Str(str.toString().substr(start.toInt(), len.toInt())));
+register('I', (cond, iftrue, iffalse) => {
+	return cond.toBool() ? iftrue.run() : iffalse.run();
+});
+register('G', (str, start, len) => {
+	str = str.toString();
+	start = start.toInt();
+	len = len.toInt();
+
+	return new Str(str.substr(start, len));
+});
+
+
 register('S', (str, start, len, repl) => {
 	str = str.toString();
 	start = start.toInt(); 

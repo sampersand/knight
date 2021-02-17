@@ -1,5 +1,7 @@
-import { Value } from './value.js';
+import { Value, TYPES } from './value.js';
 
+// The class in Knight that represents a boolean
+// @param
 export class Bool extends Value {
 	#data;
 
@@ -36,4 +38,4 @@ export class Bool extends Value {
 	}
 }
 
-Value.TYPES.push(Bool);
+TYPES.push(Bool);
