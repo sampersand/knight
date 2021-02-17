@@ -1,18 +1,18 @@
-import { Value } from './Value.js';
+import { Value } from './value.js';
 
 export class Bool extends Value {
 	#data;
 
 	static parse(stream) {
-		let match = stream.match(/^([TF])[A-Z]*/, 1);
+		const match = stream.match(/^([TF])[A-Z]*/, 1);
 
-		return match ?? new Bool(match === 'T');
+		return match && new Bool(match === 'T');
 	}
 
 	constructor(data) {
 		super();
 
-		if ('boolean' !== typeof data) {
+		if (typeof data !== 'boolean') {
 			throw `Expected a boolean, got ${typeof data}`;
 		}
 
@@ -23,11 +23,11 @@ export class Bool extends Value {
 		return this.#data.toString();
 	}
 
-	toInteger() {
+	toInt() {
 		return +this.#data;
 	}
 
-	toBoolean() {
+	toBool() {
 		return this.#data;
 	}
 
@@ -35,3 +35,5 @@ export class Bool extends Value {
 		return rhs instanceof Bool && this.#data === rhs.#data;
 	}
 }
+
+Value.TYPES.push(Bool);

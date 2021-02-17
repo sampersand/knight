@@ -1,8 +1,11 @@
-import { Identifier } from './Identifier.js';
-import { Integer } from './Integer.js';
+import { run } from './mod.js';
 
-let ident = new Identifier("foo");
+run("O 3");
+// import { Identifier } from './Identifier.js';
+// import { Int } from './Int.js';
 
-ident.assign(new Integer(123));
+// let ident = new Identifier("foo");
 
-console.log(ident.run().add(ident.run()).toString());
+// ident.assign(new Int(123));
+
+// console.log(ident.run().add(ident.run()).toString());

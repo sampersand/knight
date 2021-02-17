@@ -1,4 +1,4 @@
-import { Value } from './Value.js';
+import { Value } from './value.js';
 
 export class Str extends Value {
 	#data;
@@ -6,21 +6,21 @@ export class Str extends Value {
 	static parse(stream) {
 		let match = stream.match(/^(["'])(.*?)\1/, 2);
 
-		switch (true) {
-			case match !== null:
-				return new Str(match);
-			case stream.match(/^['"]/) !== null:
+		if (match === null) {
+			if (stream.match(/^['"]/) !== null) {
 				throw `Unterminated quote encountered: ${stream}`;
-			default:
-				return null;		
+			} else {
+				return null;
+			}
 		}
-	}
 
+		return new Str(match);
+	}
 
 	constructor(data) {
 		super();
 
-		if ('string' !== typeof data) {
+		if (typeof data !== 'string') {
 			throw `Expected a string, got ${typeof data}`;
 		}
 
@@ -31,11 +31,11 @@ export class Str extends Value {
 		return this.#data;
 	}
 
-	toInteger() {
+	toInt() {
 		return parseInt(this.#data, 10) || 0;
 	}
 
-	toBoolean() {
+	toBool() {
 		return this.#data !== "";
 	}
 
@@ -44,14 +44,16 @@ export class Str extends Value {
 	}
 
 	mul(rhs) {
-		return new Str(this.#data.repeat(rhs.toInteger()));
+		return new Str(this.#data.repeat(rhs.toInt()));
 	}
 
 	eql(rhs) {
-		return rhs instanceof typeof(this) && rhs.data === this.#data;
+		return rhs instanceof Str && rhs.data === this.#data;
 	}
 
 	cmp(rhs) {
 		return this.data.localeCompare(rhs.toString());
 	}
 }
+
+Value.TYPES.push(Str);
