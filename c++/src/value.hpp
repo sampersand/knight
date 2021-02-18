@@ -1,33 +1,26 @@
 #pragma once
 
-#include <cinttypes>
-#include <string>
 #include <variant>
-
+#include <string>
 
 namespace kn {
-	using integer_t = intmax_t;
+	using number = int;
 
-	class value {
-		std::variant<bool, integer_t, std::string> data;
+	class Value {
 	public:
-		value(bool boolean);
-		value(integer_t integer);
-		value(std::string string);
+		virtual bool to_boolean() const = 0;
+		virtual number to_number() const = 0;
+		virtual std::string to_string() const = 0;
 
-		bool to_boolean() const;
-		integer_t to_integer() const;
-		std::string to_string() const;
-
-		value operator+(const value& rhs) const;
-		value operator-(const value& rhs) const;
-		value operator*(const value& rhs) const;
-		value operator/(const value& rhs) const;
-		value operator%(const value& rhs) const;
-		value pow(const value& rhs) const;
-		bool operator!() const;
-		bool operator<(const value& rhs) const;
-		bool operator>(const value& rhs) const;
-		bool operator==(const value& rhs) const;
+		// value operator+(const value& rhs) const;
+		// value operator-(const value& rhs) const;
+		// value operator*(const value& rhs) const;
+		// value operator/(const value& rhs) const;
+		// value operator%(const value& rhs) const;
+		// value pow(const value& rhs) const;
+		// bool operator!() const;
+		// bool operator<(const value& rhs) const;
+		// bool operator>(const value& rhs) const;
+		// bool operator==(const value& rhs) const;
 	};
 }
