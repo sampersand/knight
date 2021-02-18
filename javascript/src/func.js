@@ -48,6 +48,7 @@ export class Func extends Value {
 	}
 
 	run() {
+		console.log(this.n);
 		return this.#func(...this.#args);
 	}
 }
@@ -146,4 +147,4 @@ register('S', (str, start, len, repl) => {
 	repl = repl.toString();
 
 	return new Str(str.replace(str.substr(start, len), repl));
-});
+}); 

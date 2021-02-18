@@ -2,7 +2,9 @@
 import { run } from '../src/index.js';
 
 //run('E ` + "cat " P');
-run('E ` + "cat " "../../knight.kn"');
+run('E ` "cat ../../knight.kn"');
+// run('E ` + "cat " "../../examples/fizzbuzz.kn"');
+
 // run(`
 // ; = fizzbuzz BLOCK
 // 	; = n 0
