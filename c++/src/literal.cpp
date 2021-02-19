@@ -1,5 +1,4 @@
 #include "literal.hpp"
-#include "shared.hpp"
 
 using namespace kn;
 
@@ -43,6 +42,9 @@ string Literal::to_string() const {
 	}, data);
 }
 
+Literal Literal::run() const {
+	return *this;
+}
 
 inline bool Literal::is_string() const {
 	return std::holds_alternative<string>(data);
@@ -50,28 +52,28 @@ inline bool Literal::is_string() const {
 
 Literal Literal::operator+(const Literal& rhs) const {
 	if (!is_string()) {
-		return new Literal(to_number() + rhs.to_number());
+		return Literal(to_number() + rhs.to_number());
 	}
 
 	string ret(std::get<string>(data));
 	ret += rhs.to_string();
 
-	return new Literal(ret);
+	return ret;
 }
 
 Literal Literal::operator-(const Literal& rhs) const {
-	return new Literal(to_number() - rhs.to_number());
+	return to_number() - rhs.to_number();
 }
 
 Literal Literal::operator*(const Literal& rhs) const {
 	if (!is_string()) {
-		return new Literal(to_number() * rhs.to_number());
+		return to_number() * rhs.to_number();
 	}
 
 	number rhs_num = rhs.to_number();
 
 	if (rhs_num < 0) {
-		throw "cannot duplicate by a negative number";
+		throw std::invalid_argument("cannot duplicate by a negative number");
 	}
 
 	const string& str = std::get<string>(data);
@@ -81,14 +83,12 @@ Literal Literal::operator*(const Literal& rhs) const {
 		ret += str;
 	}
 
-	return new Literal(ret);
+	return ret;
 }
 
-struct ZeroDivisionError : std::exception {
-  const char* what() const noexcept {
-  	return "cannot divide by zero!\n";
-  }
-};
+const char* ZeroDivisionError::what() const noexcept {
+	return "cannot divide by zero!\n";
+}
 
 Literal Literal::operator/(const Literal& rhs) const {
 	auto rhs_num = rhs.to_number();
@@ -97,7 +97,7 @@ Literal Literal::operator/(const Literal& rhs) const {
 		throw ZeroDivisionError();
 	}
 
-	return new Literal(to_number() / rhs_num);
+	return to_number() / rhs_num;
 }
 
 Literal Literal::operator%(const Literal& rhs) const {
@@ -107,7 +107,7 @@ Literal Literal::operator%(const Literal& rhs) const {
 		throw ZeroDivisionError();
 	}
 
-	return new Literal(to_number() % rhs_num);
+	return to_number() % rhs_num;
 }
 
 Literal Literal::pow(const Literal& rhs) const {
@@ -119,7 +119,7 @@ Literal Literal::pow(const Literal& rhs) const {
 		ret *= base;
 	}
 
-	return new Literal(ret);
+	return ret;
 }
 
 bool Literal::operator==(const Literal& rhs) const {

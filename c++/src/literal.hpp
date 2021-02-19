@@ -4,10 +4,13 @@
 
 namespace kn {
 	using null = std::monostate;
-	using string = std::string;
 
-	class Literal : Value {
-		std::variant<null, bool, number, std::string> data;
+	struct ZeroDivisionError : public std::exception {
+		const char* what() const noexcept;
+	};
+
+	class Literal : public Value {
+		std::variant<null, bool, number, string> data;
 
 		bool is_string() const;
 		int cmp(const Literal& rhs) const;
@@ -15,11 +18,13 @@ namespace kn {
 		Literal();
 		Literal(bool boolean);
 		Literal(number num);
-		Literal(std::string string);
+		Literal(string str);
 
-		bool to_boolean() const;
-		number to_number() const;
-		std::string to_string() const;
+		bool to_boolean() const override;
+		number to_number() const override;
+		string to_string() const override;
+
+		std::shared_ptr<Value>& run() const override;
 
 		Literal operator+(const Literal& rhs) const;
 		Literal operator-(const Literal& rhs) const;
