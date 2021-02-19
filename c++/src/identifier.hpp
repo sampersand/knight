@@ -3,25 +3,19 @@
 #include "value.hpp"
 
 namespace kn {
-	struct UnknownIdentifier : std::exception {
-		std::string ident;
-		std::string message;
+	struct UnknownIdentifier : std::runtime_error {
+		std::string const ident;
 
 		UnknownIdentifier(std::string ident);
+	};
 
-  		const char* what() const noexcept;
-  	};
-
-	class Identifier : Value {
+	class Identifier : public Value {
 		std::string name;
 	public:
-		Identifier(std::string name);
+		Identifier(std::string name) noexcept;
 
-		bool to_boolean() const override;
-		number to_number() const override;
-		string to_string() const override;
-
-		Literal run() const override;
-		void assign(std::shared_ptr<Value> value) const override;
+		static std::shared_ptr<Value const> parse(std::string_view& view) override;
+		std::shared_ptr<Value const> run() const override;
+		void assign(std::shared_ptr<Value const> value) const override;
 	};
 }

@@ -1,11 +1,12 @@
 #include "literal.hpp"
+#include <memory>
 
 using namespace kn;
 
-Literal::Literal() : data(null {}) {}
-Literal::Literal(bool boolean) : data(boolean) {}
-Literal::Literal(number num) : data(num) {}
-Literal::Literal(string str) : data(str) {}
+Literal::Literal() noexcept : data(null {}) {}
+Literal::Literal(bool boolean) noexcept : data(boolean) {}
+Literal::Literal(number num) noexcept : data(num) {}
+Literal::Literal(string str) noexcept : data(str) {}
 
 template <typename... Fns>
 struct overload : Fns... {
@@ -17,40 +18,45 @@ overload(Fns...) -> overload<Fns...>;
 
 bool Literal::to_boolean() const {
 	return std::visit(overload {
-		[](const null&) { return false; },
-		[](const bool& boolean) { return boolean; },
-		[](const number& num) { return num != 0; },
-		[](const string& str) { return str.length() != 0; }
+		[](null const&) { return false; },
+		[](bool const& boolean) { return boolean; },
+		[](number const& num) { return num != 0; },
+		[](string const& str) { return str.length() != 0; }
 	}, data);
 }
 
 number Literal::to_number() const {
 	return std::visit(overload {
-		[](const null&) { return 0; },
-		[](const bool& boolean) { return (number) boolean; },
-		[](const number& num) { return num; },
-		[](const string& str) { return std::stoi(str); }
+		[](null const&) { return 0; },
+		[](bool const& boolean) { return (number) boolean; },
+		[](number const& num) { return num; },
+		[](string const& str) { return std::stoi(str); }
 	}, data);
 }
 
 string Literal::to_string() const {
 	return std::visit(overload {
-		[](const null&) { return string("null"); },
-		[](const bool& boolean) { return string(boolean ? "true" : "false"); },
-		[](const number& num) { return std::to_string(num); },
-		[](const string& str) { return str; }
+		[](null const&) { return string("null"); },
+		[](bool const& boolean) { return string(boolean ? "true" : "false"); },
+		[](number const& num) { return std::to_string(num); },
+		[](string const& str) { return str; }
 	}, data);
 }
 
-Literal Literal::run() const {
-	return *this;
+std::shared_ptr<Value const> Literal::parse(std::string_view& view) {
+	(void) view;
+	return nullptr;
 }
 
-inline bool Literal::is_string() const {
+std::shared_ptr<Value const> Literal::run() const {
+	return shared_from_this();
+}
+
+inline bool Literal::is_string() const noexcept {
 	return std::holds_alternative<string>(data);
 }
 
-Literal Literal::operator+(const Literal& rhs) const {
+Literal Literal::operator+(Literal const& rhs) const {
 	if (!is_string()) {
 		return Literal(to_number() + rhs.to_number());
 	}
@@ -61,11 +67,11 @@ Literal Literal::operator+(const Literal& rhs) const {
 	return ret;
 }
 
-Literal Literal::operator-(const Literal& rhs) const {
+Literal Literal::operator-(Literal const& rhs) const {
 	return to_number() - rhs.to_number();
 }
 
-Literal Literal::operator*(const Literal& rhs) const {
+Literal Literal::operator*(Literal const& rhs) const {
 	if (!is_string()) {
 		return to_number() * rhs.to_number();
 	}
@@ -76,7 +82,7 @@ Literal Literal::operator*(const Literal& rhs) const {
 		throw std::invalid_argument("cannot duplicate by a negative number");
 	}
 
-	const string& str = std::get<string>(data);
+	string const& str = std::get<string>(data);
 	string ret(str.length() * (size_t) rhs_num, '\0');
 
 	for (auto i = 0; i < rhs_num; ++i) {
@@ -86,31 +92,27 @@ Literal Literal::operator*(const Literal& rhs) const {
 	return ret;
 }
 
-const char* ZeroDivisionError::what() const noexcept {
-	return "cannot divide by zero!\n";
-}
-
-Literal Literal::operator/(const Literal& rhs) const {
+Literal Literal::operator/(Literal const& rhs) const {
 	auto rhs_num = rhs.to_number();
 
 	if (rhs_num == 0) {
-		throw ZeroDivisionError();
+		throw std::domain_error("cannot divide by zero!\n");
 	}
 
 	return to_number() / rhs_num;
 }
 
-Literal Literal::operator%(const Literal& rhs) const {
+Literal Literal::operator%(Literal const& rhs) const {
 	auto rhs_num = rhs.to_number();
 
 	if (rhs_num == 0) {
-		throw ZeroDivisionError();
+		throw std::domain_error("cannot modulo by zero!\n");
 	}
 
 	return to_number() % rhs_num;
 }
 
-Literal Literal::pow(const Literal& rhs) const {
+Literal Literal::pow(Literal const& rhs) const {
 	number ret = 1;
 	number base = to_number();
 	number exp = rhs.to_number();
@@ -122,20 +124,20 @@ Literal Literal::pow(const Literal& rhs) const {
 	return ret;
 }
 
-bool Literal::operator==(const Literal& rhs) const {
+bool Literal::operator==(Literal const& rhs) const {
 	if (data.index() != rhs.data.index()) {
 		return false;
 	}
 
 	return std::visit(overload {
-		[](const null&) { return true; },
-		[&](const bool& boolean) { return boolean == std::get<bool>(rhs.data); },
-		[&](const number& num) { return num == std::get<number>(rhs.data); },
-		[&](const string& str) { return str == std::get<string>(rhs.data); }
+		[](null const&) { return true; },
+		[&](bool const& boolean) { return boolean == std::get<bool>(rhs.data); },
+		[&](number const& num) { return num == std::get<number>(rhs.data); },
+		[&](string const& str) { return str == std::get<string>(rhs.data); }
 	}, data);
 }
 
-int Literal::cmp(const Literal& rhs) const {
+int Literal::cmp(Literal const& rhs) const {
 	if (!is_string()) {
 		auto this_num = to_number();
 		auto rhs_num = rhs.to_number();
@@ -143,7 +145,7 @@ int Literal::cmp(const Literal& rhs) const {
 		return this_num < rhs_num ? -1 : this_num > rhs_num ? 1 : 0;
 	}
 
-	const string& this_string = std::get<string>(data);
+	string const & this_string = std::get<string>(data);
 	string rhs_string = rhs.to_string();
 
 
@@ -155,10 +157,10 @@ int Literal::cmp(const Literal& rhs) const {
 	return pair.first < pair.second ? -1 : pair.first > pair.second ? 1 : 0;
 }
 
-bool Literal::operator<(const Literal& rhs) const {
+bool Literal::operator<(Literal const& rhs) const {
 	return cmp(rhs) < 0;
 }
 
-bool Literal::operator>(const Literal& rhs) const {
+bool Literal::operator>(Literal const& rhs) const {
 	return cmp(rhs) > 0;
 }

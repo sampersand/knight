@@ -2,6 +2,7 @@
 
 #include <variant>
 #include <string>
+#include <string_view>
 
 namespace kn {
 	using number = int;
@@ -9,16 +10,16 @@ namespace kn {
 
 	class Literal;
 
-	class Value {
+	class Value : public std::enable_shared_from_this<Value> {
 	public:
 		virtual ~Value() = default;
+		virtual std::shared_ptr<Value const> run() const = 0;
+		static std::shared_ptr<Value const> parse(std::string_view& view);
 
-		virtual bool to_boolean() const = 0;
-		virtual number to_number() const = 0;
-		virtual string to_string() const = 0;
+		virtual void assign(std::shared_ptr<Value const> value) const;
 
-		virtual Literal run() const = 0;
-
-		virtual void assign(std::shared_ptr<Value> value) const;
+		virtual bool to_boolean() const;
+		virtual number to_number() const;
+		virtual string to_string() const;
 	};
 }

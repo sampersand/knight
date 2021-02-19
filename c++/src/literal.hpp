@@ -1,39 +1,37 @@
 #pragma once
 
 #include "value.hpp"
+#include <memory>
 
 namespace kn {
 	using null = std::monostate;
 
-	struct ZeroDivisionError : public std::exception {
-		const char* what() const noexcept;
-	};
-
 	class Literal : public Value {
-		std::variant<null, bool, number, string> data;
+		std::variant<null, bool, number, string> const data;
 
-		bool is_string() const;
-		int cmp(const Literal& rhs) const;
+		bool is_string() const noexcept;
+		int cmp(Literal const& rhs) const;
 	public:
-		Literal();
-		Literal(bool boolean);
-		Literal(number num);
-		Literal(string str);
+		Literal() noexcept;
+		Literal(bool boolean) noexcept;
+		Literal(number num) noexcept;
+		Literal(string str) noexcept;
 
 		bool to_boolean() const override;
 		number to_number() const override;
 		string to_string() const override;
 
-		std::shared_ptr<Value>& run() const override;
+		static std::shared_ptr<Value const> parse(std::string_view& view) override;
+		std::shared_ptr<Value const> run() const override;
 
-		Literal operator+(const Literal& rhs) const;
-		Literal operator-(const Literal& rhs) const;
-		Literal operator*(const Literal& rhs) const;
-		Literal operator/(const Literal& rhs) const;
-		Literal operator%(const Literal& rhs) const;
-		Literal pow(const Literal& rhs) const;
-		bool operator==(const Literal& rhs) const;
-		bool operator<(const Literal& rhs) const;
-		bool operator>(const Literal& rhs) const;
+		Literal operator+(Literal const& rhs) const;
+		Literal operator-(Literal const& rhs) const;
+		Literal operator*(Literal const& rhs) const;
+		Literal operator/(Literal const& rhs) const;
+		Literal operator%(Literal const& rhs) const;
+		Literal pow(Literal const& rhs) const;
+		bool operator==(Literal const& rhs) const;
+		bool operator<(Literal const& rhs) const;
+		bool operator>(Literal const& rhs) const;
 	};
 }
