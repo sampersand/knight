@@ -43,9 +43,51 @@ string Literal::to_string() const {
 	}, data);
 }
 
-std::shared_ptr<Value const> Literal::parse(std::string_view& view) {
-	(void) view;
-	return nullptr;
+
+SharedValue Literal::parse(std::string_view& view) {
+	char front = view.front();
+	SharedValue ret;
+
+	switch (front) {
+		case 'T':
+			ret = Literal(true);
+			goto keyword_funcs;
+		case 'F':
+			ret = Literal(false);
+			goto keyword_funcs;
+		case 'N':
+		keyword_funcs:
+			do {
+				view.remove_prefix(1);
+			} while (isupper(view.front()));
+			break;
+		default:
+			if (isdigit(front)) {
+				/* todo digit */
+			} else {
+
+			}
+			while (is)
+			break;
+	}
+// 	if (!islower(view.front()) && view.front() != '_') {
+// 		return nullptr;
+// 	}
+
+// 	auto start = view.cbegin();
+
+// 	do {
+// 		view.remove_prefix(1);
+// 	} while (islower(view.front()) || view.front() == '_' || isdigit(view.front()));
+
+// 	std::string ret(start, view.cbegin());
+
+// 	return std::make_shared<Identifier>(Identifier(ret));
+// }
+
+// std::shared_ptr<Value const> Literal::parse(std::string_view& view) {
+// 	(void) view;
+// 	return nullptr;
 }
 
 std::shared_ptr<Value const> Literal::run() const {

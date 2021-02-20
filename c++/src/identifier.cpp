@@ -6,17 +6,29 @@ using namespace kn;
 
 Identifier::Identifier(std::string name) noexcept : name(name) {}
 
-static std::unordered_map<std::string, std::shared_ptr<Value const>> ENVIRONMENT;
+UnknownIdentifier::UnknownIdentifier(std::string ident)
+	: std::runtime_error("invalid identifier given"), ident(ident)
+	{ }
 
-UnknownIdentifier::UnknownIdentifier(std::string ident) : std::runtime_error("invalid identifier given"), ident(ident) {}
+static std::unordered_map<std::string, SharedValue> ENVIRONMENT;
 
-std::shared_ptr<Value const> Identifier::parse(std::string_view& view) {
-	char x = view[0];
-	(void) view;
-	return nullptr;
+SharedValue Identifier::parse(std::string_view& view) {
+	if (!islower(view.front()) && view.front() != '_') {
+		return nullptr;
+	}
+
+	auto start = view.cbegin();
+
+	do {
+		view.remove_prefix(1);
+	} while (islower(view.front()) || view.front() == '_' || isdigit(view.front()));
+
+	std::string ret(start, view.cbegin());
+
+	return std::make_shared<Identifier>(Identifier(ret));
 }
 
-std::shared_ptr<Value const> Identifier::run() const {
+SharedValue Identifier::run() const {
 	if (ENVIRONMENT.count(name) == 0) {
 		throw UnknownIdentifier(name);
 	}
@@ -24,6 +36,6 @@ std::shared_ptr<Value const> Identifier::run() const {
 	return ENVIRONMENT[name];
 }
 
-void Identifier::assign(std::shared_ptr<Value const> value) const {
+void Identifier::assign(SharedValue value) const {
 	ENVIRONMENT.emplace(name, std::move(value));
 }

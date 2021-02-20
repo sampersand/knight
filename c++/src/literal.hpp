@@ -21,7 +21,7 @@ namespace kn {
 		number to_number() const override;
 		string to_string() const override;
 
-		static std::shared_ptr<Value const> parse(std::string_view& view) override;
+		static std::shared_ptr<Value const> parse(std::string_view& view);
 		std::shared_ptr<Value const> run() const override;
 
 		Literal operator+(Literal const& rhs) const;

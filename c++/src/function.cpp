@@ -20,7 +20,9 @@ static inline funcptr_t ptr_for(char name) {
 	}
 }
 
-Function::Function(char name, std::vector<std::shared_ptr<Value>> args) : func(ptr_for(name)), args(args) {
+Function::Function(char name, std::vector<SharedValue const> args) :
+	func(ptr_for(name)), args(args)
+{
 	assert(FUNCTIONS[name].arity == args.size()); // make sure the arity matches.
 }
 
@@ -38,11 +40,11 @@ void Function::register_function(char name, size_t arity, funcptr_t func) {
 }
 
 
-std::shared_ptr<Value> doit(std::vector<std::shared_ptr<Value>>const &) {
+SharedValue doit(std::vector<SharedValue const>const &) {
 	return std::make_shared<Literal>(Literal(rand()));
 }
 
-std::shared_ptr<Value> add(std::vector<std::shared_ptr<Value>> const& ) {
+SharedValue add(std::vector<SharedValue const> const& ) {
 	// return args[0] + args[1];
 	return std::make_shared<Literal>(Literal(rand()));
 }
@@ -51,6 +53,6 @@ void Function::initialize(void) {
 	srand(time(nullptr));
 
 	register_function('P', 0, &doit);
-	// register_function('P', 0, [](std::vector<std::shared_ptr<Value>>&){ return shared_ptr(Literal(rand())); })
+	// register_function('P', 0, [](std::vector<SharedValue>&){ return shared_ptr(Literal(rand())); })
 }
 

@@ -4,16 +4,16 @@
 #include <vector>
 
 namespace kn {
-	using funcptr_t = std::shared_ptr<Value>(*)(std::vector<std::shared_ptr<Value>> const&);
+	using funcptr_t = SharedValue(*)(std::vector<SharedValue const> const&);
 
 	class Function : public Value {
 		funcptr_t const func;
-		std::vector<std::shared_ptr<Value>> const args;
+		std::vector<SharedValue const> const args;
 	public:
-		Function(char name, std::vector<std::shared_ptr<Value>> args);
+		Function(char name, std::vector<SharedValue const> const args);
 
-		static std::shared_ptr<Value const> parse(std::string_view& view) override;
-		std::shared_ptr<Value const> run() const override;
+		SharedValue run() const override;
+		static SharedValue parse(std::string_view& view) override;
 
 		static void register_function(char name, size_t arity, funcptr_t func);
 		static void initialize();
