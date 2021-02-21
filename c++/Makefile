@@ -4,7 +4,7 @@ EXE ?= knight
 
 CXX = g++
 CEXEFLAGS =
-CXXFLAGS = -std=c++17 -Wall -Wextra #-Werror -Wpedantic
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -Wpedantic -Wno-infinite-recursion
 override CXXFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG

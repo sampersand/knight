@@ -5,26 +5,34 @@
 
 using namespace kn;
 
-SharedValue Value::parse(std::string_view& view) {
-	remove_whitespace:
-	switch (view.front()) {
-		case ' ': case '\t': case '\n': case '\r': case '\v': case '\f':
-		case ':':
-		case '(': case ')':
-		case '[': case ']':
-		case '{': case '}':
-			view.remove_prefix(1);
-			goto remove_whitespace;
 
-		case '#':
-			do {
+static void remove_whitespace(std::string_view &view) {
+	while (true) {
+		switch (view.front()) {
+			case ' ': case '\t': case '\n': case '\r': case '\v': case '\f':
+			case ':':
+			case '(': case ')':
+			case '[': case ']':
+			case '{': case '}':
 				view.remove_prefix(1);
-			} while (!view.empty() && view.front() != '\n');
+				continue;
 
-			goto remove_whitespace;
+			case '#':
+				do {
+					view.remove_prefix(1);
+				} while (!view.empty() && view.front() != '\n');
+
+				continue;
+			default:
+				return;
+		}
 	}
+}
 
+SharedValue Value::parse(std::string_view& view) {
 	SharedValue ret;
+
+	remove_whitespace(view):
 
 	if ((ret = Literal::parse(view)) || (ret = Identifier::parse(view)) || (ret = Function::parse(view))) {
 		return ret;
@@ -35,7 +43,7 @@ SharedValue Value::parse(std::string_view& view) {
 	}
 }
 
-SharedValue Value::assign(std::shared_ptr<Value const> value) const {
+SharedValue Value::assign(SharedValue value) const {
 	return Identifier(to_string()).assign(value);
 }
 

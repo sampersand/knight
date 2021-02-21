@@ -12,7 +12,8 @@ UnknownIdentifier::UnknownIdentifier(std::string ident)
 static std::unordered_map<std::string, SharedValue> ENVIRONMENT;
 
 SharedValue Identifier::parse(std::string_view& view) {
-	if (!islower(view.front()) && view.front() != '_') {
+	char front = view.front();
+	if (!std::islower(front) && front != '_') {
 		return nullptr;
 	}
 
@@ -20,7 +21,8 @@ SharedValue Identifier::parse(std::string_view& view) {
 
 	do {
 		view.remove_prefix(1);
-	} while (islower(view.front()) || view.front() == '_' || isdigit(view.front()));
+		front = view.front();
+	} while (std::islower(front) || front == '_' || std::isdigit(front));
 
 	std::string ret(start, view.cbegin());
 

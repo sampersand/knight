@@ -63,7 +63,7 @@ SharedValue Literal::parse(std::string_view& view) {
 		remove_keyword:
 			do {
  				view.remove_prefix(1);
-			} while (isupper(view.front()));
+			} while (std::isupper(view.front()));
 
 			return literal;
 
@@ -85,13 +85,13 @@ SharedValue Literal::parse(std::string_view& view) {
 		}
 
 		default:
-			if (!isdigit(front)) {
+			if (!std::isdigit(front)) {
 				return nullptr;
 			}
 
 			number num = 0;
 
-			for (; isdigit(front = view.front()); view.remove_prefix(1)) {
+			for (; std::isdigit(front = view.front()); view.remove_prefix(1)) {
 				num = num * 10 + (front - '0');
 			}
 
