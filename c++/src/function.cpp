@@ -51,22 +51,25 @@ void Function::register_function(char name, size_t arity, funcptr_t func) {
 	FUNCTIONS.insert(std::make_pair(name, std::make_pair(func, arity)));
 }
 
-#define MAKE_SHARED(x) ((SharedValue) std::make_shared<Literal>(Literal(x)))
+#define MAKE_SHARED(x) ((SharedValue) std::make_shared<Literal>(x))
+#define DECL_FUNC(name, len, body) register_function(name, len, [](args_t const& args) -> SharedValue body);
 
 void Function::initialize(void) {
 	srand(time(NULL));
 
-	register_function('P', 0, [](args_t const&) {
+	register_function('P', 0, [](args_t const&) -> SharedValue {
 		std::string line;
 
 		std::getline(std::cin, line);
 
-		return MAKE_SHARED(line);
+		return std::make_shared<Literal>(line);
 	});
 
 	register_function('R', 0, [](args_t const&) {
 		return MAKE_SHARED((number) rand());
 	});
+
+	DECL_FUNC('B', 1, { return args[0]; });
 
 	register_function('B', 1, [](args_t const& args) {
 		return args[0];
@@ -86,9 +89,8 @@ void Function::initialize(void) {
 		return MAKE_SHARED(kn::Literal()); // TODO
 	});
 
-	register_function('Q', 1, [](args_t const& args) {
+	register_function('Q', 1, [](args_t const& args) -> SharedValue {
 		exit(args[0]->to_number());
-		return MAKE_SHARED(kn::Literal()); // todo: remove this.
 	});
 
 	register_function('!', 1, [](args_t const& args) {

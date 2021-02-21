@@ -32,7 +32,7 @@ static void remove_whitespace(std::string_view &view) {
 SharedValue Value::parse(std::string_view& view) {
 	SharedValue ret;
 
-	remove_whitespace(view):
+	remove_whitespace(view);
 
 	if ((ret = Literal::parse(view)) || (ret = Identifier::parse(view)) || (ret = Function::parse(view))) {
 		return ret;
