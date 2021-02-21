@@ -19,7 +19,7 @@ SharedValue Value::parse(std::string_view& view) {
 		case '#':
 			do {
 				view.remove_prefix(1);
-			} while (!view.end() && view.front() != '\n');
+			} while (!view.empty() && view.front() != '\n');
 
 			goto remove_whitespace;
 	}
@@ -28,6 +28,8 @@ SharedValue Value::parse(std::string_view& view) {
 
 	if ((ret = Literal::parse(view)) || (ret = Identifier::parse(view)) || (ret = Function::parse(view))) {
 		return ret;
+	} else if (view.empty()) {
+		throw std::invalid_argument("nothing to parse");
 	} else {
 		throw std::invalid_argument("invalid character encountered: " + std::to_string(view.front()));
 	}

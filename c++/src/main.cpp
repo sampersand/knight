@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 	initialize();
 
 	try {
-		run("O + 2 5");
+		run(argv[2]);
 	} catch (char const* err) {
 		std::cout << err << std::endl;
 	}

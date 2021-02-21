@@ -114,7 +114,6 @@ void Function::initialize(void) {
 	});
 
 	register_function('+', 2, [](args_t const& args) {
-		std::cout << args.size() << std::endl;
 		return *args[0]->run() + *args[1]->run();
 	});
 

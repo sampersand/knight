@@ -7,8 +7,7 @@ using namespace kn;
 Identifier::Identifier(std::string name) noexcept : name(name) {}
 
 UnknownIdentifier::UnknownIdentifier(std::string ident)
-	: std::runtime_error("invalid identifier given"), ident(ident)
-	{ }
+	: std::runtime_error("unknown identifier given"), ident(ident) { }
 
 static std::unordered_map<std::string, SharedValue> ENVIRONMENT;
 
@@ -39,7 +38,7 @@ SharedValue Identifier::run() const {
 SharedValue Identifier::assign(SharedValue value) const {
 	value = value->run();
 
-	ENVIRONMENT.insert(std::make_pair(name, value));
+	ENVIRONMENT.insert_or_assign(name, value);
 
 	return value;
 }

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "literal.hpp"
 #include <memory>
 #include <inttypes.h>
@@ -45,18 +46,21 @@ string Literal::to_string() const {
 	}, data);
 }
 
+#define MAKE_SHARED(x) (std::make_shared<Literal>(x))
 
 SharedValue Literal::parse(std::string_view& view) {
 	char front = view.front();
 	SharedValue literal;
 
 	switch (front) {
+		case 'N':
+			literal = MAKE_SHARED();
+			goto remove_keyword;
+
 		case 'T':
 		case 'F':
-			literal = std::make_shared<Literal>(front == 'T');
-			// fallthrough
-
-		case 'N':
+			literal = MAKE_SHARED(front == 'T');
+		remove_keyword:
 			do {
  				view.remove_prefix(1);
 			} while (isupper(view.front()));
@@ -69,12 +73,15 @@ SharedValue Literal::parse(std::string_view& view) {
 			auto begin = view.cbegin();
 
 			for(char quote = front; quote != view.front(); view.remove_prefix(1)) {
-				if (view.end()) {
+				if (view.empty()) {
 					throw std::invalid_argument("unmatched quote encountered!");
 				}
 			}
 
-			return std::make_shared<Literal>(string(begin, view.cbegin() - 1));
+			string ret(begin, view.cbegin());
+			view.remove_prefix(1);
+
+			return MAKE_SHARED(ret);
 		}
 
 		default:
@@ -88,7 +95,7 @@ SharedValue Literal::parse(std::string_view& view) {
 				num = num * 10 + (front - '0');
 			}
 
-			return std::make_shared<Literal>(num);
+			return MAKE_SHARED(num);
 		}
 }
 
@@ -99,8 +106,6 @@ SharedValue Literal::run() const {
 inline bool Literal::is_string() const noexcept {
 	return std::holds_alternative<string>(data);
 }
-
-#define MAKE_SHARED(x) (std::make_shared<Literal>(Literal(x)))
 
 SharedValue Literal::operator+(Value const& rhs) const {
 	if (!is_string()) {
@@ -129,7 +134,7 @@ SharedValue Literal::operator*(Value const& rhs) const {
 	}
 
 	string const& str = std::get<string>(data);
-	string ret(str.length() * (size_t) rhs_num, '\0');
+	string ret;
 
 	for (auto i = 0; i < rhs_num; ++i) {
 		ret += str;
