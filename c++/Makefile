@@ -5,10 +5,10 @@ EXE ?= knight
 CXX = g++
 CEXEFLAGS =
 CXXFLAGS = -Wall -Wextra -Werror -Wpedantic -std=c++17
-override CFLAGS += -F$(SRCDIR)
+override CXXFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-override CFLAGS += -g -fsanitize=address
+override CXXFLAGS += -g -fsanitize=address
 else
 CEXEFLAGS += -Wl,-stack_size,1600000 -O2 -DNDEBUG
 endif

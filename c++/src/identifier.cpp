@@ -36,6 +36,10 @@ SharedValue Identifier::run() const {
 	return ENVIRONMENT[name];
 }
 
-void Identifier::assign(SharedValue value) const {
-	ENVIRONMENT.emplace(name, std::move(value));
+SharedValue Identifier::assign(SharedValue value) const {
+	value = value->run();
+
+	ENVIRONMENT.insert(std::make_pair(name, value));
+
+	return value;
 }

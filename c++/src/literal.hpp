@@ -10,7 +10,7 @@ namespace kn {
 		std::variant<null, bool, number, string> const data;
 
 		bool is_string() const noexcept;
-		int cmp(Literal const& rhs) const;
+		int cmp(Value const& rhs) const;
 	public:
 		Literal() noexcept;
 		Literal(bool boolean) noexcept;
@@ -21,17 +21,17 @@ namespace kn {
 		number to_number() const override;
 		string to_string() const override;
 
-		static std::shared_ptr<Value const> parse(std::string_view& view);
-		std::shared_ptr<Value const> run() const override;
+		static SharedValue parse(std::string_view& view);
+		SharedValue run() const override;
 
-		Literal operator+(Literal const& rhs) const;
-		Literal operator-(Literal const& rhs) const;
-		Literal operator*(Literal const& rhs) const;
-		Literal operator/(Literal const& rhs) const;
-		Literal operator%(Literal const& rhs) const;
-		Literal pow(Literal const& rhs) const;
-		bool operator==(Literal const& rhs) const;
-		bool operator<(Literal const& rhs) const;
-		bool operator>(Literal const& rhs) const;
+		SharedValue operator+(Value const& rhs) const override;
+		SharedValue operator-(Value const& rhs) const override;
+		SharedValue operator*(Value const& rhs) const override;
+		SharedValue operator/(Value const& rhs) const override;
+		SharedValue operator%(Value const& rhs) const override;
+		SharedValue pow(Value const& rhs) const override;
+		bool operator==(Value const& rhs) const override;
+		bool operator<(Value const& rhs) const override;
+		bool operator>(Value const& rhs) const override;
 	};
 }

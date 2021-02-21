@@ -1,5 +1,6 @@
 #include "literal.hpp"
 #include <memory>
+#include <inttypes.h>
 
 using namespace kn;
 
@@ -7,6 +8,7 @@ Literal::Literal() noexcept : data(null {}) {}
 Literal::Literal(bool boolean) noexcept : data(boolean) {}
 Literal::Literal(number num) noexcept : data(num) {}
 Literal::Literal(string str) noexcept : data(str) {}
+
 
 template <typename... Fns>
 struct overload : Fns... {
@@ -27,10 +29,10 @@ bool Literal::to_boolean() const {
 
 number Literal::to_number() const {
 	return std::visit(overload {
-		[](null const&) { return 0; },
+		[](null const&) { return (number) 0; },
 		[](bool const& boolean) { return (number) boolean; },
 		[](number const& num) { return num; },
-		[](string const& str) { return std::stoi(str); }
+		[](string const& str) { return std::stoll(str); }
 	}, data);
 }
 
@@ -46,51 +48,51 @@ string Literal::to_string() const {
 
 SharedValue Literal::parse(std::string_view& view) {
 	char front = view.front();
-	SharedValue ret;
+	SharedValue literal;
 
 	switch (front) {
 		case 'T':
-			ret = Literal(true);
-			goto keyword_funcs;
 		case 'F':
-			ret = Literal(false);
-			goto keyword_funcs;
+			literal = std::make_shared<Literal>(front == 'T');
+			// fallthrough
+
 		case 'N':
-		keyword_funcs:
 			do {
-				view.remove_prefix(1);
+ 				view.remove_prefix(1);
 			} while (isupper(view.front()));
-			break;
-		default:
-			if (isdigit(front)) {
-				/* todo digit */
-			} else {
 
+			return literal;
+
+		case '\'':
+		case '\"': {
+			view.remove_prefix(1);
+			auto begin = view.cbegin();
+
+			for(char quote = front; quote != view.front(); view.remove_prefix(1)) {
+				if (view.end()) {
+					throw std::invalid_argument("unmatched quote encountered!");
+				}
 			}
-			while (is)
-			break;
-	}
-// 	if (!islower(view.front()) && view.front() != '_') {
-// 		return nullptr;
-// 	}
 
-// 	auto start = view.cbegin();
+			return std::make_shared<Literal>(string(begin, view.cbegin() - 1));
+		}
 
-// 	do {
-// 		view.remove_prefix(1);
-// 	} while (islower(view.front()) || view.front() == '_' || isdigit(view.front()));
+		default:
+			if (!isdigit(front)) {
+				return nullptr;
+			}
 
-// 	std::string ret(start, view.cbegin());
+			number num = 0;
 
-// 	return std::make_shared<Identifier>(Identifier(ret));
-// }
+			for (; isdigit(front = view.front()); view.remove_prefix(1)) {
+				num = num * 10 + (front - '0');
+			}
 
-// std::shared_ptr<Value const> Literal::parse(std::string_view& view) {
-// 	(void) view;
-// 	return nullptr;
+			return std::make_shared<Literal>(num);
+		}
 }
 
-std::shared_ptr<Value const> Literal::run() const {
+SharedValue Literal::run() const {
 	return shared_from_this();
 }
 
@@ -98,24 +100,26 @@ inline bool Literal::is_string() const noexcept {
 	return std::holds_alternative<string>(data);
 }
 
-Literal Literal::operator+(Literal const& rhs) const {
+#define MAKE_SHARED(x) (std::make_shared<Literal>(Literal(x)))
+
+SharedValue Literal::operator+(Value const& rhs) const {
 	if (!is_string()) {
-		return Literal(to_number() + rhs.to_number());
+		return MAKE_SHARED(to_number() + rhs.to_number());
 	}
 
 	string ret(std::get<string>(data));
 	ret += rhs.to_string();
 
-	return ret;
+	return MAKE_SHARED(ret);
 }
 
-Literal Literal::operator-(Literal const& rhs) const {
-	return to_number() - rhs.to_number();
+SharedValue Literal::operator-(Value const& rhs) const {
+	return MAKE_SHARED(to_number() - rhs.to_number());
 }
 
-Literal Literal::operator*(Literal const& rhs) const {
+SharedValue Literal::operator*(Value const& rhs) const {
 	if (!is_string()) {
-		return to_number() * rhs.to_number();
+		return MAKE_SHARED(to_number() * rhs.to_number());
 	}
 
 	number rhs_num = rhs.to_number();
@@ -131,30 +135,30 @@ Literal Literal::operator*(Literal const& rhs) const {
 		ret += str;
 	}
 
-	return ret;
+	return MAKE_SHARED(ret);
 }
 
-Literal Literal::operator/(Literal const& rhs) const {
+SharedValue Literal::operator/(Value const& rhs) const {
 	auto rhs_num = rhs.to_number();
 
 	if (rhs_num == 0) {
 		throw std::domain_error("cannot divide by zero!\n");
 	}
 
-	return to_number() / rhs_num;
+	return MAKE_SHARED(to_number() / rhs_num);
 }
 
-Literal Literal::operator%(Literal const& rhs) const {
+SharedValue Literal::operator%(Value const& rhs) const {
 	auto rhs_num = rhs.to_number();
 
 	if (rhs_num == 0) {
 		throw std::domain_error("cannot modulo by zero!\n");
 	}
 
-	return to_number() % rhs_num;
+	return MAKE_SHARED(to_number() % rhs_num);
 }
 
-Literal Literal::pow(Literal const& rhs) const {
+SharedValue Literal::pow(Value const& rhs) const {
 	number ret = 1;
 	number base = to_number();
 	number exp = rhs.to_number();
@@ -163,23 +167,25 @@ Literal Literal::pow(Literal const& rhs) const {
 		ret *= base;
 	}
 
-	return ret;
+	return MAKE_SHARED(ret);
 }
 
-bool Literal::operator==(Literal const& rhs) const {
-	if (data.index() != rhs.data.index()) {
+bool Literal::operator==(Value const& rhs_value) const {
+	auto rhs = dynamic_cast<Literal const*>(&rhs_value);
+
+	if (!rhs || data.index() != rhs->data.index()) {
 		return false;
 	}
 
 	return std::visit(overload {
 		[](null const&) { return true; },
-		[&](bool const& boolean) { return boolean == std::get<bool>(rhs.data); },
-		[&](number const& num) { return num == std::get<number>(rhs.data); },
-		[&](string const& str) { return str == std::get<string>(rhs.data); }
+		[&](bool const& boolean) { return boolean == std::get<bool>(rhs->data); },
+		[&](number const& num) { return num == std::get<number>(rhs->data); },
+		[&](string const& str) { return str == std::get<string>(rhs->data); }
 	}, data);
 }
 
-int Literal::cmp(Literal const& rhs) const {
+int Literal::cmp(Value const& rhs) const {
 	if (!is_string()) {
 		auto this_num = to_number();
 		auto rhs_num = rhs.to_number();
@@ -199,10 +205,10 @@ int Literal::cmp(Literal const& rhs) const {
 	return pair.first < pair.second ? -1 : pair.first > pair.second ? 1 : 0;
 }
 
-bool Literal::operator<(Literal const& rhs) const {
+bool Literal::operator<(Value const& rhs) const {
 	return cmp(rhs) < 0;
 }
 
-bool Literal::operator>(Literal const& rhs) const {
+bool Literal::operator>(Value const& rhs) const {
 	return cmp(rhs) > 0;
 }

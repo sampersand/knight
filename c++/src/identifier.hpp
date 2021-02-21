@@ -13,11 +13,12 @@ namespace kn {
 	class Identifier : public Value {
 		std::string const name;
 	public:
-		Identifier(std::string name) noexcept;
+		explicit Identifier(std::string name) noexcept;
+		Identifier() = delete;
 
 		static SharedValue parse(std::string_view& view);
 
 		SharedValue run() const override;
-		void assign(SharedValue value) const override;
+		SharedValue assign(SharedValue value) const override;
 	};
 }

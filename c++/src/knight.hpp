@@ -1,13 +1,12 @@
 #include "value.hpp"
 
 namespace kn {
-	shared_value
+	void initialize();
 
-	std::string str("abci123AA1");
-	
+	template<typename T>
+	SharedValue run(T input) {
+		std::string_view view(input);
 
-	auto begin = str.cbegin();
-	auto ident = kn::Identifier::parse1(begin, str.cend());
-
-	std::cout << ((kn::Identifier *) &*ident)->name << "[" << *begin << std::endl;
+		return Value::parse(view)->run();
+	}
 }
