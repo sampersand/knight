@@ -45,5 +45,6 @@ void kn_string_free(struct kn_string_t *string) {
 	// We own the string now, so we're free to remove its constness.
 	if (string->rc != NULL && --(*(string->rc)) == 0) {
 		free((char *) string->str);
+		free(string->rc);
 	}
 }
