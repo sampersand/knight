@@ -23,4 +23,9 @@ sub run {
 	Kn::Environment->get(${shift()});
 }
 
+# Dumps the class's info. Used for debugging.
+sub dump {
+	'identifier(' . shift . ')';
+}
+
 1;

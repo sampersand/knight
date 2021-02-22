@@ -25,4 +25,9 @@ sub parse {
 	$class->new();
 }
 
+# Dumps the class's info. Used for debugging.
+sub dump {
+	'null()';
+}
+
 1;

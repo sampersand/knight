@@ -1,5 +1,4 @@
 #!/bin/sh
-#!/usr/local/bin/shellcheck -ssh
 
 die () { echo "$@" >&2; exit 1; }
 
@@ -369,7 +368,7 @@ EOS
 			then
 				to_string
 
-				if [ "$arg0" \< "$result" ]
+				if [ "1" -e "$(awk 'BEGIN{ print(a < b); }' a="$arg0" b="$result")" ]
 				then
 					result=fT
 				else
@@ -403,7 +402,7 @@ EOS
 			then
 				to_string
 
-				if [ "x$arg0" \> "x$result" ]
+				if [ "1" -e "$(awk 'BEGIN{ print(a > b); }' a="$arg0" b="$result")" ]
 				then
 					result=fT
 				else

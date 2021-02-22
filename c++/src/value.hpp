@@ -1,33 +1,24 @@
 #pragma once
 
-#include <cinttypes>
-#include <string>
 #include <variant>
-
+#include <string>
 
 namespace kn {
-	using integer_t = intmax_t;
+	using number = int;
+	using string = std::string;
 
-	class value {
-		std::variant<bool, integer_t, std::string> data;
+	class Literal;
+
+	class Value {
 	public:
-		value(bool boolean);
-		value(integer_t integer);
-		value(std::string string);
+		virtual ~Value() = default;
 
-		bool to_boolean() const;
-		integer_t to_integer() const;
-		std::string to_string() const;
+		virtual bool to_boolean() const = 0;
+		virtual number to_number() const = 0;
+		virtual string to_string() const = 0;
 
-		value operator+(const value& rhs) const;
-		value operator-(const value& rhs) const;
-		value operator*(const value& rhs) const;
-		value operator/(const value& rhs) const;
-		value operator%(const value& rhs) const;
-		value pow(const value& rhs) const;
-		bool operator!() const;
-		bool operator<(const value& rhs) const;
-		bool operator>(const value& rhs) const;
-		bool operator==(const value& rhs) const;
+		virtual Literal run() const = 0;
+
+		virtual void assign(std::shared_ptr<Value> value) const;
 	};
 }
