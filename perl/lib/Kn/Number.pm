@@ -21,4 +21,9 @@ sub parse {
 	$class->new(${^MATCH});
 }
 
+# Dumps the class's info. Used for debugging.
+sub dump {
+	"number(${shift()})";
+}
+
 1;

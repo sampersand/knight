@@ -42,4 +42,9 @@ sub parse {
 	$class->new($2)
 }
 
+# Dumps the class's info. Used for debugging.
+sub dump {
+	"string(${shift()})";
+}
+
 1;

@@ -43,6 +43,11 @@ __PACKAGE__->register('R', 0, sub {
 });
 
 # Evaluates a string as Knight code.
+__PACKAGE__->register('D', 1, sub {
+	print shift->dump();
+});
+
+# Evaluates a string as Knight code.
 __PACKAGE__->register('E', 1, sub {
 	Kn->run("$_[0]");
 });
