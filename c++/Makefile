@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -Wpedantic -Wno-infinite-recursion
 override CXXFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-override CXXFLAGS += -g -fsanitize=address
+override CXXFLAGS += -g -fsanitize=address,undefined
 else
 CEXEFLAGS += -Wl,-stack_size,1600000 -O2 -DNDEBUG
 endif

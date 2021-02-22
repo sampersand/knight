@@ -5,9 +5,9 @@
 
 using namespace kn;
 
-
 static void remove_whitespace(std::string_view &view) {
 	while (true) {
+		// note that in Knight, all forms of parens and `:` are considered whitespace.
 		switch (view.front()) {
 			case ' ': case '\t': case '\n': case '\r': case '\v': case '\f':
 			case ':':

@@ -5,12 +5,14 @@
 
 #include <unordered_map>
 #include <iostream>
+#include <cstdio>
 
 using namespace kn;
+
+// The list of all _functions_
 static std::unordered_map<char, std::pair<funcptr_t, size_t>> FUNCTIONS;
 
-Function::Function(funcptr_t func, args_t args) : func(func), args(args) {
-}
+Function::Function(funcptr_t func, args_t args) : func(func), args(args) { }
 
 SharedValue Function::run() const {
 	return func(args);
@@ -23,6 +25,7 @@ bool Function::operator==(Value const& rhs) const {
 SharedValue Function::parse(std::string_view& view) {
 	char front = view.front();
 
+	// if the first character isn't a valid function identifier, then just return early.
 	if (FUNCTIONS.count(front) == 0) {
 		return nullptr;
 	}
@@ -38,8 +41,8 @@ SharedValue Function::parse(std::string_view& view) {
 		}
 	}
 
+	// parse the arguments out.
 	args_t args;
-
 	for(size_t i = 0; i < func_pair.second; ++i) {
 		args.push_back(Value::parse(view));
 	}
@@ -51,62 +54,110 @@ void Function::register_function(char name, size_t arity, funcptr_t func) {
 	FUNCTIONS.insert(std::make_pair(name, std::make_pair(func, arity)));
 }
 
-#define MAKE_SHARED(x) ((SharedValue) std::make_shared<Literal>(x))
 #define DECL_FUNC(name, len, body) register_function(name, len, [](args_t const& args) -> SharedValue body);
 
 void Function::initialize(void) {
-	srand(time(NULL));
+	srand(time(NULL)); // seed `R`'s random number.
 
-	register_function('P', 0, [](args_t const&) -> SharedValue {
-		std::string line;
+	// Prompts for a single line from stdin.
+	DECL_FUNC('P', 0, {
+		(void) args;
 
+		string line;
 		std::getline(std::cin, line);
 
 		return std::make_shared<Literal>(line);
 	});
 
-	register_function('R', 0, [](args_t const&) {
-		return MAKE_SHARED((number) rand());
+	// Gets a random number.
+	DECL_FUNC('R', 0, {
+		(void) args;
+
+		return std::make_shared<Literal>((number) rand());
 	});
 
-	DECL_FUNC('B', 1, { return args[0]; });
-
-	register_function('B', 1, [](args_t const& args) {
+	// Creates a block of code.
+	DECL_FUNC('B', 1, {
 		return args[0];
 	});
 
-	register_function('C', 1, [](args_t const& args) {
+	// Calls a block of code.
+	DECL_FUNC('C', 1, {
 		return args[0]->run()->run();
 	});
 
-	register_function('E', 1, [](args_t const& args) {
+	// Evaluates the argument as Knight source code.
+	DECL_FUNC('E', 1, {
 		return kn::run(args[0]->to_string());
 	});
 
-	register_function('`', 1, [](args_t const& args) {
-		if (true) throw "todo: exec";
-		(void) args;
-		return MAKE_SHARED(kn::Literal()); // TODO
+	// Runs a shell command, returns the stdout of the command.
+	// effectively copied my C impl...
+	DECL_FUNC('`', 1, {
+		auto cmd = args[0]->to_string();
+
+		FILE *stream = popen(cmd.c_str(), "r");
+
+		if (stream == NULL) {
+			throw Error("unable to execute command.");
+		}
+
+		size_t cap = 2048;
+		size_t length = 0;
+		size_t tmp;
+
+		char *result = (char *) malloc(cap);
+		if (result == NULL) {
+			throw Error("cant malloc");
+		}
+
+		while (0 != (tmp = fread((char *) (((size_t) result) + length), 1, cap - length, stream))) {
+			length += tmp;
+			if (length == cap) {
+				cap *= 2;
+				result = (char *) realloc(result, cap);
+				if (result == NULL) {
+					throw Error("cannot realloc");
+				}
+			}
+		}
+
+		// ignore any errors with the es
+		if (ferror(stream)) {
+			throw Error("unable to read command stream");
+		}
+
+		if (pclose(stream) == -1) {
+			throw Error("unable to close command stream.");
+		}
+
+		return std::make_shared<Literal>(string(result));
 	});
 
-	register_function('Q', 1, [](args_t const& args) -> SharedValue {
+	// Stops the program with the given status code.
+	DECL_FUNC('Q', 1, {
 		exit(args[0]->to_number());
 	});
 
-	register_function('!', 1, [](args_t const& args) {
-		return MAKE_SHARED((bool) !args[0]->to_boolean());
+	// Logical negation of its argument.
+	DECL_FUNC('!', 1, {
+		return std::make_shared<Literal>((bool) !args[0]->to_boolean());
 	});
 
-	register_function('L', 1, [](args_t const& args) {
-		return MAKE_SHARED((number) args[0]->to_string().length());
+	// Returns the length of the argument, when converted to a string.
+	DECL_FUNC('L', 1, {
+		return std::make_shared<Literal>((number) args[0]->to_string().length());
 	});
 
-	register_function('O', 1, [](args_t const& args) {
+	// Runs the value, then converts it to a string and prints it. The execution result is returned.
+	//
+	// If the string ends with a backslash, its removed before printing. Otherwise, a newline is added.
+	DECL_FUNC('O', 1, {
 		auto value = args[0]->run();
 		auto str = value->to_string();
 
 		if (!str.empty() && str.back() == '\\') {
-			str.pop_back();
+			str.pop_back(); // delete the trailing newline
 
 			std::cout << str;
 		} else {
@@ -116,53 +167,82 @@ void Function::initialize(void) {
 		return value;
 	});
 
-	register_function('+', 2, [](args_t const& args) {
-		return *args[0]->run() + *args[1]->run();
+	// Adds two values together.
+	DECL_FUNC('+', 2, {
+		return *args[0] + *args[1];
 	});
 
-	register_function('-', 2, [](args_t const& args) {
-		return *args[0]->run() - *args[1]->run();
+	// Subtracts the second value from the first.
+	DECL_FUNC('-', 2, {
+		return *args[0] - *args[1];
 	});
 
-	register_function('*', 2, [](args_t const& args) {
-		return *args[0]->run() * *args[1]->run();
+	// Multiplies the two values together.
+	DECL_FUNC('*', 2, {
+		return *args[0] * *args[1];
 	});
 
-	register_function('/', 2, [](args_t const& args) {
-		return *args[0]->run() / *args[1]->run();
+	// Divides the first value by the second.
+	DECL_FUNC('/', 2, {
+		return *args[0] / *args[1];
 	});
 
-	register_function('%', 2, [](args_t const& args) {
-		return *args[0]->run() % *args[1]->run();
+	// Modulos the first value by the second.
+	DECL_FUNC('%', 2, {
+		return *args[0] % *args[1];
 	});
 
-	register_function('^', 2, [](args_t const& args) {
-		return args[0]->run()->pow(*args[1]->run());
+	// Raises the first value to the power of the second.
+	DECL_FUNC('^', 2, {
+		return args[0]->pow(*args[1]);
 	});
 
-	register_function('?', 2, [](args_t const& args) {
-		return MAKE_SHARED(*args[0]->run() == *args[1]->run());
+	// Checks to see if the two values are equal.
+	DECL_FUNC('?', 2, {
+		return std::make_shared<Literal>(*args[0] == *args[1]);
+	});	
+
+	// Checks to see if the first value is less than the second.
+	DECL_FUNC('<', 2, {
+		return std::make_shared<Literal>(*args[0] < *args[1]);
 	});
 
-	register_function('<', 2, [](args_t const& args) {
-		return MAKE_SHARED(*args[0]->run() <  *args[1]->run());
+	// Checks to see if the first value is greater than the second.
+	DECL_FUNC('>', 2, {
+		return std::make_shared<Literal>(*args[0] > *args[1]);
 	});
 
-	register_function('>', 2, [](args_t const& args) {
-		return MAKE_SHARED(*args[0]->run() >  *args[1]->run());
+	// Evaluates the first value, returning it if it's falsey. Otherwise evaluates and returns the second.
+	DECL_FUNC('&', 2, {
+		auto lhs = args[0]->run();
+
+		return lhs->to_boolean() ? args[1]->run() : lhs;
 	});
 
-	register_function(';', 2, [](args_t const& args) {
+	// Evaluates the first value, returning it if it's truthy. Otherwise evaluates and returns the second.
+	DECL_FUNC('|', 2, {
+		auto lhs = args[0]->run();
+
+		return lhs->to_boolean() ? lhs : args[1]->run();
+	});
+
+	// Runs the first value, then runs the second and returns it.
+	DECL_FUNC(';', 2, {
 		args[0]->run();
+
 		return args[1]->run();
 	});
 
-	register_function('=', 2, [](args_t const& args) {
+	// Assigns the second value to the first.
+	DECL_FUNC('=', 2, {
 		return args[0]->assign(args[1]);
 	});
 
-	register_function('W', 2, [](args_t const& args) {
-		auto ret = MAKE_SHARED(kn::Literal());
+	// Evaluates the second value while the first one is truthy.
+	//
+	// The last value the body returned will be returned. If the body never ran, null will be returned.
+	DECL_FUNC('W', 2, {
+		SharedValue ret = std::make_shared<Literal>();
 
 		while (args[0]->to_boolean()) {
 			ret = args[1]->run();
@@ -171,31 +251,29 @@ void Function::initialize(void) {
 		return ret;
 	});
 
-	register_function('&', 2, [](args_t const& args) {
-		auto lhs = args[0]->run();
-
-		return lhs->to_boolean() ? args[1]->run() : lhs;
-	});
-
-	register_function('|', 2, [](args_t const& args) {
-		auto lhs = args[0]->run();
-
-		return lhs->to_boolean() ? lhs : args[1]->run();
-	});
-
-	register_function('I', 3, [](args_t const& args) {
+	// Runs the second value if the first is truthy. Otherwise, runs the third value.
+	DECL_FUNC('I', 3, {
 		return args[0]->to_boolean() ? args[1]->run() : args[2]->run();
 	});
 
-	register_function('G', 3, [](args_t const& args) {
-		throw "todo: get";
-		(void) args;
-		return MAKE_SHARED(kn::Literal()); // todo: remove this.
+	// Returns a substring of the first value, with the second value as the start index and the third as the length.
+	//
+	// If the length is out of bounds, it's assumed to be the string length.
+	DECL_FUNC('G', 3, {
+		auto str = args[0]->to_string();
+		auto start = args[1]->to_number();
+		auto length = args[2]->to_number();
+		return std::make_shared<Literal>(str.substr(start, length));
 	});
 
-	register_function('S', 4, [](args_t const& args) {
-		throw "todo: set";
-		(void) args;
-		return MAKE_SHARED(kn::Literal()); // todo: remove this.
+	// Returns a new string with first string's range `[second, second+third)` replaced by the fourth value.
+	DECL_FUNC('S', 4, {
+		auto str = args[0]->to_string();
+		auto start = args[1]->to_number();
+		auto length = args[2]->to_number();
+		auto repl = args[3]->to_string();
+
+		// this could be made more efficient by preallocating memory
+		return std::make_shared<Literal>(str.substr(0, start) + repl + str.substr(start + length));
 	});
 }

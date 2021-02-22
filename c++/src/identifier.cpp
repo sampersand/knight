@@ -6,13 +6,12 @@ using namespace kn;
 
 Identifier::Identifier(std::string name) noexcept : name(name) {}
 
-UnknownIdentifier::UnknownIdentifier(std::string ident)
-	: std::runtime_error("unknown identifier given"), ident(ident) { }
-
+// The list of all known variables.
 static std::unordered_map<std::string, SharedValue> ENVIRONMENT;
 
 SharedValue Identifier::parse(std::string_view& view) {
 	char front = view.front();
+
 	if (!std::islower(front) && front != '_') {
 		return nullptr;
 	}
@@ -31,7 +30,7 @@ SharedValue Identifier::parse(std::string_view& view) {
 
 SharedValue Identifier::run() const {
 	if (ENVIRONMENT.count(name) == 0) {
-		throw UnknownIdentifier(name);
+		throw Error("unknown identifier encountered: " + name);
 	}
 
 	return ENVIRONMENT[name];

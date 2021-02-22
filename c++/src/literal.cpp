@@ -10,43 +10,38 @@ Literal::Literal(bool boolean) noexcept : data(boolean) {}
 Literal::Literal(number num) noexcept : data(num) {}
 Literal::Literal(string str) noexcept : data(str) {}
 
-
 template <typename... Fns>
-struct overload : Fns... {
-  using Fns::operator()...;
-};
+struct overload : Fns... { using Fns::operator()...; };
 
 template <typename... Fns>
 overload(Fns...) -> overload<Fns...>;
 
 bool Literal::to_boolean() const {
 	return std::visit(overload {
-		[](null const&) { return false; },
-		[](bool const& boolean) { return boolean; },
-		[](number const& num) { return num != 0; },
+		[](null) { return false; },
+		[](bool boolean) { return boolean; },
+		[](number num) { return num != 0; },
 		[](string const& str) { return str.length() != 0; }
 	}, data);
 }
 
 number Literal::to_number() const {
 	return std::visit(overload {
-		[](null const&) { return (number) 0; },
-		[](bool const& boolean) { return (number) boolean; },
-		[](number const& num) { return num; },
+		[](null) { return (number) 0; },
+		[](bool boolean) { return (number) boolean; },
+		[](number num) { return num; },
 		[](string const& str) { return std::stoll(str); }
 	}, data);
 }
 
 string Literal::to_string() const {
 	return std::visit(overload {
-		[](null const&) { return string("null"); },
-		[](bool const& boolean) { return string(boolean ? "true" : "false"); },
-		[](number const& num) { return std::to_string(num); },
+		[](null) { return string("null"); },
+		[](bool boolean) { return string(boolean ? "true" : "false"); },
+		[](number num) { return std::to_string(num); },
 		[](string const& str) { return str; }
 	}, data);
 }
-
-#define MAKE_SHARED(x) (std::make_shared<Literal>(x))
 
 SharedValue Literal::parse(std::string_view& view) {
 	char front = view.front();
@@ -54,12 +49,12 @@ SharedValue Literal::parse(std::string_view& view) {
 
 	switch (front) {
 		case 'N':
-			literal = MAKE_SHARED();
+			literal = std::make_shared<Literal>();
 			goto remove_keyword;
 
 		case 'T':
 		case 'F':
-			literal = MAKE_SHARED(front == 'T');
+			literal = std::make_shared<Literal>(front == 'T');
 		remove_keyword:
 			do {
  				view.remove_prefix(1);
@@ -81,7 +76,7 @@ SharedValue Literal::parse(std::string_view& view) {
 			string ret(begin, view.cbegin());
 			view.remove_prefix(1);
 
-			return MAKE_SHARED(ret);
+			return std::make_shared<Literal>(ret);
 		}
 
 		default:
@@ -95,7 +90,7 @@ SharedValue Literal::parse(std::string_view& view) {
 				num = num * 10 + (front - '0');
 			}
 
-			return MAKE_SHARED(num);
+			return std::make_shared<Literal>(num);
 		}
 }
 
@@ -103,34 +98,34 @@ SharedValue Literal::run() const {
 	return shared_from_this();
 }
 
-inline bool Literal::is_string() const noexcept {
+constexpr bool Literal::is_string() const noexcept {
 	return std::holds_alternative<string>(data);
 }
 
 SharedValue Literal::operator+(Value const& rhs) const {
 	if (!is_string()) {
-		return MAKE_SHARED(to_number() + rhs.to_number());
+		return std::make_shared<Literal>(to_number() + rhs.to_number());
 	}
 
 	string ret(std::get<string>(data));
 	ret += rhs.to_string();
 
-	return MAKE_SHARED(ret);
+	return std::make_shared<Literal>(ret);
 }
 
 SharedValue Literal::operator-(Value const& rhs) const {
-	return MAKE_SHARED(to_number() - rhs.to_number());
+	return std::make_shared<Literal>(to_number() - rhs.to_number());
 }
 
 SharedValue Literal::operator*(Value const& rhs) const {
 	if (!is_string()) {
-		return MAKE_SHARED(to_number() * rhs.to_number());
+		return std::make_shared<Literal>(to_number() * rhs.to_number());
 	}
 
 	number rhs_num = rhs.to_number();
 
 	if (rhs_num < 0) {
-		throw std::invalid_argument("cannot duplicate by a negative number");
+		throw Error("cannot duplicate by a negative number");
 	}
 
 	string const& str = std::get<string>(data);
@@ -140,27 +135,27 @@ SharedValue Literal::operator*(Value const& rhs) const {
 		ret += str;
 	}
 
-	return MAKE_SHARED(ret);
+	return std::make_shared<Literal>(ret);
 }
 
 SharedValue Literal::operator/(Value const& rhs) const {
 	auto rhs_num = rhs.to_number();
 
 	if (rhs_num == 0) {
-		throw std::domain_error("cannot divide by zero!\n");
+		throw Error("cannot divide by zero!\n");
 	}
 
-	return MAKE_SHARED(to_number() / rhs_num);
+	return std::make_shared<Literal>(to_number() / rhs_num);
 }
 
 SharedValue Literal::operator%(Value const& rhs) const {
 	auto rhs_num = rhs.to_number();
 
 	if (rhs_num == 0) {
-		throw std::domain_error("cannot modulo by zero!\n");
+		throw Error("cannot modulo by zero!\n");
 	}
 
-	return MAKE_SHARED(to_number() % rhs_num);
+	return std::make_shared<Literal>(to_number() % rhs_num);
 }
 
 SharedValue Literal::pow(Value const& rhs) const {
@@ -172,7 +167,7 @@ SharedValue Literal::pow(Value const& rhs) const {
 		ret *= base;
 	}
 
-	return MAKE_SHARED(ret);
+	return std::make_shared<Literal>(ret);
 }
 
 bool Literal::operator==(Value const& rhs_value) const {
@@ -183,10 +178,10 @@ bool Literal::operator==(Value const& rhs_value) const {
 	}
 
 	return std::visit(overload {
-		[](null const&) { return true; },
-		[&](bool const& boolean) { return boolean == std::get<bool>(rhs->data); },
-		[&](number const& num) { return num == std::get<number>(rhs->data); },
-		[&](string const& str) { return str == std::get<string>(rhs->data); }
+		[](null) { return true; },
+		[=](bool boolean) { return boolean == std::get<bool>(rhs->data); },
+		[=](number num) { return num == std::get<number>(rhs->data); },
+		[=](string const& str) { return str == std::get<string>(rhs->data); }
 	}, data);
 }
 
