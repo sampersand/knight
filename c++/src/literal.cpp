@@ -197,12 +197,13 @@ int Literal::cmp(Value const& rhs) const {
 	string rhs_string = rhs.to_string();
 
 
-	auto pair = std::mismatch(
-		this_string.cbegin(), this_string.cend(),
-		rhs_string.cbegin(), rhs_string.cend()
-	);
+	return this_string < rhs_string ? -1 : this_string > rhs_string ? 1 : 0;
+	// auto pair = std::mismatch(
+	// 	this_string.cbegin(), this_string.cend(),
+	// 	rhs_string.cbegin(), rhs_string.cend()
+	// );
 
-	return pair.first < pair.second ? -1 : pair.first > pair.second ? 1 : 0;
+	// return pair.first < pair.second ? -1 : pair.first > pair.second ? 1 : 0;
 }
 
 bool Literal::operator<(Value const& rhs) const {

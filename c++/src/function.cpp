@@ -263,6 +263,10 @@ void Function::initialize(void) {
 		auto str = args[0]->to_string();
 		auto start = args[1]->to_number();
 		auto length = args[2]->to_number();
+
+		if (start >= (number) str.length()) {
+			return std::make_shared<Literal>(string());
+		}
 		return std::make_shared<Literal>(str.substr(start, length));
 	});
 
