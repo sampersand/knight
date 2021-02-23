@@ -2,9 +2,7 @@ require 'minitest'
 require 'minitest/spec'
 
 describe 'String' do
-	before do
-		extend $current_instance
-	end
+	include Kn::Test::Shared
 
 	describe 'conversions' do
 		it 'is falsey when empty' do

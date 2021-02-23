@@ -51,7 +51,7 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	"string(${shift()})";
+	"String(${shift()})";
 }
 
 1;

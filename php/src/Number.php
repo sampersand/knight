@@ -79,7 +79,7 @@ class Number extends Value
 	 **/
 	public function dump(): string
 	{
-		return "number($this)";
+		return "Number($this)";
 	}
 
 	/**

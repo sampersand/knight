@@ -88,7 +88,7 @@ class Str extends Value
 	 **/
 	public function dump(): string
 	{
-		return "string($this)";
+		return "String($this->data)";
 	}
 
 	/**

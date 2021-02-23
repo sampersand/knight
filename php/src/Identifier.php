@@ -115,7 +115,7 @@ class Identifier extends Value
 	 **/
 	public function dump(): string
 	{
-		return "identifier($this->data)";
+		return "Identifier($this->data)";
 	}
 
 	/**

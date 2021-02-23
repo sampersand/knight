@@ -1,11 +1,10 @@
 require 'minitest'
 require 'minitest/spec'
 require 'minitest/autorun'
+require_relative 'shared'
 
 describe 'String' do
-	before do
-		extend $current_instance
-	end
+	include Kn::Test::Shared
 
 	describe 'conversions' do
 		# Blocks cannot be converted to anything

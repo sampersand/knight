@@ -34,7 +34,7 @@ sub cmp {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	'null()';
+	'Null()';
 }
 
 1;

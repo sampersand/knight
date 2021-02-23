@@ -73,7 +73,7 @@ class Boolean extends Value
 	 **/
 	public function dump(): string
 	{
-		return "boolean($this)";
+		return "Boolean($this)";
 	}
 
 	/**

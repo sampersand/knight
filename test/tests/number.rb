@@ -1,10 +1,9 @@
 require 'minitest'
 require 'minitest/spec'
+require_relative 'shared'
 
 describe 'Numbers' do
-	before do
-		extend $current_instance
-	end
+	include Kn::Test::Shared
 
 	describe 'conversions' do
 		it 'is falsey when 0' do

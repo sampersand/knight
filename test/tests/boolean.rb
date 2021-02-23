@@ -1,10 +1,9 @@
 require 'minitest'
 require 'minitest/spec'
+require_relative 'shared'
 
 describe 'Booleans' do
-	before do
-		extend $current_instance
-	end
+	include Kn::Test::Shared
 
 	describe 'conversions' do
 		it 'is true when TRUE and false when FALSE' do

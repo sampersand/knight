@@ -1,10 +1,10 @@
 module Kn; end
+module Kn::Test; end
 
 Identifier = Struct.new :ident
 Function = Struct.new :ast
 
-module Kn::Tests
-
+module Kn::Test::Shared
 	class InvalidExpression < Exception
 		attr_reader :expr
 
@@ -14,10 +14,21 @@ module Kn::Tests
 		end
 	end
 
+	def parse(expr)
+		case expr
+		when /\ANull\(\)\z/ then :nil
+		when /\AString\((.*?)\)\z/m then $1
+		when /\ABoolean\((true|false)\)\z/ then $1 == 'true'
+		when /\ANumber\(((?:-(?!0\)))?\d+)\)\z/ then $1.to_i # `-0` is invalid.
+		when /\AFunction\((.*?)\)/m then Function.new $1
+		when /\AIdentifier\(([_a-z][\w_]*)\)/ then Identifier.new $1
+		else fail "bad expression: #{expr.inspect}"
+		end
+	end
 
 	def execute(expr, chomp=true)
 		IO.pipe do |r, w|
-			system(@program_path, '-e', expr, out: w, err: :close) or raise InvalidExpression, expr
+			system($executable_to_test, '-e', expr, out: w, err: :close) or raise InvalidExpression, expr
 
 			w.close
 			r.read.tap { |x| x.chomp! if chomp }

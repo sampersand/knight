@@ -157,7 +157,7 @@ class Func extends Value
 	 **/
 	public function dump(): string
 	{
-		$ret = "function($this->name";
+		$ret = "Function('$this->name'";
 
 		foreach ($this->args as $value) {
 			$ret .= ", " . $value->dump();
