@@ -63,6 +63,13 @@ abstract class Value
 	abstract public function dump(): string;
 
 	/**
+	 * Checks to see if `$this` is equal to `$value`.
+	 *
+	 * @return bool
+	 **/
+	abstract public function eql(Value $value): bool;
+
+	/**
 	 * Executes this Value.
 	 *
 	 * By default, the return value is simply `$this`.

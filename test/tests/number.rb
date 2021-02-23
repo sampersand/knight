@@ -135,16 +135,16 @@ describe 'Numbers' do
 				assert_equal 20, eval('/ (- 0 80) (- 0 4)')
 
 				assert_equal 3, eval('/ 13 4')
-				assert_equal -4, eval('/ 13 (- 0 4)')
-				assert_equal -4, eval('/ (- 0 13) 4')
+				assert_equal -3, eval('/ 13 (- 0 4)')
+				assert_equal -3, eval('/ (- 0 13) 4')
 				assert_equal 3, eval('/ (- 0 13) (- 0 4)')
 			end
 
 			it 'rounds downwards' do
 				assert_equal 0, eval('/ 4 5')
 				assert_equal 2, eval('/ 10 4')
-				assert_equal -2, eval('/ (- 0 5) 3')
-				assert_equal -3, eval('/ (- 0 7) 3')
+				assert_equal -1, eval('/ (- 0 5) 3')
+				assert_equal -2, eval('/ (- 0 7) 3')
 			end
 
 			it 'does not divide by zero' do

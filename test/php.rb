@@ -1,7 +1,7 @@
 require 'minitest/autorun'
 require_relative 'shared'
 
-module Perl
+module PHP
 	include Kn::Tests
 
 	def parse(expr)
@@ -18,12 +18,12 @@ module Perl
 
 	def self.extended(inst)
 		inst.instance_exec do
-			@program_path = '../perl/knight'
+			@program_path = '../php/bin/knight'
 		end
 	end
 end
 
-$current_instance = Perl
+$current_instance = PHP
 
 require_relative 'tests/number'
 require_relative 'tests/null'

@@ -73,6 +73,16 @@ class Number extends Value
 	}
 
 	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "number($this)";
+	}
+
+	/**
 	 * Converts the addend to an int, and then adds it to $this.
 	 *
 	 * @param Value $addend The number to add to `$this`.
@@ -155,7 +165,7 @@ class Number extends Value
 	/**
 	 * Converts the $rhs to an int, then compares $this to it.
 	 *
-	 * @param Value $exponent The number by which `$this` will be raised.
+	 * @param Value $rhs The number by which `$this` will be raised.
 	 * @return int Returns a number less than, equal to, or greater than 0, depending on if `$rhs`, after conversion to
 	 * an int, is less than, equal to, or greater than `$this`.
 	 **/
@@ -165,12 +175,12 @@ class Number extends Value
 	}
 
 	/**
-	 * Gets a string representation of this class, for debugging purposes.
+	 * Checks to see if `$value` is a `Number` and equal to `$this`.
 	 *
-	 * @return string
+	 * @return bool
 	 **/
-	public function dump(): string
+	public function eql(Value $value): bool
 	{
-		return "number($this)";
+		return is_a($value, get_class()) && $this->data == $value->data;
 	}
 }

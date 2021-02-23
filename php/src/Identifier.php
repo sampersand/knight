@@ -115,6 +115,16 @@ class Identifier extends Value
 	 **/
 	public function dump(): string
 	{
-		return "identifier($this)";
+		return "identifier($this->data)";
+	}
+
+	/**
+	 * Checks to see if `$value` is an `Identifier` and equal to `$this`.
+	 *
+	 * @return bool
+	 **/
+	public function eql(Value $value): bool
+	{
+		return $this === $value;
 	}
 }

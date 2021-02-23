@@ -61,4 +61,14 @@ class Nil extends Value
 	{
 		return "null()";
 	}
+
+	/**
+	 * Checks to see if `$value` is a `Nil` and equal to `$this`.
+	 *
+	 * @return bool
+	 **/
+	public function eql(Value $value): bool
+	{
+		return is_a($value, get_class());
+	}
 }

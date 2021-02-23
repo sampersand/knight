@@ -63,7 +63,12 @@ class Str extends Value
 	 **/
 	public function toInt(): int
 	{
-		return (int) $this->data;
+		// Avoid php's scientific notation by manually grepping.
+		if (!preg_match("/\A\s*[-+]?\d+/m", $this->data, $match)) {
+			return 0;
+		} else {
+			return (int) $match[0];
+		}
 	}
 
 	/**
@@ -73,7 +78,17 @@ class Str extends Value
 	 **/
 	public function toBool(): bool
 	{
-		return !empty($this->data);
+		return $this->data !== '';
+	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "string($this)";
 	}
 
 	/**
@@ -114,12 +129,12 @@ class Str extends Value
 	}
 
 	/**
-	 * Gets a string representation of this class, for debugging purposes.
+	 * Checks to see if `$value` is a `Str` and equal to `$this`.
 	 *
-	 * @return string
+	 * @return bool
 	 **/
-	public function dump(): string
+	public function eql(Value $value): bool
 	{
-		return "string($this)";
+		return is_a($value, get_class()) && $this->data == $value->data;
 	}
 }

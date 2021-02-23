@@ -49,10 +49,12 @@ class Func extends Value
 			return null;
 		}
 
-		[$func, $arity] = Func::$KNOWN[$match[0]];
+		$name = $match[0];
+
+		[$func, $arity] = Func::$KNOWN[$name];
 
 		if (!isset($func)) {
-			throw new \Exception("unknown function '$match[0]'");
+			throw new \Exception("unknown function '$name'");
 		}
 
 		$args = [];
@@ -61,13 +63,13 @@ class Func extends Value
 			$next = Value::parse($stream);
 
 			if (!isset($next)) {
-				throw new \Exception("missing argument $i for function '$match[0]'");
+				throw new \Exception("missing argument $i for function '$name'");
 			}
 
 			$args[] = $next;
 		}
 
-		return new self($func, $args);
+		return new self($func, $name, $args);
 	}
 
 	/**
@@ -85,6 +87,13 @@ class Func extends Value
 	private $args;
 
 	/**
+	 * The name of this function; used for debugging.
+	 *
+	 * @var string
+	 **/
+	private $name;
+
+	/**
 	 * Creates a new Func.
 	 *
 	 * This is `private`; to "create" a function, instead register it.
@@ -92,9 +101,10 @@ class Func extends Value
 	 * @param callable $func The function associated with this instance.
 	 * @param array $args The arguments for the function.
 	 **/
-	private function __construct(callable $func, array $args)
+	private function __construct(callable $func, string $name, array $args)
 	{
 		$this->func = $func;
+		$this->name = $name;
 		$this->args = $args;
 	}
 
@@ -147,13 +157,23 @@ class Func extends Value
 	 **/
 	public function dump(): string
 	{
-		$ret = "function(<?>";
+		$ret = "function($this->name";
 
-		foreach ($arg as $value) {
-			$ret .= ", " . $arg->dump();
+		foreach ($this->args as $value) {
+			$ret .= ", " . $value->dump();
 		}
 
 		return $ret . ')';
+	}
+
+	/**
+	 * Checks to see if `$value` is a `Boolean` and equal to `$this`.
+	 *
+	 * @return bool
+	 **/
+	public function eql(Value $value): bool
+	{
+		return $this === $value;
 	}
 }
 
@@ -386,7 +406,7 @@ Func::register('>', 2, function(Value $lhs, Value $rhs): Value {
  * @return Value True if `$lhs` is equal to `$rhs`, false otherwise.
  **/
 Func::register('?', 2, function(Value $lhs, Value $rhs): Value {
-	return new Boolean($lhs->run() == $rhs->run());
+	return new Boolean($lhs->run()->eql($rhs->run()));
 });
 
 /**

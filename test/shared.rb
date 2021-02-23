@@ -5,9 +5,19 @@ Function = Struct.new :ast
 
 module Kn::Tests
 
+	class InvalidExpression < Exception
+		attr_reader :expr
+
+		def initialize(expr)
+			@expr = expr
+			super "invalid expression: #{expr.inspect}"
+		end
+	end
+
+
 	def execute(expr, chomp=true)
 		IO.pipe do |r, w|
-			system(@program_path, '-e', expr, out: w, err: :close) or throw :call_failed
+			system(@program_path, '-e', expr, out: w, err: :close) or raise InvalidExpression, expr
 
 			w.close
 			r.read.tap { |x| x.chomp! if chomp }
@@ -15,7 +25,7 @@ module Kn::Tests
 	end
 
 	def assert_fails
-		assert_throws(:call_failed) { yield }
+		assert_raises(InvalidExpression) { yield }
 	end
 
 	def assert_runs
