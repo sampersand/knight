@@ -17,8 +17,6 @@ module Perl
 	end
 
 	def self.extended(inst)
-		Dir.chdir '../perl/'
-
 		inst.instance_exec do
 			@program_path = '../perl/knight'
 		end
