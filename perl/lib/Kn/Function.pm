@@ -44,7 +44,7 @@ __PACKAGE__->register('R', 0, sub {
 
 # Evaluates a string as Knight code.
 __PACKAGE__->register('D', 1, sub {
-	print shift->dump();
+	print shift->run()->dump();
 });
 
 # Evaluates a string as Knight code.

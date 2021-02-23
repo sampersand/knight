@@ -25,7 +25,7 @@ sub run {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	'identifier(' . shift . ')';
+	'identifier(' . ${shift()} . ')';
 }
 
 1;

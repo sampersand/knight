@@ -12,13 +12,13 @@ sub usage {
 	exit 1
 }
 
-my $sw = shift @ARGV;
+my $switch = shift @ARGV;
 
-usage unless $#ARGV == 0 && ($sw eq '-f' || $sw eq '-e');
+usage unless $#ARGV == 0 && ($switch eq '-f' || $switch eq '-e');
 
-if ($sw eq '-f') {
+if ($switch eq '-f') {
 	Kn->run(join '', <>);
-} elsif ($sw eq '-e') {
+} elsif ($switch eq '-e') {
 	Kn->run(shift @ARGV);
 } else {
 	usage;

@@ -13,11 +13,23 @@ use overload
 	'""' => 'run',
 	'bool' => 'run';
 
+# Creates a new `Ast` with the given function, operator name, and arguments.
+#
+# While not strictly necessary, the operator name is used for debugging.
 sub new {
 	my ($class, $func, $op, @args) = @_;
 
 	bless { func => $func, op => $op, args => \@args }, $class;
 }
+
+# An Ast is only equivalent to itself.
+sub eql {
+	use Scalar::Util 'refaddr';
+	my ($lhs, $rhs) = @_;
+
+	ref($lhs) eq ref($rhs) && refaddr($lhs) == refaddr($rhs);
+}
+
 
 sub run {
 	$_[0]->{func}->run(@{$_[0]->{args}})
@@ -39,7 +51,7 @@ sub parse {
 # Dumps the class's info. Used for debugging.
 sub dump {
 	my $this = shift;
-	my $ret = "ast($this->{op}";
+	my $ret = "function($this->{op}";
 
 	for my $x(@{$this->{args}}) {
 		$ret .= ',' . $x->dump();

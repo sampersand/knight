@@ -29,14 +29,21 @@ sub mul {
 	Kn::Number->new(int(shift) * int(shift));
 }
 
+sub _round {
+	my $x = shift;
+	my $int = int $x;
+
+	$x < 0 && $x != $int ? $int - 1 : $int;
+}
+
 # Divides the first number by the second, `die`ing if the second's zero.
 sub div {
 	my $lhs = int shift;
 	my $rhs = int shift;
 
-	die "cant divide by zero" if $rhs == 0;
+	die "cant divide by zero" unless $rhs;
 
-	Kn::Number->new($lhs / $rhs);
+	Kn::Number->new(_round($lhs / $rhs));
 }
 
 # Modulo the first number by the second, `die`ing if the second's zero.
@@ -44,14 +51,14 @@ sub mod {
 	my $lhs = int shift;
 	my $rhs = int shift;
 
-	die "cant modulo by zero" if $rhs == 0;
+	die "cant modulo by zero" unless $rhs;
 
 	Kn::Number->new($lhs % $rhs);
 }
 
 # Raises the first number to the power of the second.
 sub pow {
-	Kn::Number->new(int(shift) ** int(shift));
+	Kn::Number->new(_round(int(shift) ** int(shift)));
 }
 
 # Converts both values to integers and compares them.
