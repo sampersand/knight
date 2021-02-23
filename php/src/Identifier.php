@@ -107,4 +107,14 @@ class Identifier extends Value
 	{
 		return $this->run()->toBool();
 	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "identifier($this)";
+	}
 }

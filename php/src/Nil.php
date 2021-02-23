@@ -45,10 +45,20 @@ class Nil extends Value
 	/**
 	 * Converts this `Nil` to an boolean.
 	 *
-	 * @return int Simply `false`.
+	 * @return bool Simply `false`.
 	 **/
 	public function toBool(): bool
 	{
 		return false;
+	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "null()";
 	}
 }

@@ -139,6 +139,22 @@ class Func extends Value
 	{
 		return $this->run()->toBool();
 	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		$ret = "function(<?>";
+
+		foreach ($arg as $value) {
+			$ret .= ", " . $arg->dump();
+		}
+
+		return $ret . ')';
+	}
 }
 
 /**
@@ -237,6 +253,19 @@ Func::register('L', 1, function(Value $string): Value {
 	return new Number(strlen($string->run()));
 });
 
+/**
+ * Dumps its argument to stdout, after executing it. Used for debugging.
+ *
+ * @param Value $arg The argument to dump.
+ * @return Value The result of `run`ning the argument.
+ **/
+Func::register('D', 1, function(Value $val): Value {
+	$val = $val->run();
+
+	echo $val->dump();
+
+	return $val;
+});
 
 /**
  * Writes the message to stdout.

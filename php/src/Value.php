@@ -56,6 +56,13 @@ abstract class Value
 	abstract public function toBool(): bool;
 
 	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	abstract public function dump(): string;
+
+	/**
 	 * Executes this Value.
 	 *
 	 * By default, the return value is simply `$this`.

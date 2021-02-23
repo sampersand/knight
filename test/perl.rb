@@ -18,7 +18,7 @@ module Perl
 
 	def self.extended(inst)
 		inst.instance_exec do
-			@program_path = '../perl/knight'
+			@program_path = '../php/bin/knight'
 		end
 	end
 end

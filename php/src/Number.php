@@ -163,4 +163,14 @@ class Number extends Value
 	{
 		return $this->data <=> $rhs->toInt();
 	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "number($this)";
+	}
 }

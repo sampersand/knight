@@ -112,4 +112,14 @@ class Str extends Value
 	{
 		return strcmp($this, $rhs);
 	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "string($this)";
+	}
 }

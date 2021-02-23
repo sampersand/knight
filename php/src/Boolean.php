@@ -43,7 +43,7 @@ class Boolean extends Value
 	 **/
 	public function __toString(): string
 	{
-		return $this->data ? "true" : "false";
+		return $this->data ? 'true' : 'false';
 	}
 
 	/**
@@ -64,5 +64,15 @@ class Boolean extends Value
 	public function toBool(): bool
 	{
 		return $this->data;
+	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "boolean($this)";
 	}
 }

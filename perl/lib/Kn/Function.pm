@@ -43,11 +43,6 @@ __PACKAGE__->register('R', 0, sub {
 });
 
 # Evaluates a string as Knight code.
-__PACKAGE__->register('D', 1, sub {
-	print shift->run()->dump();
-});
-
-# Evaluates a string as Knight code.
 __PACKAGE__->register('E', 1, sub {
 	Kn->run("$_[0]");
 });
@@ -80,6 +75,14 @@ __PACKAGE__->register('!', 1, sub {
 # Gets the length of the given argument as a string.
 __PACKAGE__->register('L', 1, sub {
 	Kn::Number->new(length shift);
+});
+
+# Dumps a value's representation, then returns it.
+__PACKAGE__->register('D', 1, sub {
+	my $val = shift->run();
+
+	print $val->dump();
+	return $val;
 });
 
 # Outputs the given argument, which it then returns. If the argument ends with
