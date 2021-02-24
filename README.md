@@ -7,21 +7,21 @@ The following is the list of all languages that's supported. All in-progress imp
 | Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
-| [Assembly (x86)](asm) |   |   |   | X | The parser is completed.|
-| [C](c) |   | X | X | X | Sensitization Issues need to be resolved |
+| [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
+| [C](../c/c) |   | X | X | X | Sensitization Issues need to be resolved |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
-| [JavaScript](javascript) |   |   | X | X | Minor bugs need to be fixed; Complete compliance needs to be verified. |
+| [JavaScript](../javascript/javascript) |   |   | X | X | Minor bugs need to be fixed; Complete compliance needs to be verified. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
 | [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
 | [POSIX-Compliant SH](shell/knight.sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
-| [Prolog](prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
+| [Prolog](../prolog/prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
 | [Python](../python/python) |   |   | X | X | A somewhat hacky version is completed; a cleaned up version is in progress. |
-| [Quest](quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
-| [Raku](raku) |   | X | X | X | A few bugs need to be fixed before it is 100% spec compliant. |
-| [Ruby](ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
-| [Rust](rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
+| [Quest](../quest?quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
+| [Raku](../raku/raku) |   | X | X | X | A few bugs need to be fixed before it is 100% spec compliant. |
+| [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
+| [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
 
 
 
