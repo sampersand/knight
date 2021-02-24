@@ -1,10 +1,9 @@
 require 'minitest'
 require 'minitest/spec'
+require_relative 'shared'
 
 describe 'Null' do
-	before do
-		extend $current_instance
-	end
+	include Kn::Test::Shared
 
 	describe 'conversions' do
 		it 'is falsey' do
@@ -22,7 +21,7 @@ describe 'Null' do
 
 	describe 'parsing' do
 		it 'parses a simple `N` properly' do
-			assert_equal :nil, eval('N')
+			assert_equal :null, eval('N')
 		end
 
 		it 'does not parse `null`' do
@@ -58,16 +57,16 @@ describe 'Null' do
 			end
 		end
 
-		describe '<' do
-			it 'cannot be compared' do
-				assert_fails { eval('< NULL 1') }
-			end
-		end
+		# describe '<' do
+		# 	it 'cannot be compared' do
+		# 		assert_fails { eval('< NULL 1') }
+		# 	end
+		# end
 
-		describe '>' do
-			it 'cannot be compared' do
-				assert_fails { eval('> NULL 1') }
-			end
-		end
+		# describe '>' do
+		# 	it 'cannot be compared' do
+		# 		assert_fails { eval('> NULL 1') }
+		# 	end
+		# end
 	end
 end

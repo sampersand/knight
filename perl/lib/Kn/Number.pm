@@ -23,7 +23,7 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	"number(${shift()})";
+	"Number(${shift()})";
 }
 
 1;

@@ -51,10 +51,10 @@ sub parse {
 # Dumps the class's info. Used for debugging.
 sub dump {
 	my $this = shift;
-	my $ret = "function($this->{op}";
+	my $ret = "Function($this->{op}";
 
 	for my $x(@{$this->{args}}) {
-		$ret .= ',' . $x->dump();
+		$ret .= ', ' . $x->dump();
 	};
 
 	"$ret)";

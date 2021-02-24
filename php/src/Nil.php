@@ -59,7 +59,7 @@ class Nil extends Value
 	 **/
 	public function dump(): string
 	{
-		return "null()";
+		return "Null()";
 	}
 
 	/**

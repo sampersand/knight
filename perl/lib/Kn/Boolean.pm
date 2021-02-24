@@ -18,7 +18,7 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	'boolean(' . (shift() ? 'true' : 'false') . ')';
+	'Boolean(' . (shift() ? 'true' : 'false') . ')';
 }
 
 1;

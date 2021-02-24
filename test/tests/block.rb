@@ -1,11 +1,9 @@
 require 'minitest'
 require 'minitest/spec'
-require 'minitest/autorun'
+require_relative 'shared'
 
-describe 'String' do
-	before do
-		extend $current_instance
-	end
+describe 'Block' do
+	include Kn::Test::Shared
 
 	describe 'conversions' do
 		# Blocks cannot be converted to anything
@@ -62,7 +60,7 @@ describe 'String' do
 				assert_equal 'foo', eval('CALL BLOCK "foo"')
 				assert_equal true, eval('CALL BLOCK TRUE')
 				assert_equal false, eval('CALL BLOCK FALSE')
-				assert_equal :nil, eval('CALL BLOCK NULL')
+				assert_equal :null, eval('CALL BLOCK NULL')
 				assert_equal 1, eval('; = ident 1 : CALL BLOCK ident')
 			end
 		end
