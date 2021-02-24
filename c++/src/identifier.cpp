@@ -28,6 +28,10 @@ SharedValue Identifier::parse(std::string_view& view) {
 	return std::make_shared<Identifier>(Identifier(ret));
 }
 
+std::string Identifier::dump() const {
+	return "Identifier(" + std::string(name) + ")";
+}
+
 SharedValue Identifier::run() const {
 	if (ENVIRONMENT.count(name) == 0) {
 		throw Error("unknown identifier encountered: " + name);

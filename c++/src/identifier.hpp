@@ -28,6 +28,9 @@ namespace kn {
 		// Throws `UnknownIdentifier` if the identifier was never assigned.
 		SharedValue run() const override;
 
+		// Provides debugging output of this type.
+		std::string dump() const override;
+
 		// Assigns a value to this Identifier, discarding its previous value.
 		//
 		// This will run `value`, and returns the result of running it.

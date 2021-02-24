@@ -30,7 +30,31 @@ number Literal::to_number() const {
 		[](null) { return (number) 0; },
 		[](bool boolean) { return (number) boolean; },
 		[](number num) { return num; },
-		[](string const& str) { return std::stoll(str); }
+		[](string const& str) {
+			// a custom `stroll` that will will just stop at the first invalid character
+			number ret = 0;
+			auto begin = std::find_if_not(str.cbegin(), str.cend(), [](char c) { return std::isspace(c); });
+
+			if (begin == str.cend()) {
+				return (number) 0;
+			}
+
+			bool is_negative = *begin == '-';
+
+			if (is_negative || *begin == '+') {
+				++begin;
+			}
+
+			for (; begin != str.cend() && std::isdigit(*begin); ++begin) {
+				ret = ret * 10 + (*begin - '0');
+			}
+
+			if (is_negative) {
+				ret *= -1;
+			}
+
+			return ret;
+		}
 	}, data);
 }
 
@@ -40,6 +64,15 @@ string Literal::to_string() const {
 		[](bool boolean) { return string(boolean ? "true" : "false"); },
 		[](number num) { return std::to_string(num); },
 		[](string const& str) { return str; }
+	}, data);
+}
+
+std::string Literal::dump() const {
+	return std::visit(overload {
+		[](null) { return string("Null()"); },
+		[](bool boolean) { return string(boolean ? "Boolean(true)" : "Boolean(false)"); },
+		[](number num) { return "Number(" + std::to_string(num) + ")"; },
+		[](string const& str) { return "String(" + str + ")"; }
 	}, data);
 }
 
@@ -159,12 +192,24 @@ SharedValue Literal::operator%(Value const& rhs) const {
 }
 
 SharedValue Literal::pow(Value const& rhs) const {
-	number ret = 1;
+	number ret;
 	number base = to_number();
 	number exp = rhs.to_number();
 
-	for (; exp; --exp) {
-		ret *= base;
+	switch (base) {
+		case 0:
+			ret = exp == 0 ? 1 : 0;
+			break;
+		case 1:
+			ret = 1;
+			break;
+		case -1:
+			ret = exp & 1 ? -1 : 1;
+			break;
+		default:
+			for (; exp > 0; --exp) {
+				ret *= base;
+			}
 	}
 
 	return std::make_shared<Literal>(ret);
@@ -179,9 +224,9 @@ bool Literal::operator==(Value const& rhs_value) const {
 
 	return std::visit(overload {
 		[](null) { return true; },
-		[=](bool boolean) { return boolean == std::get<bool>(rhs->data); },
-		[=](number num) { return num == std::get<number>(rhs->data); },
-		[=](string const& str) { return str == std::get<string>(rhs->data); }
+		[rhs](bool boolean) { return boolean == std::get<bool>(rhs->data); },
+		[rhs](number num) { return num == std::get<number>(rhs->data); },
+		[rhs](string const& str) { return str == std::get<string>(rhs->data); }
 	}, data);
 }
 
@@ -198,12 +243,6 @@ int Literal::cmp(Value const& rhs) const {
 
 
 	return this_string < rhs_string ? -1 : this_string > rhs_string ? 1 : 0;
-	// auto pair = std::mismatch(
-	// 	this_string.cbegin(), this_string.cend(),
-	// 	rhs_string.cbegin(), rhs_string.cend()
-	// );
-
-	// return pair.first < pair.second ? -1 : pair.first > pair.second ? 1 : 0;
 }
 
 bool Literal::operator<(Value const& rhs) const {

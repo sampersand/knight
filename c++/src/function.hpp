@@ -15,13 +15,16 @@ namespace kn {
 		// A pointer to the function associated with this class.
 		funcptr_t const func;
 
+		// The name of the function; used only within `DUMP`.
+		char const name;
+
 		// The unevaluated arguments associated with this function.
 		args_t const args;
 
 		// Creates a function with the given function and arguments.
 		//
 		// This is private because the only way to create a `Function` is through `parse`.
-		Function(funcptr_t func, args_t args);
+		Function(funcptr_t func, char name, args_t args);
 
 	public:
 
@@ -30,6 +33,9 @@ namespace kn {
 
 		// Executes this function, returning the result of the execution.
 		SharedValue run() const override;
+
+		// Returns debugging information about this type.
+		std::string dump() const override;
 
 		// Functions are only ever equal to themselves---they're not equal to anything else.
 		bool operator==(Value const& rhs) const override;

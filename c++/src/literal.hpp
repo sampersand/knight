@@ -49,6 +49,9 @@ namespace kn {
 		// Simply returns itself.
 		SharedValue run() const override;
 
+		// Provides debugging information about the literal.
+		std::string dump() const override;
+
 		// If `this` is a string, concatenates `this` with `rhs`. Otherwise, does mathematical addition.
 		SharedValue operator+(Value const& rhs) const override;
 

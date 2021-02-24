@@ -24,8 +24,11 @@ namespace kn {
 		// Required so we don't leak memory when dropping types.
 		virtual ~Value() = default;
 
-		// All implementing types must provide a `run` value.
+		// All implementing types must provide a `run` function.
 		virtual SharedValue run() const = 0;
+
+		// The dump function is used for debugging.
+		virtual std::string dump() const = 0;
 
 		// Parses a value from the given view. Implementing types should provide their own logic.
 		static SharedValue parse(std::string_view& view);
