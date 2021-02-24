@@ -1,5 +1,6 @@
 #include <string.h> /* strdup, strlen */
 #include <ctype.h>  /* isspace */
+#include <stdio.h>  /* printf */
 
 #include "value.h"  /* prototypes */
 #include "ast.h"    /* kn_ast_t, kn_ast_run, kn_ast_free, kn_ast_clone */
@@ -47,7 +48,7 @@ struct kn_value_t kn_value_new_null() {
  */
 static struct kn_string_t string_from_integer(kn_integer_t num) {
 	static char buf[41]; // initialized to zero.
-	_Bool is_neg = num < 0;
+	int is_neg = num < 0;
 
 	// start two back, as the last one's `\0`.
 	char *ptr = &buf[sizeof(buf) - 1];
@@ -153,10 +154,10 @@ static kn_integer_t string_to_integer(const struct kn_string_t *string) {
 		ptr++;
 	}
 
-	_Bool is_neg = *ptr == '-';
+	int is_neg = *ptr == '-';
 	unsigned char cur;
 
-	if (is_neg) {
+	if (is_neg || *ptr == '+') {
 		++ptr;
 	}
 
@@ -192,6 +193,34 @@ kn_integer_t kn_value_to_integer(const struct kn_value_t *value) {
 		kn_value_free(&evaluated);
 		return ret;
 	}
+
+	default:
+		bug("invalid kind encountered: %d", value->kind);
+	}
+}
+
+void kn_value_dump(const struct kn_value_t *value) {
+	
+	switch(value->kind) {
+	case KN_VT_INTEGER:
+		printf("Number(%jd)", value->integer);
+		break;
+
+	case KN_VT_STRING:
+		printf("String(%s)", value->string.str);
+		break;
+
+	case KN_VT_BOOLEAN:
+		printf("Boolean(%s)", value->boolean ? "true" : "false");
+		break;
+
+	case KN_VT_NULL:
+		printf("Null()");
+		break;
+
+	case KN_VT_AST:
+		kn_ast_dump(value->ast);
+		break;
 
 	default:
 		bug("invalid kind encountered: %d", value->kind);

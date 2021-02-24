@@ -71,6 +71,11 @@ struct kn_ast_t kn_ast_parse(const char **stream);
 struct kn_value_t kn_ast_run(const struct kn_ast_t *ast);
 
 /*
+ * Dumps debugging information about the AST to stdout.
+ */
+void kn_ast_dump(const struct kn_ast_t *ast);
+
+/*
  * Clones an `kn_ast_t`.
  */
 struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast);

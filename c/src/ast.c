@@ -1,6 +1,7 @@
 #include <ctype.h>  /* isspace, isdigit, islower, isupper */
 #include <string.h> /* strdup */
 #include <assert.h> /* assert */
+#include <stdio.h>  /* printf */
 
 #include "env.h"    /* kn_env_get */
 #include "ast.h"    /* prototypes, kn_function_t, kn_value_t */
@@ -133,9 +134,9 @@ static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 
 	// strip trailing function words, if we're a non-symbolic function.
 	if (isupper(name)) {
-		do {
+		while (isupper(peek(stream))) {
 			advance(stream);
-		} while (isupper(peek(stream)));
+		}
 	}
 
 	const struct kn_function_t *function = kn_fn_fetch(name);
@@ -187,6 +188,34 @@ struct kn_ast_t kn_ast_parse(const char **stream) {
 		die("unexpected eof; expected an expression.");
 	} else {
 		die("unknown token start '%c'", peeked);
+	}
+}
+
+void kn_ast_dump(const struct kn_ast_t *ast) {
+	switch (ast->kind) {
+	case KN_TT_VALUE:
+		kn_value_dump(&ast->value);
+		break;
+	
+	case KN_TT_IDENTIFIER:
+		printf("Identifier(%s)", ast->identifier);
+		break;
+
+	case KN_TT_FUNCTION:{
+		printf("Function(%c", ast->function->name);
+
+		for (size_t i = 0; i < ast->function->arity; ++i) {
+			printf(", ");
+			kn_ast_dump(&ast->arguments[i]);
+		}
+
+		printf(")");
+		break;
+	}
+
+	default:
+		bug("unknown kind '%d'");
+
 	}
 }
 

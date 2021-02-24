@@ -2,8 +2,7 @@ SRCDIR ?= src
 OBJDIR ?= obj
 EXE ?= knight
 
-CC = gcc
-CEXEFLAGS =
+CC = gcc 
 CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-zero-variadic-macro-arguments
 override CFLAGS += -F$(SRCDIR)
 
