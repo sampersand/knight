@@ -15,8 +15,6 @@ endif
 # lower case because it's local to makefile.
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
 
-# bar: foo
-# 		echo $(DEBUG)
 all: $(EXE)
 
 $(EXE): $(objects)

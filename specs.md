@@ -1,6 +1,12 @@
 # Overview
 
-Knight is meant to be easily implementable in virtually every language imaginable. As such, the language itself is not very complicated, and the specs leave a lot of things undefined and/or up to the implementation---this allows each langauge to implement it in the most idiomatic way possible.
+Knight is meant to be easily implementable in virtually every language imaginable. As such, the language itself is not very complicated, and the specs leave a lot of things undefined and/or up to the implementation---this allows each language to implement it in the most idiomatic way possible.
+
+## Notation
+In this document, some notation is used to describe what is required of implementations:
+- The word **required** indicates directions implementations if they want to be valid.
+- The word **optional** indicates directions that probably should be implemented, but aren't required
+- The word **undefined** is used to indicate that behaviour is undefined: Programs that contain undefined behaviour are invalid, and the interpreter does not have to provide any guarantees. (However, if possible, implementations should gracefully exit.)
 
 # Syntax
 ## Overview
@@ -10,31 +16,75 @@ Knight does not have a distinction between statements and expressions: Every sin
 
 All characters other than those mentioned in this document are considered invalid within Knight: Both within source code, and strings. Notably, the NUL character (`\0`) is not permissible within Knight strings, and can be used as a deliminator within implementations.
 
-# Whitespace
-The following characters are the only recognized whitespace characters. (Because all functions have a fixed arity (see `Functions`), all forms of parenthesis in Knight are considered whitespace.):
+## Whitespace
+Implementations are **required** to recognize the following characters as whitespace:
 - Tab (`0x09`, ie `\t`)
 - Newline (`0x0a`, ie `\n`)
 - Carriage return (`0x0d`, ie `\r`)
 - Space (`0x20`, ie a space---` `)
-- All parenthesis (`(`, `)`, `[`, `]`,
-- Other whitespace characters (`(`, `)`, `[`, `]`, `{`, `}`)
-- All digits (ie `0x30` through `0x39`)
-- All upper-case letters (ie `0x41` through `0x5a`)
-- All lower-case letters (ie `0x61` through `0x7a`)
-- Any symbols defined in the specs, ie `` + - * / % ^ & | < > ? = ; : ! `
-- `#` (ie `0x23`)
+- All parentheses (`(`, `)`, `[`, `]`, `{`, `}`).
+(Because all functions have a fixed arity (see `Built-in Functions`), all forms of parentheses in Knight are considered whitespace.) Implementations may define other characters as whitespace if they wish---notably, this means that you may use regex's `\s` to strip away whitespace.
 
-## Whitespace
-In knight, whitespace is mostly irrelevant---it's used as an aid to the programmer to make their programs easier to read. Instead of writing `OUTPUT+'-x='-0x`, you can write `OUTPUT + '-x=' - 0 x`. In Knight, the following "normal whitespace characters" characters are considered whitespace:
-- Space (0x20, ` `)
-- Newline (0x0a, `\n`)
-- Tab (0x09, `\t`)
-Implementations may define additional
-As all functions have a fixed arity (see the `Functions` section for more details), all forms of
-
-As all functions have a fixed arity (more on user-defined functions later), all forms of parenthesis (ie `(`, `)`, `[`, `]`, `{`, `}`) are considered whitespace in addition to "normal" whitespace.
-
+Additionally, the `:` function is a no op, and as such may safely be considered whitespace as well.
 
 ## Comments
+Comments in Knight start with `#` and go until a newline character (`\n`) is encountered, or the end of the file; everything after the `#` is ignored.
+
+There are no multiline or embedded comments in Knight.
+
 ## Literals
+In Knight, there are two literals: Numbers and Strings.
+
+Number literals are simply a sequence of ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)). Leading `0`s do not indicate octal numbers (eg, `011` is the number eleven, not nine). No other bases are supported, and only integral numbers are allowed.
+
+String literals in Knight begin with with either a single quote (`'`) or a double quote (`"`). All characters are taken literally until the opening close is encountered again. This means that there are no escape sequences within string literals; if you want a newline character, you will have to do:
+```text
+OUTPUT "this is a newline:
+cool, right?"
+```
+Due to the lack of escape sequences, each string may only contain one of the two types of quotes (as the other quote will denote the end of the string.)
+
+There are also boolean and null values within Knight. See `Functions` for more details on them.
+
+## Variables
+In Knight, all variables are lower case---upper case letters are reserved for functions. Variable names must start with an ASCII lower case letter (ie `a` (`0x61`) through `z` (`0x7a`)) or an underscore (`_` (`0x5f`)). After the initial letter, variable names may also include ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)).
+
 ## Functions
+In Knight, there are two different styles of functions: symbolic and word-based functions. In both cases, the function is uniquely 
+
+Word-based functions start with a single uppercase letter, such as `I` for `if` or `R` for `random`, and may contain any amount of upper case letters afterwards. (Note that they may _not_ include `_`---that is considered the start of an identifier). In contrast, Symbolic functions are functions that are composed of a single symbol, such as `;` or `%`.
+
+Each function has a predetermined arity---no variable argument functions are allowed. After parsing a function's name, an amount of expressions corresponding to that function's arity should be parsed: For example, after parsing a `+`, two expressions must be parsed, such as `+ 1 2`. Programs that contain functions with fewer than the required amount of arguments are considered undefined.
+
+The list required functions are as follows,
+
+
+# Optional features.
+# Details
+## Functions
+### Adding new functions.
+
+## Types
+Knight itself only has a handful of builtin types---Numbers, Strings, Booleans, and Null. Knight has four different contexts: numeric, string, boolean, and "unchanged". Barring the "unchanged" context, values shall be able to be coerced to the correct type automatically.
+
+### Null
+`NULL` is used to indicate the absence of a value within Knight, and some functions may return it (For example, `WHILE` when no expression is executed). There is only one null type in Knight.
+
+#### Conversions
+- `Number`: Null is required to evaluate to `0` in a numeric context.
+- `String`: Null is required to evaluate to either `"null"` in a string context.
+- `Boolean`: Null is required to evaluate to evaluate to `FALSE` in a boolean context.
+
+#### Functions
+- `? NULL rhs`: The the only function defined on `NULL`--This shall return a truthy value when the 
+
+### Booleans
+The boolean type in Knight is how truthiness is defined. Booleans have exactly two valid values: `TRUE` and `FALSE`. In certain contexts (such as the condition of `IF`), expressions will be converted to their boolean value.
+
+The conversions for booleans themselves is defined as follows:
+- `Number`: In numeric contexts, `TRUE` shall become `1` and `FALSE` shall become `0`.
+- `String`: In string contexts, `TRUE` shall become `"true"` and `FALSE` shall become `"false"`.
+- `Boolean`: In boolean contexts, `TRUE` and `FALSE` do not change.
+
+### Integers
+In Knight, only integral numbers exist.
