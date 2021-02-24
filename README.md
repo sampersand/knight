@@ -6,7 +6,7 @@ The following is the list of all languages that's supported. All in-progress imp
 
 | Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
-| [AWK](shell/awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
+| [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](asm) |   |   |   | X | The parser is completed.|
 | [C](c) |   | X | X | X | Sensitization Issues need to be resolved |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
@@ -15,8 +15,9 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
 | [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
-| [POSIX-Compliant SH](shell/sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
-| [Python](python) |   |   | X | X | A somewhat hacky version is completed; a cleaned up version is in progress. |
+| [POSIX-Compliant SH](shell/knight.sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
+| [Prolog](prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
+| [Python](../python/python) |   |   | X | X | A somewhat hacky version is completed; a cleaned up version is in progress. |
 | [Quest](quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
 | [Raku](raku) |   | X | X | X | A few bugs need to be fixed before it is 100% spec compliant. |
 | [Ruby](ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
