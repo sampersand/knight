@@ -7,8 +7,3 @@ unit class Knight::Boolean does Knight::TypedValue[Bool, * <=> *, * == *];
 method Str(--> Str) is pure {
 	$!value ?? 'true' !! 'false'
 }
-
-#| Gets an internal representation of the class; used in debugging.
-method gist(--> Str) {
-	"Boolean($.Str)";
-}

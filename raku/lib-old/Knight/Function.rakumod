@@ -11,9 +11,6 @@ use Knight::NonIdempotent;
 #| Functions are registered via the `register` function.
 unit class Knight::Function does Knight::Value does Knight::NonIdempotent;
 
-#| The name of this class.
-has $!name is built;
-
 #| The function associated with this instance.
 has #`(Callable) &!func is built;
 
@@ -52,14 +49,6 @@ register '!', { Knight::Boolean.new: .not };
 
 #| Gets the amount of characters for the given argument.
 register 'L', { Knight::Number.new: .Str.chars; };
-
-#| Runs a value, dumps the result to stdout, then returns the same result.
-register 'D', {
-	given (.run) {
-		print .gist;
-		$_;
-	}
-}
 
 #| Prints the given value out, returning the original value.
 #|
@@ -155,7 +144,7 @@ register 'S', {
 method new(Str $name where *.chars == 1, *@args) {
 	die "unknown function '$name'" unless $name ~~ %FUNCS;
 
-	self.bless: :@args, :$name, func => %FUNCS{$name}
+	self.bless: :@args, func => %FUNCS{$name}
 }
 
 #| Executes the function, returning the result of its execution.
@@ -163,14 +152,4 @@ method new(Str $name where *.chars == 1, *@args) {
 #| The function will nto execute its arguments before it passes them to the function.
 method run(--> Knight::Value) {
 	&!func(|@!args)
-}
-
-#| Gets an internal representation of the class; used in debugging.
-method gist(--> Str) {
-	"Function($!name" ~ @!args».gist.map(', ' ~ *).join ~ ")";
-}
-
-#| Checks to see if `$rhs` is the exact same object as `self`.
-multi method eql(::?CLASS $rhs, --> Bool) {
-	self =:= $rhs
 }

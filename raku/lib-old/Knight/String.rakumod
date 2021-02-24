@@ -8,7 +8,7 @@ unit class Knight::String does Knight::TypedValue[Str, * cmp *, * eq *];
 #|
 #| An empty string, or a string that doesn't begin with digits, is zero.
 method Int(--> Int) is pure {
-	$!value ~~ /^ \s* <[+-]>? \d* /;
+	$!value ~~ /^ \d* /;
 	+$<>
 }
 
@@ -22,7 +22,3 @@ method mul(Knight::Value $rhs, --> ::?CLASS) {
 	::?CLASS.new: $!value x $rhs.Int
 }
 
-#| Gets an internal representation of the class; used in debugging.
-method gist(--> Str) {
-	"String($!value)";
-}

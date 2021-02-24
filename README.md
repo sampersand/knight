@@ -18,8 +18,8 @@ The following is the list of all languages that's supported. All in-progress imp
 | [POSIX-Compliant SH](shell/knight.sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
 | [Prolog](../prolog/prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
 | [Python](../python/python) |   |   | X | X | A somewhat hacky version is completed; a cleaned up version is in progress. |
-| [Quest](../quest?quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
-| [Raku](../raku/raku) |   | X | X | X | A few bugs need to be fixed before it is 100% spec compliant. |
+| [Quest](../quest/quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
+| [Raku](../raku/raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
 

@@ -9,11 +9,6 @@ use Knight::Value;
 #| `Int` type, as it allows for arbitrary-precision arithmetic.
 unit class Knight::Number does Knight::TypedValue[Int, * <=> *, * == *];
 
-#| Gets an internal representation of the class; used in debugging.
-method gist(--> Str) {
-	"Number($.Str)";
-}
-
 #| Converts `$rhs` to an `Int`, then adds it to `self`, returning a new Number.
 method add(Knight::Value $rhs, --> ::?CLASS) {
 	::?CLASS.new: $!value + $rhs.Int
@@ -33,8 +28,7 @@ method mul(Knight::Value $rhs, --> ::?CLASS) {
 #|
 #| `$rhs` may not be zero when converted to an int, or the program will `die`.
 method div(Knight::Value $rhs, --> ::?CLASS) {
-	# We have to use `(x / y).Int`, as `div` rounds incorrectly with negative numbers.
-	::?CLASS.new: ($!value / ($rhs.Int or die 'Cannot divide by zero!')).Int
+	::?CLASS.new: $!value div ($rhs.Int or die 'Cannot divide by zero!')
 }
 
 #| Converts `$rhs` to an `Int`, then modulos `self` by it, returning a new Number.
@@ -46,5 +40,5 @@ method mod(Knight::Value $rhs, --> ::?CLASS) {
 
 #| Converts `$rhs` to an `Int`, then raises `self` to its power.
 method pow(Knight::Value $rhs, --> ::?CLASS) {
-	::?CLASS.new: ($!value ** $rhs.Int).Int
+	::?CLASS.new: $!value ** $rhs.Int
 }

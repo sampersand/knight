@@ -1,7 +1,9 @@
 #!/usr/bin/env raku
 
-use lib 'lib';
+use lib $*PROGRAM.parent.add('lib');
 use Knight;
+
+@*ARGS = @*ARGS.join('=') if @*ARGS.elems == 2;
 
 multi sub MAIN(Str :$) is hidden-from-USAGE {
 	say $*USAGE;
