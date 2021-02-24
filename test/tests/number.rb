@@ -335,36 +335,3 @@ describe 'Number' do
 		end
 	end
 end
-
-
-# 				# assert_equal eval('+ 4 13'), 17
-# 				# assert_equal eval('+ 4 (- 0 13)'), -9
-# 				# assert_equal eval('+ (- 0 4) 13'), 9
-# 				# assert_equal eval('+ (- 0 4) (- 0 13)'), -17
-
-
-# 		# describe '%' do
-# 		# 	# note that, as per the Knight spec, modulo where either number is negative is undefined.
-# 		# 	it 'modulos positive numbers normally' do
-# 		# 		assert_equal eval('% 1 1'), 0
-# 		# 		assert_equal eval('% 4 4'), 0
-# 		# 		assert_equal eval('% 15 1'), 0
-# 		# 		assert_equal eval('% 123 10'), 3
-# 		# 		assert_equal eval('% 15 3'), 0
-# 		# 	end
-
-# 		# 	it 'does modulo by zero' do
-# 		# 		assert_fails { eval('% 1 0') }
-# 		# 		assert_fails { eval('% 100 0') }
-# 		# 		assert_fails { eval('% 1 FALSE') }
-# 		# 		assert_fails { eval('% 1 NULL') }
-# 		# 	end
-
-# 		# 	it 'converts other values to integers' do
-# 		# 		assert_equal eval('% 15 "2"'), 1
-# 		# 		assert_equal eval('% 91 "4"'), 3
-# 		# 		assert_equal eval('% 9 TRUE'), 0
-# 		# 	end
-# 		# end		
-# 	end
-# end
