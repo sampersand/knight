@@ -30,7 +30,7 @@ module Kn::Test::Shared
 
 	def execute(expr, chomp=true)
 		IO.pipe do |r, w|
-			system($executable_to_test, '-e', expr, out: w, err: :close) or raise InvalidExpression, expr
+			system(*Array($executable_to_test), '-e', expr, out: w) or raise InvalidExpression, expr
 
 			w.close
 			r.read.tap { |x| x.chomp! if chomp }

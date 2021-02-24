@@ -57,16 +57,16 @@ describe 'Null' do
 			end
 		end
 
-		describe '<' do
-			it 'cannot be compared' do
-				assert_fails { eval('< NULL 1') }
-			end
-		end
+		# describe '<' do
+		# 	it 'cannot be compared' do
+		# 		assert_fails { eval('< NULL 1') }
+		# 	end
+		# end
 
-		describe '>' do
-			it 'cannot be compared' do
-				assert_fails { eval('> NULL 1') }
-			end
-		end
+		# describe '>' do
+		# 	it 'cannot be compared' do
+		# 		assert_fails { eval('> NULL 1') }
+		# 	end
+		# end
 	end
 end
