@@ -196,20 +196,22 @@ SharedValue Literal::pow(Value const& rhs) const {
 	number base = to_number();
 	number exp = rhs.to_number();
 
-	switch (base) {
-		case 0:
-			ret = exp == 0 ? 1 : 0;
-			break;
-		case 1:
-			ret = 1;
-			break;
-		case -1:
-			ret = exp & 1 ? -1 : 1;
-			break;
-		default:
-			for (; exp > 0; --exp) {
-				ret *= base;
-			}
+	if (base == 1) {
+		ret = 1;
+	} else if (base == -1) {
+		ret = exp & 1 ? -1 : 1; 
+	} else if (exp == 1) {
+		ret = base;
+	} else if (exp == 0) {
+		ret = 1;
+	} else if (exp < 0) {
+		ret = 0; // already handled the `base == -1` case
+	} else {
+		ret = 1;
+
+		for (; exp > 0; --exp) {
+			ret *= base;
+		}
 	}
 
 	return std::make_shared<Literal>(ret);

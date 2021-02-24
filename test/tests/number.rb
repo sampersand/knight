@@ -210,12 +210,22 @@ describe 'Number' do
 			end
 
 			# Since we only have integral types, anything (normal) raised to a negative number is zero.
-			it 'always returns zero when a non `-1`, `0`, or `1` number is raised to a negative power' do
+			it 'always returns zero when a > 1 number is raised to a negative power' do
 				assert_equal 0, eval('^ 2 (- 0 2)')
 				assert_equal 0, eval('^ 100 (- 0 2)')
 				assert_equal 0, eval('^ 4 (- 0 2)')
 				assert_equal 0, eval('^ 3 (- 0 2)')
 				assert_equal 0, eval('^ (- 0 3) (- 0 2)')
+			end
+
+			it 'returns a negative number when a negative number is raised ot an odd power' do
+				assert_equal -1, eval('^ (- 0 1) 1')
+				assert_equal -8, eval('^ (- 0 2) 3')
+				assert_equal 16, eval('^ (- 0 2) 4')
+				assert_equal -32, eval('^ (- 0 2) 5')
+				assert_equal 100, eval('^ (- 0 10) 2')
+				assert_equal -1331, eval('^ (- 0 11) 3')
+				assert_equal 20736, eval('^ (- 0 12) 4')
 			end
 
 			it 'handles one, zero, and negative one properly' do
