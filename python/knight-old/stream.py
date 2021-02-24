@@ -1,9 +1,8 @@
 import re
-from typing import Union 
+from  typing import Union 
 
 class Stream():
-	""" The class used when parsing data. """
-
+	""" The class used when parsing data """
 	def __init__(self, source: str):
 		""" Creates a new `Stream` with the given source. """
 		self.source = source
