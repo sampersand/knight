@@ -47,10 +47,16 @@ struct kn_ast_t {
 
 	union {
 		struct kn_value_t value;
-		const char *identifier;
 		struct {
-			const struct kn_function_t *function;
-			struct kn_ast_t *arguments;
+			size_t refcount;
+			union {
+				const char *identifier;
+				struct {
+					const struct kn_function_t *function;
+					struct kn_ast_t *arguments;
+				};
+			};
+
 		};
 	};
 };

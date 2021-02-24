@@ -568,36 +568,25 @@ struct kn_value_t kn_fn_eql(const struct kn_ast_t *args) {
 
 	case KN_VT_AST:
 		// ASTs are only equal if they're the _exact same_ object.
-		is_eql = lhs.ast->kind == rhs.ast->kind;
-
-		if (!is_eql) {
-			break;
+		if (lhs.ast->kind != rhs.ast->kind) {
+			is_eql = false;
+			goto free_and_return;
 		}
 
-		switch (lhs.ast->kind) {
-		case KN_TT_VALUE:
-			// this should never happen, as you cant get an
-			// unevaluated value ast.
-			bug("this should never happen?");
+		// we should never have an AST of values...
+		assert(lhs.ast->kind == KN_TT_IDENTIFIER ||
+		       lhs.ast->kind == KN_TT_FUNCTION);
 
-		case KN_TT_IDENTIFIER:
-			is_eql = 0 == strcmp(
-				lhs.ast->identifier,
-				rhs.ast->identifier
-			);
-			break;
-		case KN_TT_FUNCTION:
+		if (lhs.ast->kind == KN_TT_IDENTIFIER) {
+			is_eql = lhs.ast->identifier == rhs.ast->identifier;
+		} else {
 			is_eql = lhs.ast->arguments == rhs.ast->arguments;
-			// sanity check to ensure function pointers are 
-			// identical as well.
 
-			if (is_eql) {
-				assert(lhs.ast->function == rhs.ast->function);
-			}
-			break;
-		default:
-			bug("unknown ast kind '%d'", lhs.ast->kind);
-		};
+			// sanity check because the function should be the same
+			// for identical arguments.
+			assert(!is_eql ||
+				lhs.ast->function == rhs.ast->function);
+		}
 
 		break;
 

@@ -96,6 +96,7 @@ static struct kn_ast_t kn_ast_parse_identifier(const char **stream) {
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_IDENTIFIER,
+		.refcount = 1,
 		.identifier = identifier
 	};
 }
@@ -149,6 +150,7 @@ static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 
 	struct kn_ast_t ast = (struct kn_ast_t) {
 		.kind = KN_TT_FUNCTION,
+		.refcount = 1,
 		.function = function,
 		.arguments = xmalloc(arity * sizeof(struct kn_ast_t))
 	};
@@ -243,40 +245,18 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 }
 
 struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
-	struct kn_ast_t ret = (struct kn_ast_t) {
-		.kind = ast->kind
-	};
+	if (ast->kind == KN_TT_VALUE) {
+		return (struct kn_ast_t) {
+			.kind = KN_TT_VALUE,
+			.value = kn_value_clone(&ast->value)
+		};
+	} else {
+		assert(ast->kind == KN_TT_FUNCTION ||
+			ast->kind == KN_TT_IDENTIFIER
+		);
 
-	switch (ret.kind) {
-	case KN_TT_VALUE:
-		ret.value = kn_value_clone(&ast->value);
-		return ret;
-
-	case KN_TT_IDENTIFIER: {
-		ret.identifier = strdup((char *) ast->identifier);
-
-		if (ret.identifier == NULL) {
-			die("unable to duplicate identifier");
-		}
-
-		return ret;
-	}
-
-	case KN_TT_FUNCTION: {
-		ret.function = ast->function;
-		size_t arity = ret.function->arity;
-
-		ret.arguments = xmalloc(arity * sizeof(struct kn_ast_t));
-
-		for (size_t i = 0; i < arity; i++) {
-			ret.arguments[i] = kn_ast_clone(&ast->arguments[i]);
-		}
-
-		return ret;
-	}
-
-	default:
-		bug("unknown kind '%d'", ast->kind);
+		++((struct kn_ast_t *) ast)->refcount;
+		return *ast;
 	}
 }
 
@@ -287,15 +267,21 @@ void kn_ast_free(struct kn_ast_t *ast) {
 		break;
 
 	case KN_TT_IDENTIFIER:
-		free((void *) ast->identifier);
+		if (--ast->refcount == 0) {
+			free((void *) ast->identifier);
+		}
+
 		break;
 
 	case KN_TT_FUNCTION:
-		for (size_t i = 0; i < ast->function->arity; ++i) {
-			kn_ast_free(&ast->arguments[i]);
+		if (--ast->refcount == 0) {
+			for (size_t i = 0; i < ast->function->arity; ++i) {
+				kn_ast_free(&ast->arguments[i]);
+			}
+
+			free((void *) ast->arguments);
 		}
 
-		free((void *) ast->arguments);
 		break;
 
 	default:
