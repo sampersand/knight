@@ -21,7 +21,7 @@ describe 'Null' do
 
 	describe 'parsing' do
 		it 'parses a simple `N` properly' do
-			assert_equal :nil, eval('N')
+			assert_equal :null, eval('N')
 		end
 
 		it 'does not parse `null`' do

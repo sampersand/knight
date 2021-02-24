@@ -2,7 +2,7 @@ require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
 
-describe 'Numbers' do
+describe 'Number' do
 	include Kn::Test::Shared
 
 	describe 'conversions' do
