@@ -65,7 +65,7 @@ nullary
   ;
 
 unary
- := ('B' | 'C' | 'O' | 'P' | 'Q' | 'S' | 'L') {UPPER}
+ := ('B' | 'C' | 'O' | 'Q' | 'L') {UPPER}
   | '`'
   | '!'
   ;

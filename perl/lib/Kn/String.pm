@@ -5,7 +5,14 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'0+' => sub { no warnings; int ${shift()}; };
+	'bool' => sub { ${shift->run()} ne '' },
+	'0+' => sub {
+		no warnings;
+
+		${shift()} =~ m/^\s*[-+]?\d*/p;
+
+		int ${^MATCH};
+	};
 
 # Converts both arguments to a string and concatenates them.
 sub add {
@@ -40,6 +47,11 @@ sub parse {
 	die "missing closing quote" unless $3;
 
 	$class->new($2)
+}
+
+# Dumps the class's info. Used for debugging.
+sub dump {
+	"string(${shift()})";
 }
 
 1;

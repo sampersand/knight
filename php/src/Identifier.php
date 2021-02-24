@@ -107,4 +107,24 @@ class Identifier extends Value
 	{
 		return $this->run()->toBool();
 	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		return "identifier($this->data)";
+	}
+
+	/**
+	 * Checks to see if `$value` is an `Identifier` and equal to `$this`.
+	 *
+	 * @return bool
+	 **/
+	public function eql(Value $value): bool
+	{
+		return $this === $value;
+	}
 }

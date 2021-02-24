@@ -1,5 +1,4 @@
 #!/bin/sh
-#!/usr/local/bin/shellcheck -ssh
 
 die () { echo "$@" >&2; exit 1; }
 
