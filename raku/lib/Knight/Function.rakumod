@@ -15,10 +15,10 @@ unit class Knight::Function does Knight::Value does Knight::NonIdempotent;
 has $!name is built;
 
 #| The function associated with this instance.
-has #`(Callable) &!func is built;
+has &!func is built;
 
 #| The arguments to pass to the function.
-has #`(Array[Knight::Value]) @!args is built;
+has Knight::Value @!args is built;
 
 my %FUNCS;
 
