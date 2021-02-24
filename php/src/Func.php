@@ -49,10 +49,12 @@ class Func extends Value
 			return null;
 		}
 
-		[$func, $arity] = Func::$KNOWN[$match[0]];
+		$name = $match[0];
+
+		[$func, $arity] = Func::$KNOWN[$name];
 
 		if (!isset($func)) {
-			throw new \Exception("unknown function '$match[0]'");
+			throw new \Exception("unknown function '$name'");
 		}
 
 		$args = [];
@@ -61,13 +63,13 @@ class Func extends Value
 			$next = Value::parse($stream);
 
 			if (!isset($next)) {
-				throw new \Exception("missing argument $i for function '$match[0]'");
+				throw new \Exception("missing argument $i for function '$name'");
 			}
 
 			$args[] = $next;
 		}
 
-		return new self($func, $args);
+		return new self($func, $name, $args);
 	}
 
 	/**
@@ -85,6 +87,13 @@ class Func extends Value
 	private $args;
 
 	/**
+	 * The name of this function; used for debugging.
+	 *
+	 * @var string
+	 **/
+	private $name;
+
+	/**
 	 * Creates a new Func.
 	 *
 	 * This is `private`; to "create" a function, instead register it.
@@ -92,9 +101,10 @@ class Func extends Value
 	 * @param callable $func The function associated with this instance.
 	 * @param array $args The arguments for the function.
 	 **/
-	private function __construct(callable $func, array $args)
+	private function __construct(callable $func, string $name, array $args)
 	{
 		$this->func = $func;
+		$this->name = $name;
 		$this->args = $args;
 	}
 
@@ -138,6 +148,32 @@ class Func extends Value
 	public function toBool(): bool
 	{
 		return $this->run()->toBool();
+	}
+
+	/**
+	 * Gets a string representation of this class, for debugging purposes.
+	 *
+	 * @return string
+	 **/
+	public function dump(): string
+	{
+		$ret = "Function('$this->name'";
+
+		foreach ($this->args as $value) {
+			$ret .= ", " . $value->dump();
+		}
+
+		return $ret . ')';
+	}
+
+	/**
+	 * Checks to see if `$value` is a `Boolean` and equal to `$this`.
+	 *
+	 * @return bool
+	 **/
+	public function eql(Value $value): bool
+	{
+		return $this === $value;
 	}
 }
 
@@ -237,6 +273,19 @@ Func::register('L', 1, function(Value $string): Value {
 	return new Number(strlen($string->run()));
 });
 
+/**
+ * Dumps its argument to stdout, after executing it. Used for debugging.
+ *
+ * @param Value $arg The argument to dump.
+ * @return Value The result of `run`ning the argument.
+ **/
+Func::register('D', 1, function(Value $val): Value {
+	$val = $val->run();
+
+	echo $val->dump();
+
+	return $val;
+});
 
 /**
  * Writes the message to stdout.
@@ -357,7 +406,7 @@ Func::register('>', 2, function(Value $lhs, Value $rhs): Value {
  * @return Value True if `$lhs` is equal to `$rhs`, false otherwise.
  **/
 Func::register('?', 2, function(Value $lhs, Value $rhs): Value {
-	return new Boolean($lhs->run() == $rhs->run());
+	return new Boolean($lhs->run()->eql($rhs->run()));
 });
 
 /**

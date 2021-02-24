@@ -1,7 +1,12 @@
+#!/usr/bin/env python3
+
 from knight import *
 
 import sys
 
+
+print(Boolean(None))
+quit()
 # lol
 sys.setrecursionlimit(10000)
 

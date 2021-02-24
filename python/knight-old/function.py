@@ -68,6 +68,14 @@ def length(arg):
 	return len(str(arg.run()))
 
 @function()
+def dump(arg):
+	arg = arg.run()
+
+	print(repr(arg))
+
+	return arg
+
+@function()
 def output(arg):
 	ret = arg.run()
 	s = str(ret)

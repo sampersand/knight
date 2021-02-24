@@ -3,10 +3,6 @@ class String
     def coerce(rhs) [method(rhs.class.name).(self), rhs] end
 end
 
-case {a: 3, b: 4}
-in { :a, :b } then puts a, b
-end
-exit
 class Numeric
 		def to_b = !zero?
 
