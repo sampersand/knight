@@ -1,21 +1,22 @@
 #!/usr/bin/env node
-import { run } from '../src/index.js';
 
-run(process.argv[3]);
-//run('E ` + "cat " P');
-// run('E ` "cat ../../knight.kn"');
-// run('E ` + "cat " "../../examples/fizzbuzz.kn"');
+import { KnightError, run } from '../src/index.js';
+import { readSync } from 'fs';
 
-// run(`
-// ; = fizzbuzz BLOCK
-// 	; = n 0
-// 	; = max +(1 max)
-// 	: WHILE ( <( =(n + 1 n) max)
-// 		: OUTPUT(
-// 			IF (! (% n 15)) "FizzBuzz"
-// 			IF (! (% n  5)) "Fizz"
-// 			IF (! (% n  3)) "Buzz"
-// 			                n)
-// ; = max 100
-// : CALL fizzbuzz
-// `);
+const argv = process.argv;
+
+if (argv.length !== 4 || (argv[2] !== '-e' && argv[2] !== '-f')) {
+	console.error(`usage: ${argv[1]} (-e 'program' | -f file)`);
+	process.exit(1);
+}
+
+try {
+	run(argv[2] == '-e' ? argv[3] : readSync(argv[3]));
+} catch (error) {
+	if (error instanceof KnightError) {
+		console.error("Fatal Error:", error.message);
+		process.exit(1);
+	} else {
+		throw error;
+	}
+}

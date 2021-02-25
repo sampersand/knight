@@ -8,7 +8,7 @@ export class Bool extends Value {
 		const match = stream.match(/^([TF])[A-Z]*/, 1);
 
 		return match && new Bool(match === 'T');
-	}
+	}	
 
 	constructor(data) {
 		super();

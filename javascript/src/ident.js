@@ -27,7 +27,7 @@ export class Ident extends Value {
 		if (value) {
 			return value;
 		} else {
-			throw `Unknown identifier '${this.#ident}'`;
+			throw new Error(`Unknown identifier '${this.#ident}'`);
 		}
 	}
 

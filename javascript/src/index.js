@@ -1,3 +1,7 @@
+export class KnightError extends Exception { }
+export class RunError extends KnightError { }
+export class ParseError extends KnightError { }
+
 import { Value } from './value.js';
 import { Bool } from './bool.js';
 import { Ident } from './ident.js';
@@ -8,11 +12,11 @@ import { Func } from './func.js';
 import { Stream } from './stream.js';
 
 export function run(input) {
-	let value = Value.parse(new Stream(input.toString()))
+	let value = Value.parse(new Stream(input.toString()));
 
 	if (value) {
 		return value.run();
 	} else {
-		throw new Error('No value could be parsed!');
+		throw new ParseError('No value could be parsed!');
 	}
 }

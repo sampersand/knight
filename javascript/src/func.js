@@ -5,6 +5,7 @@ import { Int } from './int.js';
 import { Nil } from './nil.js';
 import { Str } from './str.js';
 import { Stream } from './stream.js';
+import { Stream } from './index.js';
 
 const FUNCTIONS = {};
 
@@ -71,7 +72,7 @@ TYPES.push(Func);
 
 export function register(name, func)  {
 	if (name.length !== 1) {
-		throw `name must be exactly one character long, not ${name.length}`;
+		throw new Error(`name must be exactly one character long, not ${name.length}`);
 	}
 
 	FUNCTIONS[name] = func;

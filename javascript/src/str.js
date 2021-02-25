@@ -11,7 +11,7 @@ export class Str extends Value {
 		}
 
 		if (stream.match(/^['"]/)) {
-			throw `Unterminated quote encountered: ${stream}`;
+			throw new Error(`Unterminated quote encountered: ${stream}`);
 		}
 	}
 

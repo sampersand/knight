@@ -13,7 +13,7 @@ export class Int extends Value {
 		super();
 
 		if (!Number.isInteger(data)) {
-			throw `Expected an integer, got ${typeof data}`;
+			throw new Error(`Expected an integer, got ${typeof data}`);
 		}
 
 		this.#data = data;
