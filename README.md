@@ -23,13 +23,6 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
 
-<<<<<<< Updated upstream
-
-
-
-
-=======
->>>>>>> Stashed changes
 # Examples
 Here's some examples of the syntax to give you a feel for it:
 
