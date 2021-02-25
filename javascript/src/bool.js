@@ -32,8 +32,19 @@ export class Bool extends Value {
 		return this.#data;
 	}
 
+	dump() {
+		return `Boolean(${this})`;
+	}
+
 	eql(rhs) {
 		return rhs instanceof Bool && this.#data === rhs.#data;
+	}
+
+
+	cmp(rhs) {
+		rhs = rhs.toBool();
+
+		return !this.#data && rhs ? -1 : this.#data && !rhs ? 1 : 0;
 	}
 }
 

@@ -66,6 +66,7 @@ grammar Syntax {
 	      token unary:sym«quit»   { 'Q' <.kw-rest> }
 	      token unary:sym«not»    { '!' }
 	      token unary:sym«length» { 'L' <.kw-rest> }
+	      token unary:sym«dump»   { 'D' <.kw-rest> }
 	      token unary:sym«output» { 'O' <.kw-rest> }
 
 	#| Binary functions take two arguments.
@@ -96,7 +97,7 @@ grammar Syntax {
 	rule function:«quatenary»      { <quatenary> <expr> <expr> <expr> <expr> }
 	proto token quatenary          { * }
 	      token quatenary:sym«set» { 'S' <.kw-rest> }
-#
+# previous attempts at better error handling:
 #	method missing-arg($token, $index) {
 #		my $lineno = self.target.substr(0, self.pos).lines.elems;
 #		die "[Line '$lineno'] Missing argument number $index for token '$token'";
@@ -133,6 +134,7 @@ class SyntaxAction {
 	method unary:sym«quit»($/)   { make 'Q' }
 	method unary:sym«not»($/)    { make '!' }
 	method unary:sym«length»($/) { make 'L' }
+	method unary:sym«dump»($/)   { make 'D' }
 	method unary:sym«output»($/) { make 'O' }
 
 	method function:«binary»($/) { make Knight::Function.new: $<binary>.made, |$<expr>».made }

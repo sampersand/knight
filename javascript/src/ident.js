@@ -30,6 +30,10 @@ export class Ident extends Value {
 			throw `Unknown identifier '${this.#ident}'`;
 		}
 	}
+
+	dump() {
+		return `Identifier(${this.#ident})`;
+	}
 }
 
 TYPES.push(Ident);

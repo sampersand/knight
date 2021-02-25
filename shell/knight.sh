@@ -1,5 +1,4 @@
 #!/bin/sh
-#!/usr/local/bin/shellcheck -ssh
 
 die () { echo "$@" >&2; exit 1; }
 
@@ -70,7 +69,7 @@ $tmp$line"
 
 			case "$func" in
 				[NTFRP]) arity=0 ;;
-				["EBCQLO\`!"]) arity=1 ;;
+				["EBCQLOD\`!"]) arity=1 ;;
 				["-*+/%^?><&|;W="]) arity=2 ;;
 				[GI]) arity=3 ;;
 				[S]) arity=4 ;;
@@ -212,6 +211,35 @@ EOS
 			to_string
 			result=n${#result} ;;
 
+		fD)
+			evaluate "$2"
+
+			# deref identifier and function
+			case "$result" in
+			ast_token_*)
+				IFS="$(printf '\034')"
+				set -- $(eval echo '"${'"$result"'[*]}"')
+				unset IFS
+				# deref function
+				case "$1" in
+				ast_token_*)
+					IFS="$(printf '\034')"
+					set -- $(eval echo '"${'"$1"'[*]}"')
+					unset IFS
+				esac
+				result="$1" ;;
+			esac
+
+			case "$result" in
+				n*) printf "Number(%s)" "${result#?}" ;;
+				s*) printf "String(%s)" "${result#?}" ;;
+				fT) printf "Boolean(true)" ;;
+				fF) printf "Boolean(false)" ;;
+				fN) printf "Boolean(null)" ;;
+				i*) printf "Identifier(%s)" "${result#?}" ;;
+				f*) printf "Function(%s)" "${result#?}" ;;
+				*) bug "unknown result '$result' encountered" ;;
+			esac ;;
 		fO)
 			evaluate "$2"
 			arg0=$result
@@ -368,8 +396,8 @@ EOS
 			if [ s = "$(printf %c "$arg0")" ]
 			then
 				to_string
-
 				if [ "$arg0" \< "$result" ]
+				# if [ "1" = "$(awk 'BEGIN{ print(a < b); }' a="$arg0" b="$result")" ]
 				then
 					result=fT
 				else
@@ -403,7 +431,8 @@ EOS
 			then
 				to_string
 
-				if [ "x$arg0" \> "x$result" ]
+				if [ "$arg0" \> "$result" ]
+				# if [ "1" = "$(awk 'BEGIN{ print(a > b); }' a="$arg0" b="$result")" ]
 				then
 					result=fT
 				else

@@ -11,6 +11,7 @@ const FUNCTIONS = {};
 export class Func extends Value {
 	#args;
 	#func;
+	#name;
 
 	static parse(stream) {
 		const match = stream.match(/^([A-Z\p{P}\p{S}])(?:(?<=[A-Z])[A-Z]*)?/u, 1);
@@ -39,17 +40,30 @@ export class Func extends Value {
 		return new Func(func, match, ...args);
 	}
 
-	constructor(func, n,...args) {
+	constructor(func, name,...args) {
 		super();
-		this.n=n;
+		this.name=name;
 
 		this.#func = func;
 		this.#args = args;
 	}
 
 	run() {
-		console.log(this.n);
 		return this.#func(...this.#args);
+	}
+
+	dump() {
+		let ret = 'Function(' + this.#name;
+
+		for (let val of this.#args) {
+			ret += ', ' + val.dump();
+		}
+
+		return ret + ')';
+	}
+
+	eql(rhs) { 
+		return Object.is(this, rhs);
 	}
 }
 
@@ -87,6 +101,14 @@ register('`', block => new Str(execSync(block.toString()).toString()));
 register('Q', status => process.exit(status.toInt()));
 register('!', arg => new Bool(!arg.toBool()));
 register('L', str => new Int(arg.toString().length));
+register('D', value => {
+	const result = value.run();
+
+	console.log(result.dump());
+
+	return result;
+});
+
 register('O', input => {
 	const result = input.run();
 	const str = result.toString();

@@ -31,6 +31,10 @@ export class Int extends Value {
 		return this.#data !== 0;
 	}
 
+	dump() {
+		return `Number(${this})`;
+	}
+
 	add(rhs) {
 		return new Int(this.#data + rhs.toInt());
 	}

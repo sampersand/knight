@@ -31,3 +31,8 @@ multi method eql(::?CLASS $, --> True) is pure { }
 
 #| Running a `Null` simply returns itself.
 method run(--> Knight::Value) is pure { self }
+
+#| Gets an internal representation of the class; used in debugging.
+method gist(--> Str) {
+	"Null()";
+}

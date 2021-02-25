@@ -34,9 +34,9 @@ sub div {
 	my $lhs = int shift;
 	my $rhs = int shift;
 
-	die "cant divide by zero" if $rhs == 0;
+	die "cant divide by zero" unless $rhs;
 
-	Kn::Number->new($lhs / $rhs);
+	Kn::Number->new(int($lhs / $rhs));
 }
 
 # Modulo the first number by the second, `die`ing if the second's zero.
@@ -44,14 +44,14 @@ sub mod {
 	my $lhs = int shift;
 	my $rhs = int shift;
 
-	die "cant modulo by zero" if $rhs == 0;
+	die "cant modulo by zero" unless $rhs;
 
 	Kn::Number->new($lhs % $rhs);
 }
 
 # Raises the first number to the power of the second.
 sub pow {
-	Kn::Number->new(int(shift) ** int(shift));
+	Kn::Number->new(int(int(shift) ** int(shift)));
 }
 
 # Converts both values to integers and compares them.

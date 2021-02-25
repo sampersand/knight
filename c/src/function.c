@@ -39,6 +39,11 @@ struct kn_value_t kn_fn_assign(const struct kn_ast_t *args) {
 struct kn_value_t kn_fn_block(const struct kn_ast_t *args) {
 	assert(args != NULL);
 
+	// if we're being passed a literal, return that instead.
+	if (args[0].kind == KN_TT_VALUE) {
+		return kn_value_clone(&args[0].value);
+	}
+
 	struct kn_ast_t *ast = xmalloc(sizeof(struct kn_ast_t));
 
 	*ast = kn_ast_clone(&args[0]);
@@ -280,6 +285,16 @@ struct kn_value_t kn_fn_length(const struct kn_ast_t *args) {
 	return ret;
 }
 
+struct kn_value_t kn_fn_dump(const struct kn_ast_t *args) {
+	assert(args != NULL);
+
+	struct kn_value_t ret = kn_ast_run(&args[0]);
+
+	kn_value_dump(&ret);
+
+	return ret;
+}
+
 struct kn_value_t kn_fn_output(const struct kn_ast_t *args) {
 	assert(args != NULL);
 
@@ -494,10 +509,23 @@ struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
 	kn_integer_t base = kn_value_to_integer(&lhs);
 	kn_integer_t exponent = kn_value_to_integer(&rhs);
 
+
 	// there's no builtin way to do integer exponentiation, so we have to
 	// do it manually.
-	if (base != 0 && base != 1) {
-		for (; exponent != 0; --exponent) {
+	if (base == 1) {
+		result = 1;
+	} else if (base == -1) {
+		result = exponent & 1 ? -1 : 1; 
+	} else if (exponent == 1) {
+		result = base;
+	} else if (exponent == 0) {
+		result = 1;
+	} else if (exponent < 0) {
+		result = 0; // already handled the `base == -1` case
+	} else {
+		result = 1;
+
+		for (; exponent > 0; --exponent) {
 			result *= base;
 		}
 	}
@@ -540,7 +568,26 @@ struct kn_value_t kn_fn_eql(const struct kn_ast_t *args) {
 
 	case KN_VT_AST:
 		// ASTs are only equal if they're the _exact same_ object.
-		is_eql = lhs.ast == rhs.ast;
+		if (lhs.ast->kind != rhs.ast->kind) {
+			is_eql = false;
+			goto free_and_return;
+		}
+
+		// we should never have an AST of values...
+		assert(lhs.ast->kind == KN_TT_IDENTIFIER ||
+		       lhs.ast->kind == KN_TT_FUNCTION);
+
+		if (lhs.ast->kind == KN_TT_IDENTIFIER) {
+			is_eql = lhs.ast->identifier == rhs.ast->identifier;
+		} else {
+			is_eql = lhs.ast->arguments == rhs.ast->arguments;
+
+			// sanity check because the function should be the same
+			// for identical arguments.
+			assert(!is_eql ||
+				lhs.ast->function == rhs.ast->function);
+		}
+
 		break;
 
 	default:
@@ -554,10 +601,7 @@ free_and_return:
 	return kn_value_new_boolean(is_eql);
 }
 
-static int kn_value_cmp(
-	struct kn_value_t lhs,
-	struct kn_value_t rhs
-) {
+static int kn_value_cmp(struct kn_value_t lhs, struct kn_value_t rhs) {
 	switch(lhs.kind) {
 	case KN_VT_NULL:
 		die("cannot compare NULL");
@@ -570,7 +614,7 @@ static int kn_value_cmp(
 
 	case KN_VT_STRING: {
 		struct kn_string_t rstring = kn_value_to_string(&rhs);
-		int cmp = strcmp(lhs.string.str, rhs.string.str);
+		int cmp = strcmp(lhs.string.str, rstring.str);
 		kn_string_free(&rstring);
 		return cmp;
 	}
@@ -699,47 +743,50 @@ struct kn_value_t kn_fn_set(const struct kn_ast_t *args) {
 	return ret;
 }
 
+#define DECLARE_FUNCTION(name, arity, pointer) [name] = { arity, pointer, name }
+
 static struct kn_function_t FUNCTIONS[0xff] = {
-	['P'] = { 0, kn_fn_prompt },
-	['R'] = { 0, kn_fn_rand },
-	['T'] = { 0, kn_fn_true },
-	['F'] = { 0, kn_fn_false },
-	['N'] = { 0, kn_fn_null },
+	DECLARE_FUNCTION('P', 0, kn_fn_prompt),
+	DECLARE_FUNCTION('R', 0, kn_fn_rand),
+	DECLARE_FUNCTION('T', 0, kn_fn_true),
+	DECLARE_FUNCTION('F', 0, kn_fn_false),
+	DECLARE_FUNCTION('N', 0, kn_fn_null),
 
-	['B'] = { 1, kn_fn_block },
-	['E'] = { 1, kn_fn_eval },
-	['C'] = { 1, kn_fn_call },
-	['`'] = { 1, kn_fn_system },
-	['Q'] = { 1, kn_fn_quit },
-	['!'] = { 1, kn_fn_not },
-	['L'] = { 1, kn_fn_length },
-	['O'] = { 1, kn_fn_output },
+	DECLARE_FUNCTION('B', 1, kn_fn_block),
+	DECLARE_FUNCTION('E', 1, kn_fn_eval),
+	DECLARE_FUNCTION('C', 1, kn_fn_call),
+	DECLARE_FUNCTION('`', 1, kn_fn_system),
+	DECLARE_FUNCTION('Q', 1, kn_fn_quit),
+	DECLARE_FUNCTION('!', 1, kn_fn_not),
+	DECLARE_FUNCTION('L', 1, kn_fn_length),
+	DECLARE_FUNCTION('D', 1, kn_fn_dump),
+	DECLARE_FUNCTION('O', 1, kn_fn_output),
 
-	['+'] = { 2, kn_fn_add },
-	['-'] = { 2, kn_fn_sub },
-	['*'] = { 2, kn_fn_mul },
-	['/'] = { 2, kn_fn_div },
-	['%'] = { 2, kn_fn_mod },
-	['^'] = { 2, kn_fn_pow },
-	['?'] = { 2, kn_fn_eql },
-	['<'] = { 2, kn_fn_lth },
-	['>'] = { 2, kn_fn_gth },
-	[';'] = { 2, kn_fn_then },
-	['='] = { 2, kn_fn_assign },
-	['W'] = { 2, kn_fn_while },
-	['&'] = { 2, kn_fn_and },
-	['|'] = { 2, kn_fn_or },
+	DECLARE_FUNCTION('+', 2, kn_fn_add),
+	DECLARE_FUNCTION('-', 2, kn_fn_sub),
+	DECLARE_FUNCTION('*', 2, kn_fn_mul),
+	DECLARE_FUNCTION('/', 2, kn_fn_div),
+	DECLARE_FUNCTION('%', 2, kn_fn_mod),
+	DECLARE_FUNCTION('^', 2, kn_fn_pow),
+	DECLARE_FUNCTION('?', 2, kn_fn_eql),
+	DECLARE_FUNCTION('<', 2, kn_fn_lth),
+	DECLARE_FUNCTION('>', 2, kn_fn_gth),
+	DECLARE_FUNCTION(';', 2, kn_fn_then),
+	DECLARE_FUNCTION('=', 2, kn_fn_assign),
+	DECLARE_FUNCTION('W', 2, kn_fn_while),
+	DECLARE_FUNCTION('&', 2, kn_fn_and),
+	DECLARE_FUNCTION('|', 2, kn_fn_or),
 
-	['I'] = { 3, kn_fn_if },
-	['G'] = { 3, kn_fn_get },
+	DECLARE_FUNCTION('I', 3, kn_fn_if),
+	DECLARE_FUNCTION('G', 3, kn_fn_get),
 
-	['S'] = { 4, kn_fn_set },
+	DECLARE_FUNCTION('S', 4, kn_fn_set),
 };
 
 const struct kn_function_t *kn_fn_fetch(char name) {
 	return FUNCTIONS[(int) name].func == NULL ? NULL : &FUNCTIONS[(int) name];
 }
 
-void kn_fn_register_func(char name, struct kn_function_t func) {
-	FUNCTIONS[(int) name] = func;
+void kn_fn_register_func(struct kn_function_t func) {
+	FUNCTIONS[(int) func.name] = func;
 }

@@ -11,7 +11,6 @@ export function run(input) {
 	let value = Value.parse(new Stream(input.toString()))
 
 	if (value) {
-		console.log(value);
 		return value.run();
 	} else {
 		throw new Error('No value could be parsed!');

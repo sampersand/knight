@@ -37,6 +37,10 @@ export class Str extends Value {
 		return this.#data !== "";
 	}
 
+	dump() {
+		return `String(${this})`;
+	}
+
 	add(rhs) {
 		return new Str(`${this.#data}${rhs}`);
 	}

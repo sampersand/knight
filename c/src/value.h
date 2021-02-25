@@ -134,6 +134,13 @@ kn_boolean_t kn_value_to_boolean(const struct kn_value_t *value);
 kn_integer_t kn_value_to_integer(const struct kn_value_t *value);
 
 /*
+ * Dumps debugging information about the value to stdout.
+ *
+ * This does not add a trailing newline.
+ */
+void kn_value_dump(const struct kn_value_t *value);
+
+/*
  * Clones a value.
  *
  * Both the clone and original value will need to be passed to `kn_value_free`.

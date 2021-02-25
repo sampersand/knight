@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { run } from '../src/index.js';
 
+run(process.argv[3]);
 //run('E ` + "cat " P');
-run('E ` "cat ../../knight.kn"');
+// run('E ` "cat ../../knight.kn"');
 // run('E ` + "cat " "../../examples/fizzbuzz.kn"');
 
 // run(`

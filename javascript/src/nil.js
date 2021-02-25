@@ -17,6 +17,10 @@ export class Nil extends Value {
 		return false;
 	}
 
+	dump() {
+		return 'Null()';
+	}
+
 	eql(rhs) {
 		return rhs instanceof Nil;
 	}
