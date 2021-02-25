@@ -8,7 +8,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
-| [C](../c/c) |   | X | X | X | Sensitization Issues need to be resolved |
+| [C](../c/c) | * | X | X | X | Almost fully functional---the hashmap for identifiers needs work. |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
 | [JavaScript](../javascript/javascript) |   |   | X | X | Minor bugs need to be fixed; Complete compliance needs to be verified. |
@@ -23,10 +23,13 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
 
+<<<<<<< Updated upstream
 
 
 
 
+=======
+>>>>>>> Stashed changes
 # Examples
 Here's some examples of the syntax to give you a feel for it:
 
