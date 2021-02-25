@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 require 'minitest/autorun'
 
 $executable_to_test ||= $*.shift
