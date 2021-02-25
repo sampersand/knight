@@ -15,6 +15,19 @@ class Stream():
 		""" Returns whether the stream is empty. """
 		return bool(self.source)
 
+	def strip(self):
+		""" Removes all leading whitespace and quotes """
+		self.matches(r'([\s(){}\[\]:]+|\#[^\n]*)+')
+
+	def prepend(self, value: str):
+		"""
+		Adds text back to the stream.
+
+		This is only used by `String` to restore the stream back to its previous state
+		when raising an error due to a missing closing quote.
+		"""
+		self.source = value + self.source
+
 	def matches(self, rxp: str, index: int = 0) -> Union[None, str]:
 		"""
 		Checks to see if the start of the stream matches `rxp`.

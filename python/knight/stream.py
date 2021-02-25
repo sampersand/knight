@@ -16,15 +16,21 @@ class Stream():
 		""" Returns whether the stream is empty. """
 		return bool(self.source)
 
-	def matches(self, rxp: str, index: int = 0) -> Union[None, str]:
+	def strip(self) -> None:
+		""" Removes all leading whitespace and quotes """
+		self.matches(r'([\s(){}\[\]:]+|\#[^\n]*)+')
+
+	def matches(self, rxp: re.Pattern, index: int = 0) -> Union[None, str]:
 		"""
 		Checks to see if the start of the stream matches `rxp`.
 
-		If the stream doesn't match, `None` is returned. Otherwise, the stream is updated, and the `index`th group is
-		returned. (The default value of `0` means the entire matched regex is returned.)
+		If the stream doesn't match, `None` is returned. Otherwise, the
+		stream is updated, and the `index`th group is returned. (The
+		default value of `0` means the entire matched regex is returned.)
 		"""
-
-		if match := re.match(rxp, self.source):
+		if match := rxp.match(self.source):
 			string = self.source[:match.end()]
 			self.source = self.source[match.end():]
-			return string[index]
+			return match[index]
+		else:
+			return None
