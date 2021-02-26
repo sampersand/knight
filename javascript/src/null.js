@@ -1,9 +1,9 @@
 import { Value, TYPES } from './value.js';
 import { RuntimeError } from './error.js';
 
-export class Nil extends Value {
+export class Null extends Value {
 	static parse(stream) {
-		return stream.match(/^N[A-Z]*/) && new Nil();
+		return stream.match(/^N[A-Z]*/) && new Null();
 	}
 
 	toString() {
@@ -23,7 +23,7 @@ export class Nil extends Value {
 	}
 
 	eql(rhs) {
-		return rhs instanceof Nil;
+		return rhs instanceof Null;
 	}
 
 	lth(_rhs) {
@@ -35,4 +35,4 @@ export class Nil extends Value {
 	}
 }
 
-TYPES.push(Nil);
+TYPES.push(Null);

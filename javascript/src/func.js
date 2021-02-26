@@ -2,7 +2,7 @@ import { Value, TYPES } from './value.js';
 import { Bool } from './bool.js';
 import { Ident } from './ident.js';
 import { Int } from './int.js';
-import { Nil } from './nil.js';
+import { Null } from './null.js';
 import { Str } from './str.js';
 import { Stream } from './stream.js';
 import { ParseError } from './error.js';
@@ -156,7 +156,7 @@ register('W', (condition, body) => {
 		ret = body.run();
 	}
 
-	return ret || new Nil(); 
+	return ret || new Null(); 
 });
 
 register('I', (cond, iftrue, iffalse) => {

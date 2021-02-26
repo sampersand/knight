@@ -3,7 +3,7 @@ import { Value } from './value.js';
 import { Bool } from './bool.js';
 import { Ident } from './ident.js';
 import { Int } from './int.js';
-import { Nil } from './nil.js';
+import { Null } from './null.js';
 import { Str } from './str.js';
 import { Func } from './func.js';
 import { Stream } from './stream.js';
