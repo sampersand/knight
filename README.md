@@ -22,7 +22,6 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Raku](raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
-
 | Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
 | C# |   |   |   |   | Planned. I know a decent amount of C# already, so this wont be that hard. |
 | LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
