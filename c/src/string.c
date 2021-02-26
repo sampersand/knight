@@ -36,7 +36,7 @@ struct kn_string_t kn_string_clone(const struct kn_string_t *string) {
 		((struct kn_string_t *) string)->rc++;
 	}
 
-	return *(struct kn_string_t *) string;
+	return *string;
 }
 
 void kn_string_free(struct kn_string_t *string) {
@@ -45,5 +45,6 @@ void kn_string_free(struct kn_string_t *string) {
 	// We own the string now, so we're free to remove its constness.
 	if (string->rc != NULL && --(*(string->rc)) == 0) {
 		free((char *) string->str);
+		free(string->rc);
 	}
 }

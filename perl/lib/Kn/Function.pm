@@ -77,6 +77,14 @@ __PACKAGE__->register('L', 1, sub {
 	Kn::Number->new(length shift);
 });
 
+# Dumps a value's representation, then returns it.
+__PACKAGE__->register('D', 1, sub {
+	my $val = shift->run();
+
+	print $val->dump();
+	return $val;
+});
+
 # Outputs the given argument, which it then returns. If the argument ends with
 # a `\`, it's removed and no trailing newline is printed. Otherwise, a newline
 # is added to the end of the string.

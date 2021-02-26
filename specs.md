@@ -1,6 +1,12 @@
 # Overview
 
-Knight is meant to be easily implementable in virtually every language imaginable. As such, the language itself is not very complicated, and the specs leave a lot of things undefined and/or up to the implementation---this allows each langauge to implement it in the most idiomatic way possible.
+Knight is meant to be easily implementable in virtually every language imaginable. As such, the language itself is not very complicated, and the specs leave a lot of things undefined and/or up to the implementation---this allows each language to implement it in the most idiomatic way possible.
+
+## Notation
+In this document, some notation is used to describe what is required of implementations:
+- The word **required** indicates directions implementations if they want to be valid.
+- The word **optional** indicates directions that probably should be implemented, but aren't required
+- The word **undefined** is used to indicate that behaviour is undefined: Programs that contain undefined behaviour are invalid, and the interpreter does not have to provide any guarantees. (However, if possible, implementations should gracefully exit.)
 
 # Syntax
 ## Overview
@@ -11,7 +17,7 @@ Knight does not have a distinction between statements and expressions: Every sin
 All characters other than those mentioned in this document are considered invalid within Knight: Both within source code, and strings. Notably, the NUL character (`\0`) is not permissible within Knight strings, and can be used as a deliminator within implementations.
 
 ## Whitespace
-The following characters are the only recognized whitespace characters:
+Implementations are **required** to recognize the following characters as whitespace:
 - Tab (`0x09`, ie `\t`)
 - Newline (`0x0a`, ie `\n`)
 - Carriage return (`0x0d`, ie `\r`)
@@ -44,9 +50,41 @@ There are also boolean and null values within Knight. See `Functions` for more d
 In Knight, all variables are lower case---upper case letters are reserved for functions. Variable names must start with an ASCII lower case letter (ie `a` (`0x61`) through `z` (`0x7a`)) or an underscore (`_` (`0x5f`)). After the initial letter, variable names may also include ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)).
 
 ## Functions
-In Knight, there are two different styles of functions: symbolic and word-based functions.
+In Knight, there are two different styles of functions: symbolic and word-based functions. In both cases, the function is uniquely 
 
+Word-based functions start with a single uppercase letter, such as `I` for `if` or `R` for `random`, and may contain any amount of upper case letters afterwards. (Note that they may _not_ include `_`---that is considered the start of an identifier). In contrast, Symbolic functions are functions that are composed of a single symbol, such as `;` or `%`.
+
+Each function has a predetermined arity---no variable argument functions are allowed. After parsing a function's name, an amount of expressions corresponding to that function's arity should be parsed: For example, after parsing a `+`, two expressions must be parsed, such as `+ 1 2`. Programs that contain functions with fewer than the required amount of arguments are considered undefined.
+
+The list required functions are as follows,
+
+
+# Optional features.
 # Details
+## Functions
+### Adding new functions.
+
 ## Types
-### Number
+Knight itself only has a handful of builtin types---Numbers, Strings, Booleans, and Null. Knight has four different contexts: numeric, string, boolean, and "unchanged". Barring the "unchanged" context, values shall be able to be coerced to the correct type automatically.
+
+### Null
+`NULL` is used to indicate the absence of a value within Knight, and some functions may return it (For example, `WHILE` when no expression is executed). There is only one null type in Knight.
+
+#### Conversions
+- `Number`: Null is required to evaluate to `0` in a numeric context.
+- `String`: Null is required to evaluate to either `"null"` in a string context.
+- `Boolean`: Null is required to evaluate to evaluate to `FALSE` in a boolean context.
+
+#### Functions
+- `? NULL rhs`: The the only function defined on `NULL`--This shall return a truthy value when the 
+
+### Booleans
+The boolean type in Knight is how truthiness is defined. Booleans have exactly two valid values: `TRUE` and `FALSE`. In certain contexts (such as the condition of `IF`), expressions will be converted to their boolean value.
+
+The conversions for booleans themselves is defined as follows:
+- `Number`: In numeric contexts, `TRUE` shall become `1` and `FALSE` shall become `0`.
+- `String`: In string contexts, `TRUE` shall become `"true"` and `FALSE` shall become `"false"`.
+- `Boolean`: In boolean contexts, `TRUE` and `FALSE` do not change.
+
+### Integers
 In Knight, only integral numbers exist.

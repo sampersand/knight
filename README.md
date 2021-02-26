@@ -1,6 +1,35 @@
 # Knight
 An extremely simple programming language that I've designed to be easy to implement in a variety of languages. It's not actually meant to be used, though it is a fully-functional lang.
 
+# Implementations
+The following is the list of all languages that's supported. All in-progress implementations are in separate branches.
+
+| Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
+| -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
+| [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
+| [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
+| [C](../c/c) | * | X | X | X | Almost fully functional---the hashmap for identifiers needs work. |
+| [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
+| [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
+| [JavaScript](../javascript/javascript) | X |   | X | X | Documentation needs to be written, code can probably be cleaned up slightly. |
+| [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
+| [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
+| [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
+| [POSIX-Compliant SH](shell/knight.sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
+| [Prolog](../prolog/prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
+| [Python](../python/python) |   |   | X | X | A somewhat hacky version is completed; a cleaned up version is in progress. |
+| [Quest](../quest/quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
+| [Raku](raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
+| [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
+| [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
+| Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
+| TypeScript |   |   |   |   | Planned; Sufficiently different enough in idioms IMO that it warrants its own implementation. |
+| C# |   |   |   |   | Planned. I know a decent amount of C# already, so this wont be that hard. |
+| SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
+| Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
+| LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
+| Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
+
 # Examples
 Here's some examples of the syntax to give you a feel for it:
 
@@ -65,7 +94,7 @@ nullary
   ;
 
 unary
- := ('B' | 'C' | 'O' | 'P' | 'Q' | 'S' | 'L') {UPPER}
+ := ('B' | 'C' | 'O' | 'Q' | 'L') {UPPER}
   | '`'
   | '!'
   ;

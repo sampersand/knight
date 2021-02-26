@@ -1,0 +1,19 @@
+; = _fib_recur 0
+; = fib BLOCK
+	: IF (< n 2)
+		# if < 2, return n
+		: n
+		# otherwise, recursion!
+		; = n (- n 1) # n-=1, so we do `fib(n) + fib(n-1)`
+
+		# calculate `fib(n)`
+		; = _fib_recur (+ _fib_recur 1)
+		; = (+ "_fib_n_" _fib_recur) (- n 1)
+		; = tmp (CALL fib)
+		; = _fib_recur (- _fib_recur 1)
+
+		# return `fib(n)` added to `fib(n-1)`
+		; = n (EVAL (+ "_fib_n_" _fib_recur))
+		: + tmp (CALL fib)
+; = n 10
+: OUTPUT CALL fib
