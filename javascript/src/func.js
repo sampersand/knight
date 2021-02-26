@@ -86,10 +86,16 @@ register('P', () => {
 	let line = '';
 	let buf = Buffer.alloc(1);
 
-	while (buf[0] != 0x0a) {	
-		line += buf;
+	do {
 		readSync(0, buf, 0, 1);
-	}
+		if (buf[0] == 0x00) {
+			break;
+		}
+
+		line += buf;
+	} while (buf[0] != 0x0a);
+
+	console.log(JSON.stringify(line));
 
 	return new Str(line);
 });
@@ -100,8 +106,10 @@ register('B', block => block);
 register('C', block => block.run().run());
 register('`', block => {
 	const block1 = block.toString();
+	console.log(block1 == 'cat tmp.ignore');
+	console.log(JSON.stringify(block1));
 	console.log(`block1=<${block1}>`);
-	const res = execSync(block1);
+	const res = execSync(block1.toString());
 	console.log(`res=<${res}>`);
 
 	return new Str(res.toString());

@@ -21,6 +21,12 @@ export class Str extends Value {
 	constructor(data) {
 		super();
 
+		if (data[0] == '\0') {
+			var err = new Error();
+			console.log(err.stack);
+			throw "nope";
+		}
+
 		if (typeof data !== 'string') {
 			throw new Error(`Expected a string, got ${typeof data}`);
 		}
