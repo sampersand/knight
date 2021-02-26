@@ -84,6 +84,7 @@ describe 'Booleans' do
 				assert_equal false, eval('< FALSE 0')
 				assert_equal false, eval('< FALSE ""')
 				assert_equal false, eval('< FALSE NULL')
+				assert_equal true, eval('< FALSE (- 0 1)')
 
 				assert_equal false, eval('< TRUE TRUE')
 				assert_equal false, eval('< TRUE FALSE')
@@ -108,6 +109,7 @@ describe 'Booleans' do
 				assert_equal false, eval('> TRUE 1')
 				assert_equal false, eval('> TRUE "1"')
 
+				assert_equal false, eval('> FALSE (- 0 1)')
 				assert_equal false, eval('> FALSE TRUE')
 				assert_equal false, eval('> FALSE FALSE')
 				assert_equal false, eval('> FALSE 1')
