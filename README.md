@@ -11,7 +11,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [C](../c/c) | * | X | X | X | Almost fully functional---the hashmap for identifiers needs work. |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
-| [JavaScript](../javascript/javascript) |   |   | X | X | Minor bugs need to be fixed; Complete compliance needs to be verified. |
+| [JavaScript](../javascript/javascript) | X |   | X | X | Documentation needs to be written, code can probably be cleaned up slightly. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
 | [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
