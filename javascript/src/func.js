@@ -98,7 +98,15 @@ register('R', () => new Ident(Math.floor(Math.random() * 0xffff_ffff)));
 register('E', string => run(string.toString()));
 register('B', block => block);
 register('C', block => block.run().run());
-register('`', block => new Str(execSync(block.toString()).toString()));
+register('`', block => {
+	const block1 = block.toString();
+	console.log(`block1=<${block1}>`);
+	const res = execSync(block1);
+	console.log(`res=<${res}>`);
+
+	return new Str(res.toString());
+	// new Str(execSync(block.toString()).toString())
+});
 register('Q', status => process.exit(status.toInt()));
 register('!', arg => new Bool(!arg.toBool()));
 register('L', str => new Int(arg.toString().length));
