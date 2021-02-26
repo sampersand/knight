@@ -1,9 +1,52 @@
 class Object
+	alias _not !
+
 	alias call itself
-	def coerce(rhs) = to_i.coerce(rhs)
+	def coerce(r) = to_i.coerce(r)
 	def to_i = to_s.to_i
-	def <(rhs) = !!( !self && rhs)
-	def >(rhs) = !!( self && !rhs)
+	def to_str = to_s
+	def to_sym = to_s.to_sym
+
+	def R(*) = rand(0..0xffff_ffff)
+	def P(*) = gets
+	def E =  parse!(to_s).()
+	alias B itself
+	def ! = call._not
+	def C = call.()
+	def ` = Kernel.`(to_s)  # `
+	def Q = exit(to_i)
+	def L = to_s.length
+	def D = print(inspect)
+	def O; if (b="#{a=call}")[-1] == '\\' then print b[..-2] else puts b end; a end
+	def +(r) = call + r.()
+	def -(r) = call - r.()
+	def *(r) = call * r.()
+	def /(r) = call / r.()
+	def %(r) = call % r.()
+	def ^(r) = self ** r
+	def <(r) = !!(!self && r) # overloads for booleans
+	def >(r) = !!(self && !r) # overloads for booleans
+	define_method ?? do |r| self == r end
+	define_method ?; do |r| call; r.() end
+	define_method ?= do |r| to_sym.send :'=', r.() end
+	def &(r) = !(x=call) ? x : r.()
+	def |(r) = !(x=call) ? r.(): x
+	def W(r) 
+		tmp = r.() until !self
+		tmp
+	end
+
+	def I(t,f) = (!self ? f : t).()
+	def G(s, l) = to_s[s.to_i, l.to_i]
+	def S(s, l, r)
+		t = to_s.dup
+		t[s.to_i, l.to_i] = r.to_s
+		t
+	end
+end
+
+class Proc
+	def inspect = 'Function(...)'
 end
 
 class String
@@ -12,73 +55,51 @@ class String
 end
 
 class TrueClass
-	alias to_str to_s
 	def to_i = 1
 	def inspect = "Boolean(#{self})"
 end
 
 class FalseClass
-	alias to_str to_s
 	def inspect = "Boolean(#{self})"
 end
 
 class Integer
 	alias ! zero?
-	alias to_str to_s
 	def inspect = 'Null()'
 end
 
 class Symbol
-	$ENV = {}
+	$ENV={}
 	def call = $ENV.fetch(self)
-
-def r(&x)=x
-def parse(input)
-	[[/\s+|\#[^\n]*/,->_{parse input}],
-	 [/\d+/, proc(&:to_i)],
-	 [/([TF])[A-Z]*/, ->x{ x == ?T }],
-	 [/N[A-Z]/, ->_{}],
-	 [/'([^']*)'|"([^"]*)"/, proc(&:itself)],
-	 [/[a-z_][a-z0-9_]*/, proc(&:to_sym)],
-	 [/(?:([A-Z])[A-Z]*|(.))/, ->f{
-	 	val = {
-	 		?R => ->{ rand 0..0xffff_ffff },
-	 		?P => ->{ gets },
-	 		?E => ->a{ parse("#{a}").call },
-	 		?B => proc(&:itself),
-	 		?C => ->a{ a.().() },
-	 		?` => ->a{ `#{a}` },
-	 		?Q => ->a{ exit a },
-	 		?! => proc(&:!),
-	 		?L => ->a{ a.to_s.size },
-	 		?D => ->a print a.inspect}
-# B
-# C
-# `
-# Q
-# !
-# L
-# O
-# +
-# -
-# *
-# /
-# %
-# ^
-# <
-# >
-	 	}[f] or abort "unknown function '#{f}'"
-	 	[val, val.arity.times.map { parse stream }]
-	 }]
-	].each { input.slice! /\A(?:#{_1})/ and return _2.($+||$&).call }
-	abort "nothing found"
+	define_method ?= do |r| $ENV[self] = r end
 end
 
-p parse <<EOS
- O + 1 2 
+def parse!(input)
+	input.slice! /\A(?:[\s(){}\[\]:]+|\#[^\n]*)/
+
+	case
+	when input.slice!(/\A\d+/) then $&.to_i
+	when input.slice!(/\A([TF])[A-Z]*/) then $1 == ?T
+	when input.slice!(/\AN[A-Z]*/) then # nil
+	when input.slice!(/\A[a-z_][a-z0-9_]*/) then $&.to_sym
+	when input.slice!(/\A(?:'([^']*)'|"([^"]*)")/) then $+
+	when (meth = Object.instance_method(input[0].to_sym) rescue false) then
+		input.slice! /\A([A-Z]+|.)/
+		args = meth.arity.succ.times.map { parse! input }
+		proc { meth.bind_call(*args) }
+	else abort "nothing found"
+	end
+end
+
+parse!($*[1]).()
+__END__
+p parse!(<<EOS).()
+	; = a 3
+	: O * a 3
 F
 1
 EOS
+p $ENV
 __END__
 
 p 1 + 1
@@ -107,7 +128,7 @@ class Object
 
 	def to_i = run ? 1 : 0
 	def falsey? = to_i.zero?
-	def coerce(rhs) = [to_i, rhs]
+	def coerce(r) = [to_i, r]
 end
 
 class Ident < String
@@ -342,7 +363,7 @@ module Value
 	def to_str = to_s 
 	def run = self
 	def falsey? = to_i.zero?
-	def coerce(rhs) = [to_i, rhs]
+	def coerce(r) = [to_i, r]
 end
 
 class String
