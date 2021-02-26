@@ -15,6 +15,10 @@ export class Ident extends Value {
 	constructor(ident) {
 		super();
 
+		if (typeof ident !== 'string') {
+			throw new Error(`Expected a string, got ${typeof ident}`);
+		}
+
 		this.#ident = ident;
 	}
 

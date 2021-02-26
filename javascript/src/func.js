@@ -43,8 +43,8 @@ export class Func extends Value {
 
 	constructor(func, name,...args) {
 		super();
-		this.name=name;
 
+		this.#name =name;
 		this.#func = func;
 		this.#args = args;
 	}
@@ -95,33 +95,22 @@ register('P', () => {
 		line += buf;
 	} while (buf[0] != 0x0a);
 
-	console.log(JSON.stringify(line));
-
 	return new Str(line);
 });
-register('R', () => new Ident(Math.floor(Math.random() * 0xffff_ffff)));
+
+register('R', () => new Int(Math.floor(Math.random() * 0xffff_ffff)));
 
 register('E', string => run(string.toString()));
 register('B', block => block);
 register('C', block => block.run().run());
-register('`', block => {
-	const block1 = block.toString();
-	console.log(block1 == 'cat tmp.ignore');
-	console.log(JSON.stringify(block1));
-	console.log(`block1=<${block1}>`);
-	const res = execSync(block1.toString());
-	console.log(`res=<${res}>`);
-
-	return new Str(res.toString());
-	// new Str(execSync(block.toString()).toString())
-});
+register('`', block => new Str(execSync(block.toString()).toString()));
 register('Q', status => process.exit(status.toInt()));
 register('!', arg => new Bool(!arg.toBool()));
-register('L', str => new Int(arg.toString().length));
+register('L', str => new Int(str.toString().length));
 register('D', value => {
 	const result = value.run();
 
-	console.log(result.dump());
+	process.stdout.write(result.dump());
 
 	return result;
 });
@@ -144,8 +133,14 @@ register('^', (lhs, rhs) => lhs.run().pow(rhs.run()));
 register('<', (lhs, rhs) => new Bool(lhs.run().lth(rhs.run())));
 register('>', (lhs, rhs) => new Bool(lhs.run().gth(rhs.run())));
 register('?', (lhs, rhs) => new Bool(lhs.run().eql(rhs.run())));
-register('&', (lhs, rhs) => lhs.run() && rhs.run());
-register('|', (lhs, rhs) => lhs.run() || rhs.run());
+register('&', (lhs, rhs) => {
+	lhs = lhs.run();
+	return lhs.toBool() ? rhs.run() : lhs;
+});
+register('|', (lhs, rhs) => {
+	lhs = lhs.run();
+	return lhs.toBool() ? lhs : rhs.run();
+});
 register(';', (lhs, rhs) => (lhs.run(), rhs.run()));
 register('=', (ident, value) => {
 	if (!(ident instanceof Ident)) {
