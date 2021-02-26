@@ -1,4 +1,5 @@
 import { Value, TYPES } from './value.js';
+import { RuntimeError } from './error.js';
 
 const ENVIRONMENT = {};
 
@@ -27,7 +28,7 @@ export class Ident extends Value {
 		if (value) {
 			return value;
 		} else {
-			throw new Error(`Unknown identifier '${this.#ident}'`);
+			throw new RuntimeError(`Unknown identifier '${this.#ident}'`);
 		}
 	}
 

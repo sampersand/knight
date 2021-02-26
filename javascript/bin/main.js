@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { KnightError, run } from '../src/index.js';
-import { readSync } from 'fs';
+import { KnightError, run } from '../src/knight.js';
+import { readFileSync } from 'fs';
 
 const argv = process.argv;
 
@@ -11,7 +11,7 @@ if (argv.length !== 4 || (argv[2] !== '-e' && argv[2] !== '-f')) {
 }
 
 try {
-	run(argv[2] == '-e' ? argv[3] : readSync(argv[3]));
+	run(argv[2] == '-e' ? argv[3] : readFileSync(argv[3]));
 } catch (error) {
 	if (error instanceof KnightError) {
 		console.error("Fatal Error:", error.message);

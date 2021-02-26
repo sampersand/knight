@@ -51,9 +51,9 @@ export class Int extends Value {
 		const rhsInt = rhs.toInt();
 
 		if (rhsInt) {
-			return new Int(Math.floor(this.#data / rhsInt));
+			return new Int(Math.trunc(this.#data / rhsInt));
 		} else {
-			throw new Error('Cannot divide by zero');
+			throw new RuntimeError('Cannot divide by zero');
 		}
 	}
 
@@ -63,20 +63,24 @@ export class Int extends Value {
 		if (rhsInt) {
 			return new Int(this.#data % rhsInt);
 		} else {
-			throw new Error('Cannot modulo by zero');
+			throw new RuntimeError('Cannot modulo by zero');
 		}
 	}
 
 	pow(rhs) {
-		return new Int(this.#data ** rhs.toInt());
+		return new Int(Math.trunc(this.#data ** rhs.toInt()));
 	}
 
 	eql(rhs) {
-		return rhs instanceof Int && rhs.data === this;
+		return rhs instanceof Int && this.#data == rhs.#data;
 	}
 
-	cmp(rhs) {
-		return this.sub(rhs); // comparison is the same as subtraction
+	lth(rhs) {
+		return this.#data < rhs.toInt();
+	}
+
+	gth(rhs) {
+		return this.#data > rhs.toInt();
 	}
 }
 

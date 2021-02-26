@@ -40,11 +40,12 @@ export class Bool extends Value {
 		return rhs instanceof Bool && this.#data === rhs.#data;
 	}
 
+	lth(rhs) {
+		return !this.#data && rhs.toBool();
+	}
 
-	cmp(rhs) {
-		rhs = rhs.toBool();
-
-		return !this.#data && rhs ? -1 : this.#data && !rhs ? 1 : 0;
+	gth(rhs) {
+		return this.#data && !rhs.toBool();
 	}
 }
 

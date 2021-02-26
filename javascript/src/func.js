@@ -5,7 +5,7 @@ import { Int } from './int.js';
 import { Nil } from './nil.js';
 import { Str } from './str.js';
 import { Stream } from './stream.js';
-import { Stream } from './index.js';
+import { ParseError } from './error.js';
 
 const FUNCTIONS = {};
 
@@ -24,7 +24,7 @@ export class Func extends Value {
 		const func = FUNCTIONS[match];
 
 		if (!func) {
-			throw new Error(`Unknown function '${match}'`);
+			throw new ParseError(`Unknown function '${match}'`);
 		}
 
 		let args = [];
@@ -32,7 +32,7 @@ export class Func extends Value {
 			const arg = Value.parse(stream);
 
 			if (!arg) {
-				throw new Error(`Missing argument ${i+1} for function '${match}'`);
+				throw new ParseError(`Missing argument ${i+1} for function '${match}'`);
 			}
 
 			args.push(arg);
@@ -80,7 +80,7 @@ export function register(name, func)  {
 
 import { readSync } from 'fs';
 import { execSync } from 'child_process';
-import { run } from './index.js';
+import { run } from './knight.js';
 
 register('P', () => {
 	let line = '';

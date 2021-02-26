@@ -1,4 +1,5 @@
 import { Value, TYPES } from './value.js';
+import { RuntimeError } from './error.js';
 
 export class Nil extends Value {
 	static parse(stream) {
@@ -23,6 +24,14 @@ export class Nil extends Value {
 
 	eql(rhs) {
 		return rhs instanceof Nil;
+	}
+
+	lth(_rhs) {
+		throw new RuntimeError("Cannot compare Null.");
+	}
+
+	gth(_rhs) {
+		throw new RuntimeError("Cannot compare Null.");
 	}
 }
 

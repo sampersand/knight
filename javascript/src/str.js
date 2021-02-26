@@ -1,17 +1,20 @@
 import { Value, TYPES } from './value.js';
+import { ParseError } from './error.js';
 
 export class Str extends Value {
 	#data;
 
 	static parse(stream) {
-		const match = stream.match(/^(["'])((?:.|\n)*?)\1/m, 2);
+		// The modifier `/m` doesn't work in this case, so
+		// `[\s\S]` is used to match _all_ characters, including `\n` and `\r\n`.
+		const match = stream.match(/^(["'])([\s\S]*?)\1/, 2);
 
 		if (match !== null) {
 			return new Str(match);
 		}
 
 		if (stream.match(/^['"]/)) {
-			throw new Error(`Unterminated quote encountered: ${stream}`);
+			throw new ParseError(`Unterminated quote encountered: ${stream}`);
 		}
 	}
 
@@ -50,11 +53,15 @@ export class Str extends Value {
 	}
 
 	eql(rhs) {
-		return rhs instanceof Str && rhs.data === this.#data;
+		return rhs instanceof Str && this.#data === rhs.#data;
 	}
 
-	cmp(rhs) {
-		return this.data.localeCompare(rhs.toString());
+	lth(rhs) {
+		return this.#data < rhs.toString();
+	}
+
+	gth(rhs) {
+		return this.#data > rhs.toString();
 	}
 }
 
