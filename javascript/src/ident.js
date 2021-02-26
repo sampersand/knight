@@ -23,7 +23,7 @@ export class Ident extends Value {
 	}
 
 	assign(value) {
-		ENVIRONMENT[this.#ident] = value;
+		ENVIRONMENT[this.#ident] = value.run();
 	}
 
 	run() {

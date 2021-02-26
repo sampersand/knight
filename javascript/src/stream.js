@@ -17,8 +17,11 @@ export class Stream {
 		}
 
 		this.#source = this.#source.substr(match[0].length);
+
 		return match[idx];
 	}
 
-	toString() { return this.#source; }
+	toString() {
+		return this.#source;
+	}
 }

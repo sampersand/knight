@@ -15,14 +15,6 @@ export class Value {
 		return null;
 	}
 
-	lth(rhs) {
-		return this.cmp(rhs) < 0;
-	}
-
-	gth(rhs) {
-		return this.cmp(rhs) > 0;
-	}
-
 	run() {
 		return this;
 	}

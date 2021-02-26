@@ -1,7 +1,8 @@
 import { Value, TYPES } from './value.js';
+import { Literal } from './literal.js';
 
 // The class in Knight that represents a boolean
-export class Bool extends Value {
+export class Bool extends Literal {
 	#data;
 
 	static parse(stream) {
@@ -11,13 +12,10 @@ export class Bool extends Value {
 	}	
 
 	constructor(data) {
-		super();
-
 		if (typeof data !== 'boolean') {
 			throw new Error(`Expected a boolean, got ${typeof data}`);
 		}
-
-		this.#data = data;
+		super(data);
 	}
 
 	toString() {
@@ -28,9 +26,9 @@ export class Bool extends Value {
 		return +this.#data;
 	}
 
-	toBool() {
-		return this.#data;
-	}
+	// toBool() {
+	// 	return this.#data;
+	// }
 
 	dump() {
 		return `Boolean(${this})`;
@@ -50,3 +48,4 @@ export class Bool extends Value {
 }
 
 TYPES.push(Bool);
+
