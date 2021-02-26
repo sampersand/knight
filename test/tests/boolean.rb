@@ -2,7 +2,7 @@ require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
 
-describe 'Booleans' do
+describe 'Boolean' do
 	include Kn::Test::Shared
 
 	describe 'conversions' do
