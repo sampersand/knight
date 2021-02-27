@@ -23,7 +23,6 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
 | Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
-| TypeScript |   |   |   |   | Planned; Sufficiently different enough in idioms IMO that it warrants its own implementation. |
 | C# |   |   |   |   | Planned. I know a decent amount of C# already, so this wont be that hard. |
 | SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
