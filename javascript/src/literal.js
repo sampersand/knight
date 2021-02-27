@@ -1,7 +1,7 @@
 import { Value } from './value.js';
 
 /**
- * The string type within Knight, used to represent textual data.
+ * An abstract class that's used 
  *
  * @see Value - For more information on why we don't simply use `String`.
  * @extends {Literal<string>}
@@ -15,16 +15,19 @@ export class Literal extends Value {
 		this._data = data;
 	}
 
+	run() {
+		return this;
+	}
+
 	toString() {
 		return String(this._data);
 	}
 
-	toInt() {
+	toNumber() {
 		return Number(this._data);
 	}
 
-	toBool() {
-		console.log(this._data, Boolean(this._data));
+	toBoolean() {
 		return Boolean(this._data);
 	}
 

@@ -1,5 +1,6 @@
-import { Value, TYPES } from './value.js';
+import { TYPES } from './value.js';
 import { ParseError } from './error.js';
+import { Literal } from './literal.js';
 
 /**
  * The string type within Knight, used to represent textual data.
@@ -7,7 +8,7 @@ import { ParseError } from './error.js';
  * @see Value - For more information on why we don't simply use `String`.
  * @extends {Literal<string>}
  */
-export class Str extends Value {
+export class Str extends Literal {
 	/**
 	 * Attempts to parse a `Str` from the `stream`.`
 	 *
@@ -41,7 +42,7 @@ export class Str extends Value {
 	 * @override
 	 * @return {number} - The numeric representation of this class.
 	 */
-	toInt() {
+	toNumber() {
 		return parseInt(this._data, 10) || 0;
 	}
 
@@ -57,7 +58,7 @@ export class Str extends Value {
 	/**
 	 * Returns a new `Str` with `this` concatenated with `rhs`.
 	 *
-	 * @param {Value} rhs - The value to append.
+	 * @param {import('./value.js').Value} rhs - The value to append.
 	 * @return {Str} - The concatenation of `this` and `rhs`.
 	 */
 	add(rhs) {
@@ -67,18 +68,20 @@ export class Str extends Value {
 	/**
 	 * Returns a new `Str` with `this` repeated `rhs` times.
 	 *
-	 * @param {Value} rhs - The amount of times to repeat `this` for.
+	 * @param {import('./value.js').Value} rhs - The amount of times to repeat
+	 *                                           `this` for.
 	 * @return {Str} - `This` repeated `rhs` times.
 	 */
 	mul(rhs) {
-		return new Str(this._data.repeat(rhs.toInt()));
+		return new Str(this._data.repeat(rhs.toNumber()));
 	}
 
 	/**
 	 * Returns a whether `this` is less than `rhs`, lexicographically 
 	 *
-	 * @param {Value} rhs - The value to be converted to a string and compared.
-	 * @return {Str} - True if `this` is less than `rhs`.
+	 * @param {import('./value.js').Value} rhs - The value to be converted to a
+	 *                                           string and compared.
+	 * @return {boolean} - True if `this` is less than `rhs`.
 	 */
 	lth(rhs) {
 		return this._data < rhs.toString();
@@ -87,8 +90,9 @@ export class Str extends Value {
 	/**
 	 * Returns a whether `this` is less than `rhs`, lexicographically 
 	 *
-	 * @param {Value} rhs - The value to be converted to a string and compared.
-	 * @return {Str} - True if `this` is less than `rhs`.
+	 * @param {import('./value.js').Value} rhs - The value to be converted to a
+	 *                                           string and compared.
+	 * @return {boolean} - True if `this` is less than `rhs`.
 	 */
 	gth(rhs) {
 		return this._data > rhs.toString();

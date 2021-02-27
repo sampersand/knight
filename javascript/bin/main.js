@@ -13,7 +13,7 @@ if (argv.length !== 4 || (argv[2] !== '-e' && argv[2] !== '-f')) {
 try {
 	run(argv[2] == '-e' ? argv[3] : readFileSync(argv[3]));
 } catch (error) {
-	if (error instanceof KnightError) {
+	if (!(error instanceof KnightError)) {
 		console.error("Fatal Error:", error.message);
 		process.exit(1);
 	} else {

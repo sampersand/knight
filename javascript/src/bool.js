@@ -33,27 +33,27 @@ export class Bool extends Literal {
 	/**
 	 * Checks to see if `this` is less than `rhs`.
 	 *
-	 * This will only return true if `this.toBool()` is false and `rhs.toBool()`
-	 * is true.
+	 * This will only return true if `this.toBoolean()` is false and
+	 * `rhs.toBoolean()` is true.
 	 *
 	 * @param {import('./value.js').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is less than `rhs`.
 	 */
 	lth(rhs) {
-		return !this._data && rhs.toBool();
+		return !this._data && rhs.toBoolean();
 	}
 
 	/**
 	 * Checks to see if `this` is greater than `rhs`.
 	 *
-	 * This will only return true if `this.toBool()` is true and `rhs.toBool()`
-	 * is false.
+	 * This will only return true if `this.toBoolean()` is true and
+	 * `rhs.toBoolean()` is false.
 	 *
 	 * @param {import('./value.js').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is greater than `rhs`.
 	 */
 	gth(rhs) {
-		return this._data && !rhs.toBool();
+		return this._data && !rhs.toBoolean();
 	}
 }
 

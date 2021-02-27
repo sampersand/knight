@@ -104,8 +104,8 @@ register('E', string => run(string.toString()));
 register('B', block => block);
 register('C', block => block.run().run());
 register('`', block => new Str(execSync(block.toString()).toString()));
-register('Q', status => process.exit(status.toInt()));
-register('!', arg => new Bool(!arg.toBool()));
+register('Q', status => process.exit(status.toNumber()));
+register('!', arg => new Bool(!arg.toBoolean()));
 register('L', str => new Int(str.toString().length));
 register('D', value => {
 	const result = value.run();
@@ -135,11 +135,11 @@ register('>', (lhs, rhs) => new Bool(lhs.run().gth(rhs.run())));
 register('?', (lhs, rhs) => new Bool(lhs.run().eql(rhs.run())));
 register('&', (lhs, rhs) => {
 	lhs = lhs.run();
-	return lhs.toBool() ? rhs.run() : lhs;
+	return lhs.toBoolean() ? rhs.run() : lhs;
 });
 register('|', (lhs, rhs) => {
 	lhs = lhs.run();
-	return lhs.toBool() ? lhs : rhs.run();
+	return lhs.toBoolean() ? lhs : rhs.run();
 });
 register(';', (lhs, rhs) => (lhs.run(), rhs.run()));
 register('=', (ident, value) => {
@@ -147,15 +147,13 @@ register('=', (ident, value) => {
 		ident = new Ident(ident.toString());
 	}
 
-	const ran = value.run();
-	ident.assign(ran);
-
-	return ran;
+	return ident.assign(value);
 });
+
 register('W', (condition, body) => {
 	let ret;
 
-	while (condition.toBool()) {
+	while (condition.toBoolean()) {
 		ret = body.run();
 	}
 
@@ -163,12 +161,12 @@ register('W', (condition, body) => {
 });
 
 register('I', (cond, iftrue, iffalse) => {
-	return cond.toBool() ? iftrue.run() : iffalse.run();
+	return cond.toBoolean() ? iftrue.run() : iffalse.run();
 });
 register('G', (str, start, len) => {
 	str = str.toString();
-	start = start.toInt();
-	len = len.toInt();
+	start = start.toNumber();
+	len = len.toNumber();
 
 	return new Str(str.substr(start, len));
 });
@@ -176,8 +174,8 @@ register('G', (str, start, len) => {
 
 register('S', (str, start, len, repl) => {
 	str = str.toString();
-	start = start.toInt(); 
-	len = len.toInt(); 
+	start = start.toNumber(); 
+	len = len.toNumber(); 
 	repl = repl.toString();
 
 	return new Str(str.replace(str.substr(start, len), repl));
