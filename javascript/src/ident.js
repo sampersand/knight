@@ -4,6 +4,7 @@ import { RuntimeError } from './error.js';
 /**
  * The list of all known identifiers.
  *
+ * @private
  * @type {Object.<string, Value>}
  */
 const ENVIRONMENT = {};
@@ -12,7 +13,7 @@ const ENVIRONMENT = {};
  * The identifier class within Knight.
  *
  * As per the specs, all identifiers are global. As such, there is no scoping
- * whatsoever, and a single `ENVIRONMENT` is used.
+ * whatsoever: A single `ENVIRONMENT` is used.
  */
 export class Ident extends Value {
 	/** @type {string} */
