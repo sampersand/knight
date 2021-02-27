@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { KnightError, run } from '../src/knight.js';
+import { KnightError, run } from '../src/knight';
 import { readFileSync } from 'fs';
 
 const argv = process.argv;

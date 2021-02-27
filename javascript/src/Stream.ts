@@ -11,14 +11,14 @@
  */
 export class Stream {
 	/** @type {string} */
-	#source;
+	source;
 
 	/**
 	 * Creates a new stream with the given source.
 	 * @param {string} source - The source of the stream.
 	 */
 	constructor(source) {
-		this.#source = source;
+		this.source = source;
 	}
 
 	/**
@@ -26,7 +26,7 @@ export class Stream {
 	 */
 	stripWhitespace() {
 		// simply ignore the return value--it can fail for all we care.
-		this.match(/^([\]\[\s(){}:]+|#[^\n]*(\n|$))*/);
+		this.match(/^([\]\[\s(){}:]+|[^\n]*(\n|$))*/);
 	}
 
 	/**
@@ -40,14 +40,14 @@ export class Stream {
 	 * @return {null|string} - Returns the matched group, or `null` if no match.
 	 */
 	match(regex, group=0) {
-		const match = regex.exec(this.#source);
+		const match = regex.exec(this.source);
 
 		if (match === null) {
 			return null;
 		}
 
 		// remove the match from the source code.
-		this.#source = this.#source.substr(match[0].length);
+		this.source = this.source.substr(match[0].length);
 
 		return match[group];
 	}

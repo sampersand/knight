@@ -1,6 +1,7 @@
-import { TYPES } from './value.js';
-import { RuntimeError } from './error.js';
-import { Literal } from './literal.js';
+import { TYPES } from './value';
+import { RuntimeError } from './error';
+import { Literal } from './literal';
+import { Stream } from './stream';
 
 /**
  * The null type within Knight, used to represent the lack of a value.
@@ -8,20 +9,20 @@ import { Literal } from './literal.js';
  * @see Value - For more information on why we don't simply use `null`.
  * @extends {Literal<null>}
  */
-export class Null extends Literal {
+export class Null extends Literal<null> {
 	/**
 	 * Attempts to parse a `Null` from the `stream`.`
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
+	 * @param { import('./stream').Stream } stream - The stream to parse from.
 	 * @returns {Null|null} - The parsed `Null`, or `null` if the stream did not
 	 *                        start with a boolean.
 	 */
-	static parse(stream) {
+	static parse(stream: Stream): (null | Null) {
 		return stream.match(/^N[A-Z]*/) && new Null();
 	}
 
 	/** Creates a new `Null`. */
-	constructor(){
+	constructor() {
 		super(null);
 	}
 
@@ -30,7 +31,7 @@ export class Null extends Literal {
 	 *
 	 * @return {string}
 	 */
-	dump() {
+	dump(): string {
 		return 'Null()';
 	}
 
@@ -41,7 +42,7 @@ export class Null extends Literal {
 	 * only need to check to see if `rhs` is `Null`.
 	 *
 	 * @override
-	 * @param {import('./value.js').Value} The value to compare against.
+	 * @param {import('./value').Value} The value to compare against.
 	 * @return {boolean} Whether `rhs` is `Null`.
 	 */
 	eql(rhs) {
@@ -52,7 +53,7 @@ export class Null extends Literal {
 	 * Comparisons with `Null` are invalid, and this always fails.
 	 *
 	 * @override
-	 * @param {import('./value.js').Value} _rhs
+	 * @param {import('./value').Value} _rhs
 	 * @throws {RuntimeError} This is always thrown.
 	 */
 	lth(_rhs) {
@@ -63,7 +64,7 @@ export class Null extends Literal {
 	 * Comparisons with `Null` are invalid, and this always fails.
 	 *
 	 * @override
-	 * @param {import('./value.js').Value} _rhs
+	 * @param {import('./value').Value} _rhs
 	 * @throws {RuntimeError} This is always thrown.
 	 */
 	gth(_rhs) {

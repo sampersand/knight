@@ -1,5 +1,6 @@
-import { Value, TYPES } from './value.js';
-import { ParseError } from './error.js';
+import { Value, TYPES } from './value';
+import { ParseError } from './error';
+import { Literal } from './literal';
 
 /**
  * The string type within Knight, used to represent textual data.
@@ -7,11 +8,11 @@ import { ParseError } from './error.js';
  * @see Value - For more information on why we don't simply use `String`.
  * @extends {Literal<string>}
  */
-export class Str extends Value {
+export class Str extends Literal<string> {
 	/**
 	 * Attempts to parse a `Str` from the `stream`.`
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
+	 * @param { import('./stream').Stream } stream - The stream to parse from.
 	 * @returns {Str|null} - The parsed `Str`, or `null` if the stream did not
 	 *                       start with a string.
 	 * @throws {ParseError} If no ending quote is found.
@@ -42,7 +43,7 @@ export class Str extends Value {
 	 * @return {number} - The numeric representation of this class.
 	 */
 	toInt() {
-		return parseInt(this._data, 10) || 0;
+		return parseInt(this.data, 10) || 0;
 	}
 
 	/**
@@ -71,7 +72,7 @@ export class Str extends Value {
 	 * @return {Str} - `This` repeated `rhs` times.
 	 */
 	mul(rhs) {
-		return new Str(this._data.repeat(rhs.toInt()));
+		return new Str(this.data.repeat(rhs.toInt()));
 	}
 
 	/**
@@ -81,7 +82,7 @@ export class Str extends Value {
 	 * @return {Str} - True if `this` is less than `rhs`.
 	 */
 	lth(rhs) {
-		return this._data < rhs.toString();
+		return this.data < rhs.toString();
 	}
 
 	/**
@@ -91,7 +92,7 @@ export class Str extends Value {
 	 * @return {Str} - True if `this` is less than `rhs`.
 	 */
 	gth(rhs) {
-		return this._data > rhs.toString();
+		return this.data > rhs.toString();
 	}
 }
 

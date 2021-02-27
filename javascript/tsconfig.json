@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "module": "commonjs", 
+        "outDir": "built/", 
+        "sourceMap": true, 
+        "target": "es2015"
+    }, 
+    "files": [
+        "src/Bool.ts",
+        "src/Error.ts",
+        "src/Func.ts",
+        "src/Ident.ts",
+        "src/Int.ts",
+        "src/Knight.ts",
+        "src/Literal.ts",
+        "src/Null.ts",
+        "src/Str.ts",
+        "src/Stream.ts",
+        "src/Value.ts"
+    ]
+}

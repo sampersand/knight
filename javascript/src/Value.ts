@@ -1,6 +1,7 @@
+import { Stream } from './stream';
 export const TYPES = [];
 
-export class Value {
+export abstract class Value {
 	static parse(stream) {
 		stream.stripWhitespace();
 
@@ -15,9 +16,8 @@ export class Value {
 		return null;
 	}
 
-	run() {
-		return this;
-	}
+	abstract run(): Value;
+	abstract dump(): string;
 
 	toString() {
 		return this.run().toString();

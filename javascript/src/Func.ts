@@ -1,18 +1,18 @@
-import { Value, TYPES } from './value.js';
-import { Bool } from './bool.js';
-import { Ident } from './ident.js';
-import { Int } from './int.js';
-import { Null } from './null.js';
-import { Str } from './str.js';
-import { Stream } from './stream.js';
-import { ParseError } from './error.js';
+import { Value, TYPES } from './value';
+import { Bool } from './bool';
+import { Ident } from './ident';
+import { Int } from './int';
+import { Null } from './null';
+import { Str } from './str';
+import { Stream } from './stream';
+import { ParseError } from './error';
 
 const FUNCTIONS = {};
 
 export class Func extends Value {
-	#args;
-	#func;
-	#name;
+	args;
+	func;
+	name;
 
 	static parse(stream) {
 		const match = stream.match(/^([A-Z\p{P}\p{S}])(?:(?<=[A-Z])[A-Z]*)?/u, 1);
@@ -44,19 +44,19 @@ export class Func extends Value {
 	constructor(func, name,...args) {
 		super();
 
-		this.#name =name;
-		this.#func = func;
-		this.#args = args;
+		this.name =name;
+		this.func = func;
+		this.args = args;
 	}
 
 	run() {
-		return this.#func(...this.#args);
+		return this.func(...this.args);
 	}
 
 	dump() {
-		let ret = 'Function(' + this.#name;
+		let ret = 'Function(' + this.name;
 
-		for (let val of this.#args) {
+		for (let val of this.args) {
 			ret += ', ' + val.dump();
 		}
 
@@ -80,14 +80,14 @@ export function register(name, func)  {
 
 import { readSync } from 'fs';
 import { execSync } from 'child_process';
-import { run } from './knight.js';
+import { run } from './knight';
 
 register('P', () => {
 	let line = '';
 	let buf = Buffer.alloc(1);
 
 	do {
-		readSync(0, buf, 0, 1);
+		// readSync(0, buf, 0, 1);
 		if (buf[0] == 0x00) {
 			break;
 		}
@@ -98,7 +98,7 @@ register('P', () => {
 	return new Str(line);
 });
 
-register('R', () => new Int(Math.floor(Math.random() * 0xffff_ffff)));
+register('R', () => new Int(Math.floor(Math.random() * 0xffffffff)));
 
 register('E', string => run(string.toString()));
 register('B', block => block);

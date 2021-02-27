@@ -1,5 +1,6 @@
-import { TYPES } from './value.js';
-import { Literal } from './literal.js';
+import { Value, TYPES } from './value';
+import { Literal } from './literal';
+import { Stream } from './stream';
 
 /**
  * The boolean type within Knight, used to represent truthfulness.
@@ -7,15 +8,15 @@ import { Literal } from './literal.js';
  * @see Value - For more information on why we don't simply use `true`/`false`.
  * @extends {Literal<boolean>}
  */
-export class Bool extends Literal {
+export class Bool extends Literal<boolean> {
 	/**
 	 * Attempts to parse a `Bool` from the `stream`.`
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
+	 * @param { import('./stream').Stream } stream - The stream to parse from.
 	 * @returns {Bool|null} - The parsed boolean, or `null` if the stream did not
 	 *                        start with a boolean.
 	 */
-	static parse(stream) {
+	static parse(stream: Stream): (null | Bool) {
 		const match = stream.match(/^([TF])[A-Z]*/, 1);
 
 		return match && new Bool(match === 'T');
@@ -26,7 +27,7 @@ export class Bool extends Literal {
 	 *
 	 * @return {string}
 	 */
-	dump() {
+	dump(): string {
 		return `Boolean(${this})`;
 	}
 
@@ -36,11 +37,11 @@ export class Bool extends Literal {
 	 * This will only return true if `this.toBool()` is false and `rhs.toBool()`
 	 * is true.
 	 *
-	 * @param {import('./value.js').Value} rhs - The value to compare with.
+	 * @param {import('./value').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is less than `rhs`.
 	 */
-	lth(rhs) {
-		return !this._data && rhs.toBool();
+	lth(rhs: Value): boolean {
+		return !this.data && rhs.toBool();
 	}
 
 	/**
@@ -49,11 +50,11 @@ export class Bool extends Literal {
 	 * This will only return true if `this.toBool()` is true and `rhs.toBool()`
 	 * is false.
 	 *
-	 * @param {import('./value.js').Value} rhs - The value to compare with.
+	 * @param {import('./value').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is greater than `rhs`.
 	 */
-	gth(rhs) {
-		return this._data && !rhs.toBool();
+	gth(rhs): boolean {
+		return this.data && !rhs.toBool();
 	}
 }
 
