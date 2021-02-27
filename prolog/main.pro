@@ -6,7 +6,7 @@ lower(C) :- member(C, "abcdefghijklmnopqrstuvwxyz_").
 upper(C) :- member(C, "ABCDEFGHIJKLMNOPQRSTUVWXYZ").
 symbol(C) :- member(C, "`!+-*/%^?&|;=<>").
 
-% whter the input is empty.
+empty([]).
 
 % Ensure the head of 
 ishead(P, [H|_]) :- call(P, H).
@@ -16,27 +16,32 @@ string(string(String), [Quote|Tail], Rest) :-
 	quote(Quote),
 	append(String, [Quote|Rest], Tail).
 
-% Parse an integer out.
+% Parse an integer. Note that `Stream` is guaranteed to end with a non-digit character
 integer(integer(Int), Stream, Rest) :-
 	ishead(digit, Stream),
 	append(Bytes, Rest, Stream),
-	(Rest = []; \+ishead(digit, Stream)),
-	write(Bytes),
+	\+ishead(digit, Rest),
 	number_codes(Int, Bytes).
 
+% Parse an identifier
 identifier(identifier(Ident), Stream, Rest) :- 
 	ishead(lower, Stream),
 	append(Bytes, Rest, Stream),
-	( Rest = []; \+ishead(lower, Rest), \+ishead(digit, Rest) ),
+	\+ishead(lower, Rest),
+	\+ishead(digit, Rest),
 	atom_codes(Ident, Bytes).
 
-% comment([0'#|T], Rest) :- append(_, [0'\n|Rest], T) . % :- .
+
+append_space([H|Rest], Out).
+
+parse(Value, Input) :-
+	append(Input, " ", Stream),
+	parseInner(Value, Input, _).
 
 main :-
 	integer(integer(S), "1234 'foo'bar", R), !,
-	atom_codes(Str, S),
 	atom_codes(Rst, R),
-	nl, write(Str), write(':'), write(Rst), nl.
+	nl, write(S), write(':'), write(Rst), nl.
 %	quote(0'\"), !,
 %	quote(0'\'), !.
 
