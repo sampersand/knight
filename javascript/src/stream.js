@@ -1,27 +1,57 @@
+/**
+ * The source code of a Knight program.
+ *
+ * When parsing Knight source code, there needs to be a way to communicate what
+ * part of the source code was parsed. However, because JavaScript does not have
+ * out parameters, nor does it allow for the modification of strings, we must
+ * use a class to maintain the remaining source code to be parsed. Thus, the 
+ * `Stream` class.
+ *
+ * @see Value.parse
+ */
 export class Stream {
+	/**
+	 * The source of this stream.
+	 *
+	 * @type {String}
+    */
 	#source;
 
+	/**
+	 * Creates a new stream with the given source.
+	 * @param {String} source - The source of the stream.
+	 */
 	constructor(source) {
 		this.#source = source;
 	}
 
+	/**
+	 * Strips the leading whitespace and comments from `this`.
+	 */
 	stripWhitespace() {
-		this.#source = this.#source.replace(/^(?:[\]\[\s(){}:]+|\#[^\n]*(\n|$))*/, '');
+		// simply ignore the return value--it can fail for all we care.
+		this.match(/^([\]\[\s(){}:]+|#[^\n]*(\n|$))*/);
 	}
 
-	match(regex, idx=0) {
+	/**
+	 * Attempts to match the given `regex` at the start of the stream, returning
+	 * the `group`th group if successful.
+	 *
+	 * @param {RegExp} regex - The regular expression to match, which should have
+	 *                         an `^` (so as to only match the stream start).
+	 * @param {Number} group - The group number to return; 0 is the entire match.
+	 * @return {null|String} - Returns the matched group, or `null` if no match.
+	 */
+	match(regex, group=0) {
 		const match = regex.exec(this.#source);
 
 		if (match === null) {
 			return null;
 		}
 
+		// remove the match from the source code.
 		this.#source = this.#source.substr(match[0].length);
 
-		return match[idx];
-	}
-
-	toString() {
-		return this.#source;
+		return match[group];
 	}
 }
