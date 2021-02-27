@@ -1,4 +1,4 @@
-import { Value, TYPES } from './value.js';
+import { TYPES } from './value.js';
 import { Literal } from './literal.js';
 
 /**
@@ -36,6 +36,7 @@ export class Bool extends Literal {
 	 * This will only return true if `this.toBool()` is false and `rhs.toBool()`
 	 * is true.
 	 *
+	 * @param {import('./value.js').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is less than `rhs`.
 	 */
 	lth(rhs) {
@@ -48,6 +49,7 @@ export class Bool extends Literal {
 	 * This will only return true if `this.toBool()` is true and `rhs.toBool()`
 	 * is false.
 	 *
+	 * @param {import('./value.js').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is greater than `rhs`.
 	 */
 	gth(rhs) {

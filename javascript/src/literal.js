@@ -1,5 +1,11 @@
 import { Value } from './value.js';
 
+/**
+ * The string type within Knight, used to represent textual data.
+ *
+ * @see Value - For more information on why we don't simply use `String`.
+ * @extends {Literal<string>}
+ */
 export class Literal extends Value {
 	_data;
 
