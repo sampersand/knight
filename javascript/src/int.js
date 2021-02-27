@@ -1,34 +1,11 @@
 import { Value, TYPES } from './value.js';
+import { Literal } from './literal.js';
 
-export class Int extends Value {
-	#data;
-
+export class Int extends Literal {
 	static parse(stream) {
 		const match = stream.match(/^\d+/);
 
 		return match && new Int(Number(match));
-	}
-
-	constructor(data) {
-		super();
-
-		if (!Number.isInteger(data)) {
-			throw new Error(`Expected an integer, got ${typeof data}`);
-		}
-
-		this.#data = data;
-	}
-
-	toString() {
-		return this.#data.toString();
-	}
-
-	toInt() {
-		return this.#data;
-	}
-
-	toBool() {
-		return this.#data !== 0;
 	}
 
 	dump() {
@@ -36,22 +13,22 @@ export class Int extends Value {
 	}
 
 	add(rhs) {
-		return new Int(this.#data + rhs.toInt());
+		return new Int(this._data + rhs.toInt());
 	}
 
 	sub(rhs) {
-		return new Int(this.#data - rhs.toInt());
+		return new Int(this._data - rhs.toInt());
 	}
 
 	mul(rhs) {
-		return new Int(this.#data * rhs.toInt());
+		return new Int(this._data * rhs.toInt());
 	}
 
 	div(rhs) {
 		const rhsInt = rhs.toInt();
 
-		if (rhsInt) {
-			return new Int(Math.trunc(this.#data / rhsInt));
+		if (rhsInt !== 0) {
+			return new Int(Math.trunc(this._data / rhsInt));
 		} else {
 			throw new RuntimeError('Cannot divide by zero');
 		}
@@ -60,27 +37,23 @@ export class Int extends Value {
 	mod(rhs) {
 		const rhsInt = rhs.toInt();
 
-		if (rhsInt) {
-			return new Int(this.#data % rhsInt);
+		if (rhsInt !== 0) {
+			return new Int(this._data % rhsInt);
 		} else {
 			throw new RuntimeError('Cannot modulo by zero');
 		}
 	}
 
 	pow(rhs) {
-		return new Int(Math.trunc(this.#data ** rhs.toInt()));
-	}
-
-	eql(rhs) {
-		return rhs instanceof Int && this.#data == rhs.#data;
+		return new Int(Math.trunc(this._data ** rhs.toInt()));
 	}
 
 	lth(rhs) {
-		return this.#data < rhs.toInt();
+		return this._data < rhs.toInt();
 	}
 
 	gth(rhs) {
-		return this.#data > rhs.toInt();
+		return this._data > rhs.toInt();
 	}
 }
 

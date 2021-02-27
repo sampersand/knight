@@ -1,32 +1,28 @@
 import { Value } from './value.js';
 
 export class Literal extends Value {
-	#data;
+	_data;
 
 	constructor(data) {
 		super();
 
-		this.#data = data;
+		this._data = data;
 	}
 
 	toString() {
-		return String(this.#data);
+		return String(this._data);
 	}
 
 	toInt() {
-		return Number(this.#data);
+		return Number(this._data);
 	}
 
 	toBool() {
-		console.log(this.#data, Boolean(this.#data));
-		return Boolean(this.#data);
-	}
-
-	dump() {
-		return `${this.constructor.name}(${this})`;
+		console.log(this._data, Boolean(this._data));
+		return Boolean(this._data);
 	}
 
 	eql(rhs) {
-		return rhs.constructor instanceof this.constructor && this.#data === rhs.#data;
+		return rhs instanceof this.constructor && this._data === rhs._data;
 	}
 }

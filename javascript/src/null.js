@@ -1,21 +1,18 @@
 import { Value, TYPES } from './value.js';
 import { RuntimeError } from './error.js';
+import { Literal } from './literal.js';
 
-export class Null extends Value {
+export class Null extends Literal {
 	static parse(stream) {
 		return stream.match(/^N[A-Z]*/) && new Null();
 	}
 
+	constructor(){
+		super(null);
+	}
+
 	toString() {
 		return 'null';
-	}
-
-	toInt() {
-		return 0;
-	}
-
-	toBool() {
-		return false;
 	}
 
 	dump() {

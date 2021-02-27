@@ -10,16 +10,12 @@
  * @see Value.parse
  */
 export class Stream {
-	/**
-	 * The source of this stream.
-	 *
-	 * @type {String}
-	 */
+	/** @type {string} */
 	#source;
 
 	/**
 	 * Creates a new stream with the given source.
-	 * @param {String} source - The source of the stream.
+	 * @param {string} source - The source of the stream.
 	 */
 	constructor(source) {
 		this.#source = source;
@@ -39,8 +35,9 @@ export class Stream {
 	 *
 	 * @param {RegExp} regex - The regular expression to match, which should have
 	 *                         an `^` (so as to only match the stream start).
-	 * @param {Number} group - The group number to return; 0 is the entire match.
-	 * @return {null|String} - Returns the matched group, or `null` if no match.
+	 * @param {number} [group] - The group number to return; the default (0) is
+	 *                           return the entire match.
+	 * @return {null|string} - Returns the matched group, or `null` if no match.
 	 */
 	match(regex, group=0) {
 		const match = regex.exec(this.#source);
