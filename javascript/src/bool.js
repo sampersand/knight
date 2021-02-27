@@ -55,5 +55,5 @@ export class Bool extends Literal {
 	}
 }
 
-// Add the `Bool` class to the list of known types, so it can be parsed.
+// Add the `Bool` class to the list of known types, so it can be parsed.	
 TYPES.push(Bool);
