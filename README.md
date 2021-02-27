@@ -1,6 +1,8 @@
 # Knight
 An extremely simple programming language that I've designed to be easy to implement in a variety of languages. It's not actually meant to be used, though it is a fully-functional lang.
 
+Unofficial Tag-line: "Knight: Runs everywhere. Not because it's cross-platform, but because it has a implementation in virtually all major languages."
+
 # Implementations
 The following is the list of all languages that's supported. All in-progress implementations are in separate branches.
 
