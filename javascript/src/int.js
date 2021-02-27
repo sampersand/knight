@@ -13,9 +13,9 @@ export class Int extends Literal {
 	/**
 	 * Attempts to parse an `Int` from the `stream`.`
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
-	 * @returns {Int|null} - The parsed integer, or `null` if the stream did not
-	 *                       start with a integer.
+	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
+	 * @return {Int|null} - The parsed integer, or `null` if the stream did not
+	 *                      start with a integer.
 	 */
 	static parse(stream) {
 		const match = stream.match(/^\d+/);
@@ -134,4 +134,5 @@ export class Int extends Literal {
 	}
 }
 
+// Add the `Int` class to the list of known types, so it can be parsed.	
 TYPES.push(Int);

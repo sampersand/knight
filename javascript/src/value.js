@@ -59,6 +59,16 @@ export class Value {
 	}
 
 	/**
+	 * Returns debugging information for `this`.
+	 *
+	 * @abstract
+	 * @return {string}
+	 */
+	debug() {
+		throw new Error;
+	}
+
+	/**
 	 * Converts this Value to a JavaScript string.
 	 *
 	 * The default implementation simply calls `toString()` on `run()`'s result.

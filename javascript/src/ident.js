@@ -21,9 +21,9 @@ export class Ident extends Value {
 	/**
 	 * Attempts to parse an `Ident` from the `stream`.`
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
-	 * @returns {Ident|null} - The parsed identifier, or `null` if the stream did
-	 *                         not start with an identifier.
+	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
+	 * @return {Ident|null} - The parsed identifier, or `null` if the stream did
+	 *                        not start with an identifier.
 	 */
 	static parse(stream) {
 		const match = stream.match(/^[a-z_][a-z0-9_]*/);
@@ -75,7 +75,7 @@ export class Ident extends Value {
 	 * Executes this identifier, returning its last assigned value.
 	 *
 	 * @return {Value} - The last value associated with this identifier's name.
-	 * @throws [RuntimeError] - Thrown if this identifier was never assigned to.
+	 * @throws {RuntimeError} - Thrown if this identifier was never assigned to.
 	 */
 	run() {
 		const value = ENVIRONMENT[this.#ident];
@@ -88,4 +88,5 @@ export class Ident extends Value {
 	}
 }
 
+// Add the `Ident` class to the list of known types, so it can be parsed.	
 TYPES.push(Ident);

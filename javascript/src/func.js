@@ -68,6 +68,7 @@ export class Func extends Value {
 	}
 }
 
+// Add the `Func` class to the list of known types, so it can be parsed.	
 TYPES.push(Func);
 
 export function register(name, func)  {

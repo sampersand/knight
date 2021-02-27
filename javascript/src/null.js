@@ -12,9 +12,9 @@ export class Null extends Literal {
 	/**
 	 * Attempts to parse a `Null` from the `stream`.`
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
-	 * @returns {Null|null} - The parsed `Null`, or `null` if the stream did not
-	 *                        start with a boolean.
+	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
+	 * @return {Null|null} - The parsed `Null`, or `null` if the stream did not
+	 *                       start with a `Null`.
 	 */
 	static parse(stream) {
 		return stream.match(/^N[A-Z]*/) && new Null();
@@ -71,4 +71,5 @@ export class Null extends Literal {
 	}
 }
 
+// Add the `Null` class to the list of known types, so it can be parsed.	
 TYPES.push(Null);

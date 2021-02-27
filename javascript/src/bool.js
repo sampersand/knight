@@ -9,11 +9,11 @@ import { Literal } from './literal.js';
  */
 export class Bool extends Literal {
 	/**
-	 * Attempts to parse a `Bool` from the `stream`.`
+	 * Attempts to parse a `Bool` from `stream`.
 	 *
-	 * @param { import('./stream.js').Stream } stream - The stream to parse from.
-	 * @returns {Bool|null} - The parsed boolean, or `null` if the stream did not
-	 *                        start with a boolean.
+	 * @param {import('./stream.js').Stream} stream - The stream to parse.
+	 * @return {Bool|null} - The parsed `Bool`, or `null` if the stream did not
+	 *                       start with `T` or `F`.
 	 */
 	static parse(stream) {
 		const match = stream.match(/^([TF])[A-Z]*/, 1);
@@ -33,8 +33,8 @@ export class Bool extends Literal {
 	/**
 	 * Checks to see if `this` is less than `rhs`.
 	 *
-	 * This will only return true if `this.toBoolean()` is false and
-	 * `rhs.toBoolean()` is true.
+	 * This will only return true if `this._data` is false and `rhs.toBoolean()`
+	 * is true.
 	 *
 	 * @param {import('./value.js').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is less than `rhs`.
@@ -46,8 +46,8 @@ export class Bool extends Literal {
 	/**
 	 * Checks to see if `this` is greater than `rhs`.
 	 *
-	 * This will only return true if `this.toBoolean()` is true and
-	 * `rhs.toBoolean()` is false.
+	 * This will only return true if `this._data` is true and `rhs.toBoolean()`
+	 * is false.
 	 *
 	 * @param {import('./value.js').Value} rhs - The value to compare with.
 	 * @return {boolean} - Whether or not `this` is greater than `rhs`.
