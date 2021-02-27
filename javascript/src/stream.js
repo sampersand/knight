@@ -14,7 +14,7 @@ export class Stream {
 	 * The source of this stream.
 	 *
 	 * @type {String}
-    */
+	 */
 	#source;
 
 	/**
