@@ -166,7 +166,8 @@ $
 \
 ```
 
-
-
 ## Details
-The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified, some functions are not included (such as the "system" function `` ` ``, `O`, `C`)
+The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified
+
+# NOTES:
+Maybe the `O` function should just return null...?
