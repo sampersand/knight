@@ -120,8 +120,8 @@ static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 		advance(stream);
 	} while (c != quote);
 
-	size_t length = *stream - start - 1 == 0;
-	struct kn_string_t *string;
+	size_t length = *stream - start - 1;
+	struct kn_string_t string;
 
 	if (length == 0) {
 		// optimize for the empty string.
