@@ -48,7 +48,7 @@ struct kn_ast_t {
 	union {
 		struct kn_value_t value;
 		struct {
-			size_t refcount;
+			size_t *refcount;
 			union {
 				const char *identifier;
 				struct {
