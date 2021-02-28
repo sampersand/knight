@@ -53,7 +53,18 @@ void kn_env_free() {
 
 static struct kn_env_bucket_t *get_bucket(const char *identifier) {
 	assert(identifier != NULL);
-	return &BUCKETS[0];
+
+	// return &BUCKETS[0];
+	// This is the MurmurHash.
+	long hash = 525201411107845655;
+
+	while (*identifier != '\0') {
+		hash ^= *identifier++;
+		hash *= 0x5bd1e9955bd1e995;
+		hash ^= hash >> 47;
+	}
+
+	return &BUCKETS[hash & 0xff];
 }
 
 static struct kn_env_pair_t *get_pair(
