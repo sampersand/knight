@@ -41,7 +41,7 @@ The following able describes how fast each implementation (in `user` time) was a
 Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
 
 |  Language  |  Time   | `<implementation>` | Notes |
-| ---------- |:-------:|:------------------:|:-----:|
+| ---------- |--------:|--------------------|-------|
 | C          | 19.10s  | `c/knight`         | Compiled using `make optimized`; See [c/Makefile](c/Makefile) for details. |
 | C++        | 166.76s | `c++/knight`       | The virtual functions are a bottleneck |
 | JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | The default stack size was too small, so we had to bump it up. |
