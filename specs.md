@@ -80,7 +80,6 @@ Note that _all_ types within Knight are immutable. This means that it's a perfec
 
 In addition to these types types, two additional types do exist: Identifier and Function. However, these types are only accessible via a `BLOCK`, and the only valid operation on them is to `CALL` them. As such, they do not have conversions defined on them (as doing so would be performing an operation other than `CALL`) and are not described here.
 
-----------------------
 
 ## Number
 In Knight, only integral numbers exist---all functions which might return non-integral numbers are simply truncated (look at the the functions' respective definitions for details on what exactly truncation means in each case).
@@ -88,11 +87,10 @@ In Knight, only integral numbers exist---all functions which might return non-in
 All implementations must be able to represent a minimum integral value of `-2147483648`, and a maximal integral value of `2147483647` (ie, the minimum and maximum values for a 2's complement 32-bit integer). Implementations are allowed to represent numbers outside this range---this is simply the bare minimum that's required.
 
 ### Conversions
-- numeric: In numeric contexts, the number itself is simply returned.
-- string: In string contexts, numbers are converted to their base-10 representation. Negative numbers shall have a `-` prepended to the beginning of the string. (e.g. `0` -> `"0"`, `123` -> `"123"`, `- 0 12` => `"-12"`)
-- boolean: In boolean contexts, nonzero numbers shall become `TRUE`, whereas zero shall become `FALSE`.
+- **numeric**: In numeric contexts, the number itself is simply returned.
+- **string**: In string contexts, numbers are converted to their base-10 representation. Negative numbers shall have a `-` prepended to the beginning of the string. (e.g. `0` -> `"0"`, `123` -> `"123"`, `- 0 12` => `"-12"`)
+- **boolean**: In boolean contexts, nonzero numbers shall become `TRUE`, whereas zero shall become `FALSE`.
 
-----------------------
 
 ## String
 Strings in Knight are like strings in other languages, albeit a bit simpler: They're immutable (like all types within Knight), and can only represent a specific subset of the ASCII character set. 
@@ -102,31 +100,28 @@ Implementations are _only_ required to support the following characters within s
 - ASCII characters `0x21` (`!`) through `0x7e` (`~`)
 
 ### Conversions
-- numeric: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
-- string: In string contexts, the string itself is returned.
-- boolean: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
+-**numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
+- **string**: In string contexts, the string itself is returned.
+- **boolean**: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
 
-----------------------
 
 ## Boolean
 The Boolean type has two variants: `TRUE` and `FALSE`. These two values are used to indicate truthiness within Knight, and is the type that's should be converted to within boolean contexts.
 
 ### Contexts
-- numeric: In numeric contexts, `TRUE` becomes `1` and `FALSE` becomes `0`.
-- string: In string contexts, `TRUE` becomes `"true"` and `FALSE` becomes `"false"`.
-- boolean: In boolean contexts, the boolean itself is simply returned.
+- **numeric**: In numeric contexts, `TRUE` becomes `1` and `FALSE` becomes `0`.
+- **string**: In string contexts, `TRUE` becomes `"true"` and `FALSE` becomes `"false"`.
+- **boolean**: In boolean contexts, the boolean itself is simply returned.
 
-----------------------
 
 ## Null
 The `NULL` type is used to indicate the absence of a value within Knight, and is the return value of some function (such as `OUTPUT` and `WHILE`). 
 
 ### Contexts
-- numeric: Null must become `0` in numeric contexts.
-- string: Null must become `"null"` in string contexts.
-- boolean: Null must become `FALSE` in boolean contexts.
+- **numeric**: Null must become `0` in numeric contexts.
+- **string**: Null must become `"null"` in string contexts.
+- **boolean**: Null must become `FALSE` in boolean contexts.
 
-----------------------
 
 Functions:
 `O` and `W` both return null always
