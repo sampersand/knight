@@ -2,6 +2,11 @@ import { TYPES } from './value.js';
 import { RuntimeError } from './error.js';
 import { Literal } from './literal.js';
 
+/** 
+ * @typedef {import('./stream.js').Stream} Stream
+ * @typedef {import('./value.js').Value} Value
+ */
+
 /**
  * The null type within Knight, used to represent the lack of a value.
  *
@@ -10,9 +15,9 @@ import { Literal } from './literal.js';
  */
 export class Null extends Literal {
 	/**
-	 * Attempts to parse a `Null` from the `stream`.`
+	 * Attempts to parse a `Null` from the `stream`.
 	 *
-	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
+	 * @param {Stream} stream - The stream from which to parse.
 	 * @return {Null|null} - The parsed `Null`, or `null` if the stream did not
 	 *                       start with a `Null`.
 	 */
@@ -41,7 +46,7 @@ export class Null extends Literal {
 	 * only need to check to see if `rhs` is `Null`.
 	 *
 	 * @override
-	 * @param {import('./value.js').Value} The value to compare against.
+	 * @param {Value} The value against which to compare.
 	 * @return {boolean} Whether `rhs` is `Null`.
 	 */
 	eql(rhs) {
@@ -51,8 +56,7 @@ export class Null extends Literal {
 	/**
 	 * Comparisons with `Null` are invalid, and this always fails.
 	 *
-	 * @override
-	 * @param {import('./value.js').Value} _rhs
+	 * @param {Value} _rhs - Ignored.
 	 * @throws {RuntimeError} This is always thrown.
 	 */
 	lth(_rhs) {
@@ -62,8 +66,7 @@ export class Null extends Literal {
 	/**
 	 * Comparisons with `Null` are invalid, and this always fails.
 	 *
-	 * @override
-	 * @param {import('./value.js').Value} _rhs
+	 * @param {Value} _rhs - Ignored.
 	 * @throws {RuntimeError} This is always thrown.
 	 */
 	gth(_rhs) {

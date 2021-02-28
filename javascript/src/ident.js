@@ -1,6 +1,11 @@
 import { Value, TYPES } from './value.js';
 import { RuntimeError } from './error.js';
 
+/** 
+ * @typedef {import('./stream.js').Stream} Stream
+ */
+
+
 /**
  * The list of all known identifiers.
  *
@@ -20,11 +25,11 @@ export class Ident extends Value {
 	#ident;
 
 	/**
-	 * Attempts to parse an `Ident` from the `stream`.`
+	 * Attempts to parse an `Ident` from the `stream`.
 	 *
-	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
-	 * @return {Ident|null} - The parsed identifier, or `null` if the stream did
-	 *                        not start with an identifier.
+	 * @param {Stream} stream - The stream with which to parse.
+	 * @return {Ident|null} - The parsed `Ident`, or `null` if the stream did not
+	 *                        start with an `Ident`.
 	 */
 	static parse(stream) {
 		const match = stream.match(/^[a-z_][a-z0-9_]*/);
@@ -81,10 +86,10 @@ export class Ident extends Value {
 	run() {
 		const value = ENVIRONMENT[this.#ident];
 
-		if (value) {
-			return value;
-		} else {
+		if (value === null) {
 			throw new RuntimeError(`Unknown identifier '${this.#ident}'`);
+		} else {
+			return value;
 		}
 	}
 }

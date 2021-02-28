@@ -1,21 +1,26 @@
-import { Value, TYPES } from './value.js';
+import { TYPES } from './value.js';
 import { Literal } from './literal.js';
+
+/** 
+ * @typedef {import('./stream.js').Stream} Stream
+ * @typedef {import('./value.js').Value} Value
+ */
 
 /**
  * The number type within Knight.
  *
  * As per the Knight specs, the only number type allowed are integers.
  *
- * @see Value - For more information on why we don't simply use numbers.
+ * @see Value - For more information on why we don't simply use `number`s.
  * @extends {Literal<number>}
  */
 export class Int extends Literal {
 	/**
-	 * Attempts to parse an `Int` from the `stream`.`
+	 * Attempts to parse an `Int` from the `stream`.
 	 *
-	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
-	 * @return {Int|null} - The parsed integer, or `null` if the stream did not
-	 *                      start with a integer.
+	 * @param {Stream} stream - The stream from which to parse.
+	 * @return {Int|null} - The parsed `Int`, or `null` if the stream did not
+	 *                      start with a `Int`.
 	 */
 	static parse(stream) {
 		const match = stream.match(/^\d+/);
@@ -112,10 +117,9 @@ export class Int extends Literal {
 	}
 
 	/**
-	 * Returns whether `this` is less than `rhs`, when `rhs` is converted to an
-	 * `Int`.
+	 * Returns whether `this` is numerically less than `rhs`.
 	 *
-	 * @param {Value} rhs - The value to compare to
+	 * @param {Value} rhs - The value to convert to a number and compare against.
 	 * @return {boolean} - Whether `this` is numerically less than `rhs`.
 	 */
 	lth(rhs) {
@@ -123,10 +127,9 @@ export class Int extends Literal {
 	}
 
 	/**
-	 * Returns whether `this` is greater than `rhs`, when `rhs` is converted to
-	 * an `Int`.
+	 * Returns whether `this` is numerically greater than `rhs`.
 	 *
-	 * @param {Value} rhs - The value to compare to
+	 * @param {Value} rhs - The value to convert to a number and compare against.
 	 * @return {boolean} - Whether `this` is numerically greater than `rhs`.
 	 */
 	gth(rhs) {

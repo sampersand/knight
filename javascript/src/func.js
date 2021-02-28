@@ -15,16 +15,16 @@ export class Func extends Value {
 	#name;
 
 	static parse(stream) {
-		const match = stream.match(/^([A-Z\p{P}\p{S}])(?:(?<=[A-Z])[A-Z]*)?/u, 1);
+		const func = FUNCTIONS[stream.peek()];
 
-		if (match === null) {
-			return;
+		if (func === null) {
+			return null;
 		}
 
-		const func = FUNCTIONS[match];
-
-		if (!func) {
-			throw new ParseError(`Unknown function '${match}'`);
+		if (/[A-Z]/.test(stream.peek())) {
+			stream.match(/^[A-Z]+/);
+		} else {
+			stream.match(/^./);
 		}
 
 		let args = [];
