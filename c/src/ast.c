@@ -120,12 +120,19 @@ static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 		advance(stream);
 	} while (c != quote);
 
-	// subtract one because we've already advanced the ending quote.
-	char *string = strndup(start, *stream - start - 1);
+	size_t length = *stream - start - 1 == 0;
+	struct kn_string_t *string;
+
+	if (length == 0) {
+		// optimize for the empty string.
+		string = kn_string_intern("");
+	} else {
+		string = kn_string_new(strndup(start, length));
+	}
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_VALUE,
-		.value = kn_value_new_string(kn_string_new(string))
+		.value = kn_value_new_string(string)
 	};
 }
 

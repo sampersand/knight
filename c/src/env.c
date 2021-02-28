@@ -54,7 +54,6 @@ void kn_env_free() {
 static struct kn_env_bucket_t *get_bucket(const char *identifier) {
 	assert(identifier != NULL);
 	return &BUCKETS[0];
-	// return NULL;
 }
 
 static struct kn_env_pair_t *get_pair(
