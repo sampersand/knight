@@ -3,13 +3,13 @@ OBJDIR ?= obj
 EXE ?= knight
 
 CC = gcc 
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-zero-variadic-macro-arguments
+CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-zero-variadic-macro-arguments -flto -march=native
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
 override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -Wl,-stack_size,1600000 -O2 -DNDEBUG
+CEXEFLAGS += -Wl,-stack_size,1600000 -O3 -DNDEBUG
 endif
 
 # lower case because it's local to makefile.

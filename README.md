@@ -31,6 +31,19 @@ The following is the list of all languages that's supported. All in-progress imp
 | LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
 | Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
 
+## Time Comparisons
+The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I used the command `time <implementation> -f knight.kn <<<$'knight.kn\nexamples/fizzbuzz.kn'`:
+
+
+Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
+| Language | Time | Notes |
+| -------- |:----:|:-----:|
+| C | 19.90s | see [c/Makefile](c/Makefile) for details on flags. |
+| C++ | 166.76s | The virtual functions are a bottleneck |
+| JavaScript | 30.32s | I used `node` and passed `---stack-size=1000000`, as the default stack size was too small |
+
+
+
 # Examples
 Here's some examples of the syntax to give you a feel for it:
 
@@ -170,6 +183,3 @@ $
 
 ## Details
 The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified
-
-# NOTES:
-Maybe the `O` function should just return null...?

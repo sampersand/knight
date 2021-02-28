@@ -397,7 +397,10 @@ register('|', (lhs, rhs) => {
  * @param {Value} rhs - The second value to run.
  * @return {Value} - The result of running `rhs`.
  */
-register(';', (lhs, rhs) => (lhs.run(), rhs.run()));
+register(';', (lhs, rhs) => {
+	lhs.run();
+	return rhs.run();
+});
 
 /**
  * Assigns `value` to `ident`.
