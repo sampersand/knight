@@ -47,19 +47,33 @@ Due to the lack of escape sequences, each string may only contain one of the two
 There are also boolean and null values within Knight. See `Functions` for more details on them.
 
 ## Variables
-In Knight, all variables are lower case---upper case letters are reserved for functions. Variable names must start with an ASCII lower case letter (ie `a` (`0x61`) through `z` (`0x7a`)) or an underscore (`_` (`0x5f`)). After the initial letter, variable names may also include ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)).
+In Knight, all variables are lower case---upper case letters are reserved for functions. Variable names must start with an ASCII lower case letter (ie `a` (`0x61`) through `z` (`0x7a`)) or an underscore (`_` (`0x5f`)). After the initial letter, variable names may also include ASCII digits (ie `0` (`0x30`) through `9` (`0x39`)). The maximum length of variables should only be constrained by available memory.
 
 ## Functions
-In Knight, there are two different styles of functions: symbolic and word-based functions. In both cases, the function is uniquely 
+In Knight, there are two different styles of functions: symbolic and word-based functions. In both cases, the function is uniquely identified by its first character. 
 
-Word-based functions start with a single uppercase letter, such as `I` for `if` or `R` for `random`, and may contain any amount of upper case letters afterwards. (Note that they may _not_ include `_`---that is considered the start of an identifier). In contrast, Symbolic functions are functions that are composed of a single symbol, such as `;` or `%`.
+Word-based functions start with a single uppercase letter, such as `I` for `IF` or `R` for `RANDOM`, and may contain any amount of upper case letters afterwards. (Note that they may _not_ include `_`---that is considered the start of an identifier.) This means that `R`, `RAND`, `RANDOM`, `RANDINT`, `RANDOMNUMBER`, etc. are all the same function---the `R` function.
 
-Each function has a predetermined arity---no variable argument functions are allowed. After parsing a function's name, an amount of expressions corresponding to that function's arity should be parsed: For example, after parsing a `+`, two expressions must be parsed, such as `+ 1 2`. Programs that contain functions with fewer than the required amount of arguments are considered undefined.
+In contrast, Symbolic functions are functions that are composed of a single symbol, such as `;` or `%`. Unlike word-based functions, they should not consume additional characters following them, word-based or not. The characters `+++` should be interpreted identically to `+ + +`---three separate addition functions.
 
-The list required functions are as follows,
+Each function has a predetermined arity---no variable argument functions are allowed. After parsing a function's name, an amount of expressions corresponding to that function's arity should be parsed: For example, after parsing a `+`, two expressions must be parsed, such as `+ 1 2`. Programs that contain functions with fewer than the required amount of arguments are considered undefined. While not necessary, it's recommended to provide some form of error message (if it's easy to implement), such as `missing argument 2 for ';`, or even `missing an argument for ';'`.
 
+The list of required functions are as follows. Implementations may define additional symbolic or keyword-based functions as desired. (For details on what individual functions mean, see `# Semantics`.)
 
-# Optional features.
+- Arity `0`: `PROMPT`, `RANDOM`, `TRUE`, `FALSE`, `NULL`.
+- Arity `1`: `BLOCK`, `EVAL`, `CALL`, `QUIT`, `LENGTH`, `DUMP`, `OUTPUT`, `` ` ``, `!`, `:`
+- Arity `2`: `WHILE`, `+`, `-`, `*`, `/`, `%`, `^`, `?`, `<`, `>`, `&`, `|`, `;`, `=`
+- Arity `3`: `IF`, `GET`
+- Arity `4`: `SET`
+
+Short note on `TRUE`/`FALSE`/`NULL`: As they are functions that take no arguments, and should simply return a true, false, or null value, they can be instead interpreted as literals. That is, there's no functional difference between parsing `TRUE` as a function, and then executing that function and parsing `TRUE` as a boolean literal.
+
+Note that `:` is the "no-op" function, and can safely be considered a piece of whitespace.
+
+### Implementation-Defined Functions
+Implementations may define their own functions, as long as they start with an upper-case letter, or a symbol. 
+
+--# Optional features.--
 # Details
 ## Functions
 ### Adding new functions.
