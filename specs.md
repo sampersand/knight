@@ -121,3 +121,22 @@ The `NULL` type is used to indicate the absence of a value within Knight, and is
 - **numeric**: Null must become `0` in numeric contexts.
 - **string**: Null must become `"null"` in string contexts.
 - **boolean**: Null must become `FALSE` in boolean contexts.
+
+# Runtime
+
+## Identifiers
+
+
+## Functions
+### List of functions
+
+# Functions
+Functions in Knight are how everything works.
+
+Functions:
+`O` and `W` both return null always
+
+
+# Details
+## Functions
+### Adding new functions.
