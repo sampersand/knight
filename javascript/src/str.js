@@ -2,7 +2,7 @@ import { TYPES } from './value.js';
 import { ParseError } from './error.js';
 import { Literal } from './literal.js';
 
-/** 
+/**
  * @typedef {import('./stream.js').Stream} Stream
  * @typedef {import('./value.js').Value} Value
  */
@@ -44,7 +44,7 @@ export class Str extends Literal {
 	 *
 	 * This does effectively what `parseInt` does, except it returns `0` instead
 	 * of `NaN`.
-	 * 
+	 *
 	 * @override
 	 * @return {number} - The numeric representation of this class.
 	 */
@@ -102,5 +102,5 @@ export class Str extends Literal {
 	}
 }
 
-// Add the `Str` class to the list of known types, so it can be parsed.	
+// Add the `Str` class to the list of known types, so it can be parsed.
 TYPES.push(Str);

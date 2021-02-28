@@ -1,7 +1,7 @@
 import { TYPES } from './value.js';
 import { Literal } from './literal.js';
 
-/** 
+/**
  * @typedef {import('./stream.js').Stream} Stream
  * @typedef {import('./value.js').Value} Value
  */
@@ -62,5 +62,5 @@ export class Bool extends Literal {
 	}
 }
 
-// Add the `Bool` class to the list of known types, so it can be parsed.	
+// Add the `Bool` class to the list of known types, so it can be parsed.
 TYPES.push(Bool);

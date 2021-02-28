@@ -4,7 +4,7 @@
  * When parsing Knight source code, there needs to be a way to communicate what
  * part of the source code was parsed. However, because JavaScript does not have
  * out parameters, nor does it allow for the modification of strings, we must
- * use a class to maintain the remaining source code to be parsed. Thus, the 
+ * use a class to maintain the remaining source code to be parsed. Thus, the
  * `Stream` class.
  *
  * @see Value.parse

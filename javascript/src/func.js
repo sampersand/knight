@@ -7,6 +7,13 @@ import { Str } from './str.js';
 import { Stream } from './stream.js';
 import { ParseError } from './error.js';
 
+
+/**
+ * The list of all known identifiers.
+ *
+ * @private
+ * @type {Object.<string, Value>}
+ */
 const FUNCTIONS = {};
 
 export class Func extends Value {
@@ -63,12 +70,12 @@ export class Func extends Value {
 		return ret + ')';
 	}
 
-	eql(rhs) { 
+	eql(rhs) {
 		return Object.is(this, rhs);
 	}
 }
 
-// Add the `Func` class to the list of known types, so it can be parsed.	
+// Add the `Func` class to the list of known types, so it can be parsed.
 TYPES.push(Func);
 
 export function register(name, func)  {
@@ -121,7 +128,7 @@ register('O', input => {
 	const str = result.toString();
 
 	process.stdout.write(str.substr(-1) === '\\' ? str.substr(0, str.length - 1) :`${str}\n`);
- 
+
 	return result;
 });
 
@@ -158,7 +165,7 @@ register('W', (condition, body) => {
 		ret = body.run();
 	}
 
-	return ret || new Null(); 
+	return ret || new Null();
 });
 
 register('I', (cond, iftrue, iffalse) => {
@@ -172,12 +179,11 @@ register('G', (str, start, len) => {
 	return new Str(str.substr(start, len));
 });
 
-
 register('S', (str, start, len, repl) => {
 	str = str.toString();
-	start = start.toNumber(); 
-	len = len.toNumber(); 
+	start = start.toNumber();
+	len = len.toNumber();
 	repl = repl.toString();
 
 	return new Str(str.replace(str.substr(start, len), repl));
-}); 
+});

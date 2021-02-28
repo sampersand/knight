@@ -1,10 +1,9 @@
 import { Value, TYPES } from './value.js';
 import { RuntimeError } from './error.js';
 
-/** 
+/**
  * @typedef {import('./stream.js').Stream} Stream
  */
-
 
 /**
  * The list of all known identifiers.
@@ -65,7 +64,7 @@ export class Ident extends Value {
 	 * only evaluate `value` after it evaluates the `Ident`.
 	 *
 	 * Any previously associated `Value` is simply discarded.
-	 * 
+	 *
 	 * @param {Value} value - The value to associate with this identifier's name.
 	 * @return {Value} - The result of running `value`.
 	 */
@@ -94,5 +93,5 @@ export class Ident extends Value {
 	}
 }
 
-// Add the `Ident` class to the list of known types, so it can be parsed.	
+// Add the `Ident` class to the list of known types, so it can be parsed.
 TYPES.push(Ident);

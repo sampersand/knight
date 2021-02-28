@@ -2,7 +2,7 @@ import { TYPES } from './value.js';
 import { RuntimeError } from './error.js';
 import { Literal } from './literal.js';
 
-/** 
+/**
  * @typedef {import('./stream.js').Stream} Stream
  * @typedef {import('./value.js').Value} Value
  */
@@ -74,5 +74,5 @@ export class Null extends Literal {
 	}
 }
 
-// Add the `Null` class to the list of known types, so it can be parsed.	
+// Add the `Null` class to the list of known types, so it can be parsed.
 TYPES.push(Null);
