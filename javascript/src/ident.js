@@ -76,7 +76,7 @@ export class Ident extends Value {
 	run() {
 		const value = ENVIRONMENT[this.#ident];
 
-		if (value === null) {
+		if (value === undefined) {
 			throw new RuntimeError(`Unknown identifier '${this.#ident}'`);
 		} else {
 			return value;

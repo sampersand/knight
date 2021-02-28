@@ -66,7 +66,7 @@ export class Func extends Value {
 		const front = stream.peek();
 		const func = FUNCTIONS[front];
 
-		if (func === null) {
+		if (func === undefined) {
 			return null;
 		}
 
@@ -85,7 +85,7 @@ export class Func extends Value {
 			args.push(arg);
 		}
 
-		return new Func(func, match, args);
+		return new Func(func, front, args);
 	}
 
 	/**
@@ -412,7 +412,8 @@ register('=', (ident, value) => {
 		ident = new Ident(ident.toString());
 	}
 
-	return ident.assign(value.run());
+	ident.assign(value = value.run());
+	return value;
 });
 
 /**
@@ -457,7 +458,7 @@ register('G', (str, start, len) => {
 	start = start.toNumber();
 	len = len.toNumber();
 
-	return new Str(str.substr(start, len));
+	return new Str(str.substr(start, len) || "");
 });
 
 /**
@@ -476,5 +477,5 @@ register('S', (str, start, len, repl) => {
 	len = len.toNumber();
 	repl = repl.toString();
 
-	return new Str(str.replace(str.substr(start, len), repl));
+	return new Str(str.replace(str.substr(start, len), repl) || "");
 });
