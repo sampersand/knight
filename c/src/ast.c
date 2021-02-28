@@ -223,7 +223,7 @@ void kn_ast_dump(const struct kn_ast_t *ast) {
 	}
 
 	default:
-		bug("unknown kind '%d'");
+		bug("unknown kind '%d'", ast->kind);
 
 	}
 }
@@ -247,7 +247,7 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 		return (ast->function->func)(ast->arguments);
 
 	default:
-		bug("unknown kind '%d'");
+		bug("unknown kind '%d'", ast->kind);
 	}
 }
 
