@@ -59,21 +59,12 @@ export class Ident extends Value {
 	/**
 	 * Associates `value` with this class.
 	 *
-	 * Note that this will actually `run` the `value`---this is because it allows
-	 * for a much easier implementation of `assign`, where `= (+ "a" x) ...` will
-	 * only evaluate `value` after it evaluates the `Ident`.
-	 *
 	 * Any previously associated `Value` is simply discarded.
 	 *
 	 * @param {Value} value - The value to associate with this identifier's name.
-	 * @return {Value} - The result of running `value`.
 	 */
 	assign(value) {
-		value = value.run();
-
 		ENVIRONMENT[this.#ident] = value;
-
-		return value;
 	}
 
 	/**
