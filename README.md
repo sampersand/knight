@@ -10,10 +10,10 @@ The following is the list of all languages that's supported. All in-progress imp
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
-| [C](../c/c) | * | X | X | X | Almost fully functional---the hashmap for identifiers needs work. |
+| [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
-| [JavaScript](../javascript/javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
+| [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
 | [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
