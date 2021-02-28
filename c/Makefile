@@ -17,6 +17,9 @@ objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
 
 all: $(EXE)
 
+optimized:
+	gcc $(CFLAGS) $(CEXEFLAGS) -o $(EXE) $(wildcard $(SRCDIR)/*.c)
+
 $(EXE): $(objects)
 	$(CC) $(CFLAGS) $(CEXEFLAGS) -o $@ $+
 
