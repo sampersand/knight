@@ -100,7 +100,7 @@ Implementations are _only_ required to support the following characters within s
 - ASCII characters `0x21` (`!`) through `0x7e` (`~`)
 
 ### Conversions
--**numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
+- **numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
 - **string**: In string contexts, the string itself is returned.
 - **boolean**: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
 
@@ -121,12 +121,3 @@ The `NULL` type is used to indicate the absence of a value within Knight, and is
 - **numeric**: Null must become `0` in numeric contexts.
 - **string**: Null must become `"null"` in string contexts.
 - **boolean**: Null must become `FALSE` in boolean contexts.
-
-
-Functions:
-`O` and `W` both return null always
-
-
-# Details
-## Functions
-### Adding new functions.
