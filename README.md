@@ -1,6 +1,8 @@
 # Knight
 An extremely simple programming language that I've designed to be easy to implement in a variety of languages. It's not actually meant to be used, though it is a fully-functional lang.
 
+Unofficial Tag-line: "Knight: Runs everywhere. Not because it's cross-platform, but because it has a implementation in virtually all major languages."
+
 # Implementations
 The following is the list of all languages that's supported. All in-progress implementations are in separate branches.
 
@@ -11,7 +13,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [C](../c/c) | * | X | X | X | Almost fully functional---the hashmap for identifiers needs work. |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
-| [JavaScript](../javascript/javascript) |   |   | X | X | Minor bugs need to be fixed; Complete compliance needs to be verified. |
+| [JavaScript](../javascript/javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
 | [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
@@ -22,14 +24,13 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Raku](raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) |   |   | X | X | Simple implementation without comments, and unchecked for spec compliance. I'll probably rework it to make it cleaner. |
+| Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
+| C# |   |   |   |   | Planned. I know a decent amount of C# already, so this wont be that hard. |
+| SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
+| Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
+| LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
+| Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
 
-<<<<<<< Updated upstream
-
-
-
-
-=======
->>>>>>> Stashed changes
 # Examples
 Here's some examples of the syntax to give you a feel for it:
 
@@ -167,7 +168,8 @@ $
 \
 ```
 
-
-
 ## Details
-The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified, some functions are not included (such as the "system" function `` ` ``, `O`, `C`)
+The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified
+
+# NOTES:
+Maybe the `O` function should just return null...?

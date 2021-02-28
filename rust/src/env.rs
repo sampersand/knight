@@ -4,7 +4,6 @@ use crate::Value;
 
 static mut ENVIRONMENT: MaybeUninit<HashMap<String, Value>> = MaybeUninit::uninit();
 
-
 static mut INITIALIZED: bool = false;
 
 pub fn initialize() {
