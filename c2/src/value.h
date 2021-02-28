@@ -38,7 +38,7 @@ struct value_t {
 	};
 };
 
-inline struct value_t value_new_intern(string_t string) {
+struct value_t value_new_intern(string_t string) {
 	return (struct value_t) {
 		.kind = VK_STRING,
 		.string = string,
@@ -46,7 +46,7 @@ inline struct value_t value_new_intern(string_t string) {
 	};
 }
 
-inline struct value_t value_new_string(string_t string) {
+ struct value_t value_new_string(string_t string) {
 	unsigned *rc = xmalloc(sizeof(unsigned));
 	++*rc;
 
