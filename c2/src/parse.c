@@ -31,37 +31,13 @@ kn_value_t kn_parse(const char **stream) {
 	assert(*stream != NULL);
 	static const void * labels[256] = {
 		['\0'] = &&expected_token,
-		[0x01] = &&invalid,
-		[0x02] = &&invalid,
-		[0x03] = &&invalid,
-		[0x04] = &&invalid,
-		[0x05] = &&invalid,
-		[0x06] = &&invalid,
-		[0x07] = &&invalid,
-		[0x08] = &&invalid,
+		[0x01 ... 0x08] = &&invalid,
 		['\t'] = &&whitespace,
 		['\n'] = &&whitespace,
 		['\v'] = &&whitespace,
 		['\f'] = &&whitespace,
 		['\r'] = &&whitespace,
-		[0x0E] = &&invalid,
-		[0x0F] = &&invalid,
-		[0x10] = &&invalid,
-		[0x11] = &&invalid,
-		[0x12] = &&invalid,
-		[0x13] = &&invalid,
-		[0x14] = &&invalid,
-		[0x15] = &&invalid,
-		[0x16] = &&invalid,
-		[0x17] = &&invalid,
-		[0x18] = &&invalid,
-		[0x19] = &&invalid,
-		[0x1A] = &&invalid,
-		[0x1B] = &&invalid,
-		[0x1C] = &&invalid,
-		[0x1D] = &&invalid,
-		[0x1E] = &&invalid,
-		[0x1F] = &&invalid,
+		[0x0e ... 0x1f] = &&invalid,
 		[' ']  = &&whitespace,
 		['!']  = &&function_not,
 		['"']  = &&string,
@@ -78,16 +54,7 @@ kn_value_t kn_parse(const char **stream) {
 		['-']  = &&function_sub,
 		['.']  = &&invalid,
 		['/']  = &&function_div,
-		['0']  = &&number,
-		['1']  = &&number,
-		['2']  = &&number,
-		['3']  = &&number,
-		['4']  = &&number,
-		['5']  = &&number,
-		['6']  = &&number,
-		['7']  = &&number,
-		['8']  = &&number,
-		['9']  = &&number,
+		['0' ... '9']  = &&number,
 		[':']  = &&whitespace,
 		[';']  = &&function_then,
 		['<']  = &&function_lth,
@@ -127,80 +94,12 @@ kn_value_t kn_parse(const char **stream) {
 		['^']  = &&function_pow,
 		['_']  = &&identifier,
 		['`']  = &&function_system,
-		['a']  = &&identifier,
-		['b']  = &&identifier,
-		['c']  = &&identifier,
-		['d']  = &&identifier,
-		['e']  = &&identifier,
-		['f']  = &&identifier,
-		['g']  = &&identifier,
-		['h']  = &&identifier,
-		['i']  = &&identifier,
-		['j']  = &&identifier,
-		['k']  = &&identifier,
-		['l']  = &&identifier,
-		['m']  = &&identifier,
-		['n']  = &&identifier,
-		['o']  = &&identifier,
-		['p']  = &&identifier,
-		['q']  = &&identifier,
-		['r']  = &&identifier,
-		['s']  = &&identifier,
-		['t']  = &&identifier,
-		['u']  = &&identifier,
-		['v']  = &&identifier,
-		['w']  = &&identifier,
-		['x']  = &&identifier,
-		['y']  = &&identifier,
-		['z']  = &&identifier,
+		['a' ... 'z'] = &&identifier,
 		['{']  = &&whitespace,
 		['|']  = &&function_or,
 		['}']  = &&whitespace,
 		['~']  = &&invalid,
-		[0x7f] = &&invalid,
-		[0x80] = &&invalid, [0x81] = &&invalid, [0x82] = &&invalid,
-		[0x83] = &&invalid, [0x84] = &&invalid, [0x85] = &&invalid,
-		[0x86] = &&invalid, [0x87] = &&invalid, [0x88] = &&invalid,
-		[0x89] = &&invalid, [0x8a] = &&invalid, [0x8b] = &&invalid,
-		[0x8c] = &&invalid, [0x8d] = &&invalid, [0x8e] = &&invalid,
-		[0x8f] = &&invalid, [0x90] = &&invalid, [0x91] = &&invalid,
-		[0x92] = &&invalid, [0x93] = &&invalid, [0x94] = &&invalid,
-		[0x95] = &&invalid, [0x96] = &&invalid, [0x97] = &&invalid,
-		[0x98] = &&invalid, [0x99] = &&invalid, [0x9a] = &&invalid,
-		[0x9b] = &&invalid, [0x9c] = &&invalid, [0x9d] = &&invalid,
-		[0x9e] = &&invalid, [0x9f] = &&invalid, [0xa0] = &&invalid,
-		[0xa1] = &&invalid, [0xa2] = &&invalid, [0xa3] = &&invalid,
-		[0xa4] = &&invalid, [0xa5] = &&invalid, [0xa6] = &&invalid,
-		[0xa7] = &&invalid, [0xa8] = &&invalid, [0xa9] = &&invalid,
-		[0xaa] = &&invalid, [0xab] = &&invalid, [0xac] = &&invalid,
-		[0xad] = &&invalid, [0xae] = &&invalid, [0xaf] = &&invalid,
-		[0xb0] = &&invalid, [0xb1] = &&invalid, [0xb2] = &&invalid,
-		[0xb3] = &&invalid, [0xb4] = &&invalid, [0xb5] = &&invalid,
-		[0xb6] = &&invalid, [0xb7] = &&invalid, [0xb8] = &&invalid,
-		[0xb9] = &&invalid, [0xba] = &&invalid, [0xbb] = &&invalid,
-		[0xbc] = &&invalid, [0xbd] = &&invalid, [0xbe] = &&invalid,
-		[0xbf] = &&invalid, [0xc0] = &&invalid, [0xc1] = &&invalid,
-		[0xc2] = &&invalid, [0xc3] = &&invalid, [0xc4] = &&invalid,
-		[0xc5] = &&invalid, [0xc6] = &&invalid, [0xc7] = &&invalid,
-		[0xc8] = &&invalid, [0xc9] = &&invalid, [0xca] = &&invalid,
-		[0xcb] = &&invalid, [0xcc] = &&invalid, [0xcd] = &&invalid,
-		[0xce] = &&invalid, [0xcf] = &&invalid, [0xd0] = &&invalid,
-		[0xd1] = &&invalid, [0xd2] = &&invalid, [0xd3] = &&invalid,
-		[0xd4] = &&invalid, [0xd5] = &&invalid, [0xd6] = &&invalid,
-		[0xd7] = &&invalid, [0xd8] = &&invalid, [0xd9] = &&invalid,
-		[0xda] = &&invalid, [0xdb] = &&invalid, [0xdc] = &&invalid,
-		[0xdd] = &&invalid, [0xde] = &&invalid, [0xdf] = &&invalid,
-		[0xe0] = &&invalid, [0xe1] = &&invalid, [0xe2] = &&invalid,
-		[0xe3] = &&invalid, [0xe4] = &&invalid, [0xe5] = &&invalid,
-		[0xe6] = &&invalid, [0xe7] = &&invalid, [0xe8] = &&invalid,
-		[0xe9] = &&invalid, [0xea] = &&invalid, [0xeb] = &&invalid,
-		[0xec] = &&invalid, [0xed] = &&invalid, [0xee] = &&invalid,
-		[0xef] = &&invalid, [0xf0] = &&invalid, [0xf1] = &&invalid,
-		[0xf2] = &&invalid, [0xf3] = &&invalid, [0xf4] = &&invalid,
-		[0xf5] = &&invalid, [0xf6] = &&invalid, [0xf7] = &&invalid,
-		[0xf8] = &&invalid, [0xf9] = &&invalid, [0xfa] = &&invalid,
-		[0xfb] = &&invalid, [0xfc] = &&invalid, [0xfd] = &&invalid,
-		[0xfe] = &&invalid, [0xff] = &&invalid,
+		[0x7f ... 0xff] = &&invalid,
 	};
 
 	char c;
@@ -236,8 +135,7 @@ identifier: {
 
 	while (isident(ADVANCE_PEEK()));
 
-	return kn_value_new_identifier(kn_string_new(
-		strndup(start, *stream - start)));
+	return kn_value_new_identifier(kn_string_emplace(start, *stream - start));
 }
 
 string: {
@@ -253,14 +151,11 @@ string: {
 	}
 
 	size_t length = *stream - start - 1;
-	const struct kn_string_t *string;
 
-	if (length == 0)
-		string = &KN_STRING_EMPTY;
-	else
-		string = kn_string_new(strndup(start, length));
-
-	return kn_value_new_string(string);
+	return kn_value_new_string(
+		length
+		? kn_string_emplace(start, length)
+		: &KN_STRING_EMPTY);
 }
 
 literal_true:
@@ -307,13 +202,14 @@ function_while:  function = &kn_fn_while;  goto parse_kw_function;
 parse_kw_function:
 	while (isupper(ADVANCE_PEEK()));
 	// fallthrough
+
 parse_function: {
 	size_t arity = function->arity;
-	struct kn_ast_t *ast = xmalloc(sizeof(struct kn_ast_t));
+	struct kn_ast_t *ast = xmalloc(
+		sizeof(struct kn_ast_t) + sizeof(kn_value_t [arity]));
 
 	ast->func = function;
 	ast->refcount = 1;
-	ast->args = xmalloc(sizeof(kn_value_t) * arity);
 
 	for (size_t i = 0; i < arity; ++i)
 		ast->args[i] = kn_parse(stream);

@@ -4,19 +4,38 @@
 #include <stdlib.h>
 
 struct kn_string_t {
-	char *str;
+	intptr_t length;
 	unsigned refcount;
-	// TODO: put a length here.
+	char str[];
 };
 
-static struct kn_string_t KN_STRING_TRUE = { "true", 0 };
-static struct kn_string_t KN_STRING_FALSE = { "false", 0 };
-static struct kn_string_t KN_STRING_NULL = { "null", 0 };
-static struct kn_string_t KN_STRING_EMPTY = { "", 0 };
-static struct kn_string_t KN_STRING_ZERO = { "0", 0 };
-static struct kn_string_t KN_STRING_ONE = { "1", 0 };
+static struct kn_string_t KN_STRING_TRUE = {
+	4, 0, {'t', 'r', 'u', 'e', '\0'}
+};
 
-const struct kn_string_t *kn_string_new(char *);
+static struct kn_string_t KN_STRING_FALSE = {
+	5, 0, {'f', 'a', 'l', 's', 'e', '\0'}
+};
+
+static struct kn_string_t KN_STRING_NULL = {
+	4, 0, {'n', 'u', 'l', 'l', '\0'}
+};
+
+static struct kn_string_t KN_STRING_EMPTY = {
+	0, 0, {'\0'}
+};
+
+static struct kn_string_t KN_STRING_ZERO = {
+	1, 0, {'0', '\0'}
+};
+static struct kn_string_t KN_STRING_ONE = {
+	1, 0, {'1', '\0'}
+};
+
+const struct kn_string_t *kn_string_new(const char *);
+struct kn_string_t *kn_string_alloc(size_t);
+const struct kn_string_t *kn_string_emplace(const char *, size_t);
+
 void kn_string_free(const struct kn_string_t *);
 const struct kn_string_t *kn_string_clone(const struct kn_string_t *);
 

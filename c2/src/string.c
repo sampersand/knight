@@ -1,16 +1,34 @@
 #include "string.h"
 #include "shared.h"
 #include <stdio.h>
-#include "assert.h"
+#include <string.h>
+#include <assert.h>
 
-const struct kn_string_t *kn_string_new(char *string) {
-	assert(string != NULL);
+struct kn_string_t *kn_string_alloc(size_t length) {
+	// `+ 1` because of trailing NUL.
+	struct kn_string_t *string = xmalloc(
+		sizeof(struct kn_string_t) + sizeof(char [length + 1]));
 
-	struct kn_string_t *ret = xmalloc(sizeof(struct kn_string_t));
-	ret->refcount = 1;
-	ret->str = string;
+	string->length = length;
+	string->refcount = 1;
 
-	return ret;
+	return string;
+}
+
+const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
+	assert(str != NULL);
+	assert(strlen(str) >= length);
+
+	struct kn_string_t *string = kn_string_alloc(length);
+	memcpy(string->str, str, length);
+
+	return string;
+}
+
+const struct kn_string_t *kn_string_new(const char *str) {
+	assert(str != NULL);
+
+	return kn_string_emplace(str, strlen(str));
 }
 
 void kn_string_free(const struct kn_string_t *string) {
@@ -18,19 +36,15 @@ void kn_string_free(const struct kn_string_t *string) {
 
 	struct kn_string_t *unconst = (struct kn_string_t *) string;
 
-	if (unconst->refcount && !--unconst->refcount) {
-		// free(unconst->str);
-		// free(unconst);
-	}
+	if (unconst->refcount && !--unconst->refcount)
+		free(unconst);
 }
 
 const struct kn_string_t *kn_string_clone(const struct kn_string_t *string) {
 	assert(string != NULL);
-	struct kn_string_t *unconst = (struct kn_string_t *) string;
-
 
 	if (string->refcount)
-		++unconst->refcount;
+		++((struct kn_string_t *) string)->refcount;
 
 	return string;
 }

@@ -91,7 +91,6 @@ DECLARE_FUNCTION(system, 1, '`', {
 
 	kn_string_free(command);
 
-
 	size_t cap = 2048;
 	size_t len = 0;
 	size_t tmp;
@@ -130,12 +129,10 @@ DECLARE_FUNCTION(not, 1, '!', {
 
 DECLARE_FUNCTION(length, 1 ,'L', {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
-
-	kn_value_t ret = kn_value_new_number((kn_number_t) strlen(string->str));
-
+	kn_number_t length = (kn_number_t) string->length;
 	kn_string_free(string);
 
-	return ret;
+	return kn_value_new_number(length);
 });
 
 DECLARE_FUNCTION(dump, 1 ,'D', {
@@ -146,23 +143,20 @@ DECLARE_FUNCTION(dump, 1 ,'D', {
 
 DECLARE_FUNCTION(output, 1, 'O', {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
+	assert(string != NULL);
 
 	// right here we're casting away the const.
 	// this is because we might need to replace the penult character
 	// with a `\0` if it's a backslash to prevent the printing of a
 	// newline. however, we replace it on the next line, so it's ok.
-	char *str = (char *) string->str;
-	assert(str != NULL);
+	char *penult = (char *) &string->str[string->length];
 
-	size_t len = strlen(str);
-	char *penult = &str[len - 1];
-
-	if (len != 0 && *penult == '\\') {
+	if (string->length != 0 && *penult == '\\') {
 		*penult = '\0'; // replace the trailing `\`
-		printf("%s", str);
+		printf("%s", string->str);
 		*penult = '\\'; // and then restore it.
 	} else {
-		printf("%s\n", str);
+		printf("%s\n", string->str);
 	}
 
 	kn_string_free(string);
@@ -174,31 +168,29 @@ static kn_value_t kn_fn_add_string(
 	const struct kn_string_t *lhs,
 	const struct kn_string_t *rhs
 ) {
-	size_t lhslen = strlen(lhs->str);
-	size_t rhslen = strlen(rhs->str);
-
-	if (lhslen == 0) {
+	if (lhs->length == 0) {
 		kn_string_free(lhs);
 		return kn_value_new_string(rhs);
-	} else if (rhslen == 0) {
+	} else if (rhs->length == 0) {
 		kn_string_free(rhs);
 		return kn_value_new_string(kn_string_clone(lhs));
 	}
 
-	char *ret = xmalloc(lhslen + rhslen + 1);
+	struct kn_string_t *ret = kn_string_alloc(lhs->length + rhs->length + 1);
 
-	memcpy(ret, lhs->str, lhslen);
-	memcpy(ret + lhslen, rhs->str, rhslen);
+	memcpy(ret->str, lhs->str, lhs->length);
+	memcpy(ret->str + lhs->length, rhs->str, rhs->length);
 
-	ret[lhslen + rhslen] = '\0';
+	ret->str[lhs->length + rhs->length] = '\0';
 
 	kn_string_free(lhs);
 	kn_string_free(rhs);
 
-	return kn_value_new_string(kn_string_new(ret));
+	return kn_value_new_string(ret);
 }
 
 DECLARE_FUNCTION(add, 2, '+', {
+	// TODO: do we run this or not
 	kn_value_t lhs = kn_value_run(args[0]);
 
 	// If lhs is a string, convert both to a string and concat
@@ -220,10 +212,9 @@ DECLARE_FUNCTION(sub, 2, '-', {
 });
 
 static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
-	size_t lhslen = strlen(lhs->str);
-
 	// if we have an empty string, return early.
-	if (lhslen == 0 || amnt == 1)
+	if (lhs->length == 0 || amnt == 1)
+		// TODO: do we cloen this or not.
 		return kn_value_new_string(kn_string_clone(lhs));
 
 	if (amnt == 0) {
@@ -231,11 +222,12 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
-	char *string = xmalloc(1 + lhslen * amnt);
+	// struct kn_string_t string = kn_string_alloc()
+	char *string = xmalloc(1 + lhs->length * amnt);
 	char *ptr = string;
 
-	for (; amnt != 0; --amnt, ptr += lhslen)
-		memcpy(ptr, lhs->str, lhslen);
+	for (; amnt != 0; --amnt, ptr += lhs->length)
+		memcpy(ptr, lhs->str, lhs->length);
 
 	*ptr = '\0';
 

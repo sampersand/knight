@@ -16,6 +16,7 @@
  * X...X0000 - string (nonzero `X`)
  * X...X0010 - identifier (nonzero `X`)
  * X...X0100 - function (nonzero `X`)
+ * X...X1XXX - free value after use.
  */
 
 #define KN_MASK 7
@@ -23,14 +24,16 @@
 #define KN_TAG_NUMBER 1
 #define KN_TAG_IDENT 2
 #define KN_TAG_AST 4
+#define FREE_MEMORY 8
 
 #define KN_TAG(x) ((x) & KN_MASK)
+#define KN_UNMASK(x) ((x) & ~KN_MASK)
 #define KN_VALUE_AS_NUMBER(x) ((kn_number_t) (((uint64_t) (x)) >> 1))
-#define KN_VALUE_AS_IDENT(x) ((struct kn_string_t *) ((x) & ~KN_MASK))
+#define KN_VALUE_AS_IDENT(x) ((struct kn_string_t *) KN_UNMASK(x))
 #define KN_VALUE_AS_STRIDENT(x) KN_VALUE_AS_IDENT(x)
-#define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) ((x) & ~KN_MASK))
+#define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) KN_UNMASK(x))
 
-#define KN_VALUE_IS_LITERAL(x) ((x) <= 4 || (x) & KN_TAG_NUMBER)
+#define KN_VALUE_IS_LITERAL(x) ((x) <= 4 || kn_value_is_number(x))
 
 bool kn_value_is_number(kn_value_t value) {
 	return value & KN_TAG_NUMBER;
@@ -69,11 +72,11 @@ const struct kn_string_t *kn_value_as_string(kn_value_t value) {
 
 const char *kn_value_as_identifier(kn_value_t value) {
 	assert(kn_value_is_identifier(value));
-	return ((struct kn_string_t *) (value & ~KN_MASK))->str;
+	return ((struct kn_string_t *) KN_UNMASK(value))->str;
 }
 
 inline kn_value_t kn_value_new_number(kn_number_t number) {
-	assert(!(((uint64_t) number) >> 63));
+	assert(((uint64_t) number) == ((((uint64_t) number) >> 1) << 1));
 	return (((uint64_t) number) << 1) | KN_TAG_NUMBER;
 }
 
@@ -110,7 +113,7 @@ static kn_number_t string_to_number(const struct kn_string_t *value) {
 	while (isspace(*ptr))
 		ptr++;
 
-	int is_neg = *ptr == '-';
+	bool is_neg = *ptr == '-';
 	unsigned char cur; // so we get wraparound.
 
 	if (is_neg || *ptr == '+')
@@ -127,7 +130,7 @@ static kn_number_t string_to_number(const struct kn_string_t *value) {
 
 kn_number_t kn_value_to_number(kn_value_t value) {
 	if (kn_value_is_number(value))
-		return KN_VALUE_AS_NUMBER(value);
+		return kn_value_as_number(value);
 
 	if (value <= KN_NULL) {
 		assert(value == KN_FALSE || value == KN_NULL);
@@ -192,7 +195,7 @@ const struct kn_string_t *number_to_string(kn_number_t num) {
 
 const struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	if (kn_value_is_number(value))
-		return number_to_string(KN_VALUE_AS_NUMBER(value));
+		return number_to_string(kn_value_as_number(value));
 
 	switch (value) {
 	case KN_TRUE:  return &KN_STRING_TRUE;
@@ -223,7 +226,7 @@ void kn_value_dump(kn_value_t value) {
 	}
 
 	if (kn_value_is_number(value)) {
-		printf("Number(%llu)", KN_VALUE_AS_NUMBER(value));
+		printf("Number(%llu)", kn_value_as_number(value));
 		return;
 	}
 
@@ -251,13 +254,12 @@ void kn_value_dump(kn_value_t value) {
 }
 
 bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
-	if (kn_value_is_number(lhs) || kn_value_is_boolean(lhs) || kn_value_is_null(lhs))
-		return lhs == rhs;
-	if (kn_value_is_string(lhs))
-		return kn_value_is_string(rhs) && !strcmp(
-			kn_value_as_string(lhs)->str, kn_value_as_string(lhs)->str);
-	else
-		return false;
+	if (lhs == rhs)
+		return true;
+	if (kn_value_is_string(lhs) && kn_value_is_string(rhs))
+		return !strcmp(
+			kn_value_as_string(lhs)->str, kn_value_as_string(rhs)->str);
+	return false;
 }
 
 kn_value_t kn_value_run(kn_value_t value) {
@@ -279,44 +281,42 @@ kn_value_t kn_value_run(kn_value_t value) {
 }
 
 kn_value_t kn_value_clone(kn_value_t value) {
-	if (KN_VALUE_IS_LITERAL(value)) {
-		return value;
-	}
-	
-	if (KN_TAG(value) <= 2) {
-#ifdef NDEBUG
-		(void) kn_string_clone(KN_VALUE_AS_STRIDENT(value));
-#else
-		assert(kn_string_clone(KN_VALUE_AS_STRIDENT(value))
-			== KN_VALUE_AS_STRIDENT(value));
-#endif
-		return value;
-	}
+	if (!KN_VALUE_IS_LITERAL(value)) {
+		// note that both `kn_ast_t` and `kn_string_t` have their refcount
+		// in the same spot, with the same alignment, and the same size.
+		assert(KN_TAG(value) == KN_TAG_AST
+			|| KN_TAG(value) == KN_TAG_STRING
+			|| KN_TAG(value) == KN_TAG_IDENT);
 
-	assert(KN_TAG(value) == KN_TAG_AST);
-	++KN_VALUE_AS_AST(value)->refcount;
+		unsigned *rc = &((struct kn_string_t*) KN_UNMASK(value))->refcount;
+
+		if (*rc)
+			++*rc;
+	}
 
 	return value;
-
 }
 
 void kn_value_free(kn_value_t value) {
 	if (KN_VALUE_IS_LITERAL(value))
 		return;
 
-	if (KN_TAG(value) <= 2) {
-		kn_string_free(KN_VALUE_AS_STRIDENT(value));
+	// note that both `kn_ast_t` and `kn_string_t` have their refcount
+	// in the same spot, with the same alignment, and the same size.
+	unsigned *rc = &((struct kn_string_t*) KN_UNMASK(value))->refcount;
+
+	if (!*rc || --*rc)
+		return;
+
+	if (KN_TAG(value) <= 4) {
+		kn_string_free((struct kn_string_t*) KN_UNMASK(value));
 		return;
 	}
 
-	struct kn_ast_t *ast = KN_VALUE_AS_AST(value);
-
-	if (--ast->refcount)
-		return;
+	struct kn_ast_t *ast = (struct kn_ast_t*) KN_UNMASK(value);
 
 	for (unsigned i = 0; i < ast->func->arity; ++i)
 		kn_value_free(ast->args[i]);
 
-	// free(ast->args);
+	free(ast);
 }
-
