@@ -33,8 +33,6 @@
 #define KN_VALUE_AS_STRIDENT(x) KN_VALUE_AS_IDENT(x)
 #define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) KN_UNMASK(x))
 
-#define KN_VALUE_IS_LITERAL(x) ((x) <= 4 || kn_value_is_number(x))
-
 bool kn_value_is_number(kn_value_t value) {
 	return value & KN_TAG_NUMBER;
 }
@@ -76,7 +74,7 @@ const char *kn_value_as_identifier(kn_value_t value) {
 }
 
 inline kn_value_t kn_value_new_number(kn_number_t number) {
-	assert(((uint64_t) number) == ((((uint64_t) number) >> 1) << 1));
+	// assert(((uint64_t) number) == ((((uint64_t) number) << 1) >> 1));
 	return (((uint64_t) number) << 1) | KN_TAG_NUMBER;
 }
 

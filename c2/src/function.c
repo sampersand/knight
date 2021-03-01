@@ -222,9 +222,8 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
-	// struct kn_string_t string = kn_string_alloc()
-	char *string = xmalloc(1 + lhs->length * amnt);
-	char *ptr = string;
+	struct kn_string_t *string = kn_string_alloc(lhs->length * amnt);
+	char *ptr = string->str;
 
 	for (; amnt != 0; --amnt, ptr += lhs->length)
 		memcpy(ptr, lhs->str, lhs->length);
@@ -233,7 +232,7 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 
 	kn_string_free(lhs);
 
-	return kn_value_new_string(kn_string_new(string));
+	return kn_value_new_string(string);
 }
 
 DECLARE_FUNCTION(mul, 2, '*', {
@@ -276,7 +275,6 @@ DECLARE_FUNCTION(pow, 2, '^', {
 	kn_number_t result = 1;
 	kn_number_t base = kn_value_to_number(args[0]);
 	kn_number_t exponent = kn_value_to_number(args[1]);
-
 
 	// there's no builtin way to do integer exponentiation, so we have to
 	// do it manually.
@@ -386,7 +384,6 @@ DECLARE_FUNCTION(then, 2, ';', {
 	return kn_value_run(args[1]);
 });
 
-
 DECLARE_FUNCTION(assign, 2, '=', {
 	kn_value_t ret;
 
@@ -423,28 +420,19 @@ DECLARE_FUNCTION(if, 3, 'I', {
 
 DECLARE_FUNCTION(get, 3, 'G', {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
-	size_t start = (size_t) kn_value_to_number(args[1]);
-	size_t amnt = (size_t) kn_value_to_number(args[2]);
+	intptr_t start = (intptr_t) kn_value_to_number(args[1]);
+	intptr_t amnt = (intptr_t) kn_value_to_number(args[2]);
 
-	kn_value_t ret;
-
-	size_t length = strlen(string->str);
-
-	if (length <= start) {
-		ret = kn_value_new_string(&KN_STRING_EMPTY);
-		goto free_and_return;
+	if (string->length <= start) {
+		kn_string_free(string);
+		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
-	char *substr = strndup(string->str + start, amnt);
-	if (substr == NULL)
-		die("substring creation failed");
-
-	ret = kn_value_new_string(kn_string_new(substr));
-
-free_and_return:
+	struct kn_string_t *substr = kn_string_alloc(amnt);
+	strncpy(substr->str, string->str, amnt);
 	kn_string_free(string);
 
-	return ret;
+	return kn_value_new_string(substr);
 });
 
 DECLARE_FUNCTION(set, 4, 'S', {
@@ -453,8 +441,8 @@ DECLARE_FUNCTION(set, 4, 'S', {
 	size_t amnt = (size_t) kn_value_to_number(args[2]);
 	const struct kn_string_t *substr = kn_value_to_string(args[3]);
 
-	size_t string_length = strlen(string->str);
-	size_t substr_length = strlen(substr->str);
+	size_t string_length = (size_t) string->length;
+	size_t substr_length = (size_t) substr->length;
 
 	// if it's out of bounds, die.
 	if (string_length < start)
