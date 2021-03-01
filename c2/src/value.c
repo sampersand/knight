@@ -251,72 +251,13 @@ void kn_value_dump(kn_value_t value) {
 }
 
 bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
-	if (lhs == rhs) // covers all literals
-		return true;
-	else if (KN_TAG(lhs) != KN_TAG(rhs)) // 
+	if (kn_value_is_number(lhs) || kn_value_is_boolean(lhs) || kn_value_is_null(lhs))
+		return lhs == rhs;
+	if (kn_value_is_string(lhs))
+		return kn_value_is_string(rhs) && !strcmp(
+			kn_value_as_string(lhs)->str, kn_value_as_string(lhs)->str);
+	else
 		return false;
-return true;
-/*
-	
-
-// 	// if their kinds aren't equal, they're by definition not equal.
-// 	if (lhs.kind != rhs.kind) {
-// 		is_eql = false;
-// 		goto free_and_return;
-// 	}
-
-// 	switch(lhs.kind) {
-// 	case KN_VT_NULL:
-// 		is_eql = true;
-// 		break;
-
-// 	case KN_VT_BOOLEAN:
-// 		is_eql = lhs.boolean == rhs.boolean;
-// 		break;
-
-// 	case KN_VT_INTEGER:
-// 		is_eql = lhs.integer == rhs.integer;
-// 		break;
-
-// 	case KN_VT_STRING:
-// 		is_eql = strcmp(lhs.string.str, rhs.string.str) == 0;
-// 		break;
-
-// 	case KN_VT_AST:
-// 		// ASTs are only equal if they're the _exact same_ object.
-// 		if (lhs.ast->kind != rhs.ast->kind) {
-// 			is_eql = false;
-// 			goto free_and_return;
-// 		}
-
-// 		// we should never have an AST of values...
-// 		assert(lhs.ast->kind == KN_TT_IDENTIFIER ||
-// 		       lhs.ast->kind == KN_TT_FUNCTION);
-
-// 		if (lhs.ast->kind == KN_TT_IDENTIFIER) {
-// 			is_eql = lhs.ast->identifier == rhs.ast->identifier;
-// 		} else {
-// 			is_eql = lhs.ast->arguments == rhs.ast->arguments;
-
-// 			// sanity check because the function should be the same
-// 			// for identical arguments.
-// 			assert(!is_eql ||
-// 				lhs.ast->function == rhs.ast->function);
-// 		}
-
-// 		break;
-
-// 	default:
-// 		bug("unknown kind '%d'", lhs.kind);
-// 	}
-
-// free_and_return:
-// 	kn_value_free(&lhs);
-// 	kn_value_free(&rhs);
-
-// 	return kn_value_new_boolean(is_eql);
-
-*/
 }
 
 kn_value_t kn_value_run(kn_value_t value) {

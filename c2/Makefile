@@ -7,9 +7,9 @@ CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-label-as-value
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-override CFLAGS += -g -fsanitize=address,undefined -O1
+override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -Wl,-stack_size,1600000 -O3 -DNDEBUG
+CEXEFLAGS += -Wl,-stack_size,16000000 -O3 -DNDEBUG
 endif
 
 # lower case because it's local to makefile.

@@ -469,7 +469,7 @@ DECLARE_FUNCTION(set, 4, 'S', {
 		die("index '%zu' out of bounds (length=%zu)", start, string_length);
 
 	if (string_length < start + amnt)
-		amnt = string_length - amnt;
+		amnt = string_length - start;
 
 	char *result = xmalloc(string_length - amnt + substr_length + 1);
 	char *ptr = result;
@@ -478,8 +478,9 @@ DECLARE_FUNCTION(set, 4, 'S', {
 	ptr += start;
 	memcpy(ptr, substr->str, substr_length);
 	ptr += substr_length;
-	memcpy(ptr, string->str + start + amnt, substr_length - amnt);
-    ptr[substr_length - amnt] = '\0';
+	memcpy(ptr, string->str + start + amnt, string_length - amnt);
+	ptr += string_length - amnt;
+	*ptr = '\0';
 
 	kn_string_free(string);
 	kn_string_free(substr);
