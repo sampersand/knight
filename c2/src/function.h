@@ -1,43 +1,43 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
-struct value_t;
+struct kn_value_t;
 
-struct function_t {
-	struct value_t (*func)(const struct value_t*);
+struct kn_function_t {
+	struct kn_value_t (*func)(const struct kn_value_t*);
 	unsigned arity;
 };
 
-struct function_t fn_prompt;
-struct function_t fn_random;
+struct kn_function_t kn_fn_prompt;
+struct kn_function_t kn_fn_random;
 
-struct function_t fn_eval;
-struct function_t fn_block;
-struct function_t fn_call;
-struct function_t fn_system;
-struct function_t fn_quit;
-struct function_t fn_not;
-struct function_t fn_length;
-struct function_t fn_dump;
-struct function_t fn_output;
+struct kn_function_t kn_fn_eval;
+struct kn_function_t kn_fn_block;
+struct kn_function_t kn_fn_call;
+struct kn_function_t kn_fn_system;
+struct kn_function_t kn_fn_quit;
+struct kn_function_t kn_fn_not;
+struct kn_function_t kn_fn_length;
+struct kn_function_t kn_fn_dump;
+struct kn_function_t kn_fn_output;
 
-struct function_t fn_add;
-struct function_t fn_sub;
-struct function_t fn_mul;
-struct function_t fn_div;
-struct function_t fn_mod;
-struct function_t fn_eql;
-struct function_t fn_lth;
-struct function_t fn_gth;
-struct function_t fn_and;
-struct function_t fn_or;
-struct function_t fn_then;
-struct function_t fn_assign;
-struct function_t fn_while;
+struct kn_function_t kn_fn_add;
+struct kn_function_t kn_fn_sub;
+struct kn_function_t kn_fn_mul;
+struct kn_function_t kn_fn_div;
+struct kn_function_t kn_fn_mod;
+struct kn_function_t kn_fn_eql;
+struct kn_function_t kn_fn_lth;
+struct kn_function_t kn_fn_gth;
+struct kn_function_t kn_fn_and;
+struct kn_function_t kn_fn_or;
+struct kn_function_t kn_fn_then;
+struct kn_function_t kn_fn_assign;
+struct kn_function_t kn_fn_while;
 
-struct function_t fn_if;
-struct function_t fn_get;
+struct kn_function_t kn_fn_if;
+struct kn_function_t kn_fn_get;
 
-struct function_t fn_set;
+struct kn_function_t kn_fn_set;
 
 #endif

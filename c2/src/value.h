@@ -1,78 +1,35 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include <stdint.h>
+#include "string.h"
 #include "function.h"
-#include "shared.h"
+#include <stdbool.h>
 
-typedef intmax_t number_t;
-typedef char * string_t;
+typedef uint64_t kn_value_t;
+typedef int64_t kn_number_t;
+typedef bool kn_boolean_t;
 
-enum value_kind_t {
-	VK_INTEGER,
-	VK_BOOLEAN,
-	VK_NULL,
-	VK_STRING,
-	VK_IDENTIFIER,
-	VK_FUNCTION,
+struct kn_ast_t {
+	struct kn_function_t *func;
+	unsigned refcount;
+	kn_value_t *args;
 };
 
-struct value_t {
-	enum value_kind_t kind;
+kn_value_t kn_value_new_number(kn_number_t);
+kn_value_t kn_value_new_boolean(kn_boolean_t);
+kn_value_t kn_value_new_null(void);
+kn_value_t kn_value_new_string(const struct kn_string_t *);
+kn_value_t kn_value_new_identifier(const struct kn_string_t *);
+kn_value_t kn_value_new_ast(const struct kn_ast_t *);
 
-	union {
-		number_t integer;
-		bool boolean;
-		struct {
-			union {
-				string_t string;
-				char *identifier;
-				struct {
-					struct function_t *function;
-					struct value_t *args;
-				};
-			};
-			unsigned *rc;
-		};
-	};
-};
+kn_number_t kn_value_to_number(kn_value_t);
+kn_boolean_t kn_value_to_boolean(kn_value_t);
+const struct kn_string_t *kn_value_to_string(kn_value_t);
 
-struct value_t value_new_intern(string_t string) {
-	return (struct value_t) {
-		.kind = VK_STRING,
-		.string = string,
-		.rc = NULL
-	};
-}
+void kn_value_dump(kn_value_t);
 
- struct value_t value_new_string(string_t string) {
-	unsigned *rc = xmalloc(sizeof(unsigned));
-	++*rc;
-
-	return (struct value_t) {
-		.kind = VK_STRING,
-		.string = string,
-		.rc = rc
-	};
-}
-
-struct value_t EMPTY_STRING = (struct value_t) {
-	.kind = VK_STRING,
-	.string = "",
-	.rc = NULL
-};
-
-void value_free(struct value_t *);
-struct value_t value_clone(const struct value_t *);
-struct value_t value_run(const struct value_t *);
-
-number_t value_to_integer(const struct value_t *);
-bool value_to_boolean(const struct value_t *);
-
-#define INTERN_BIT 1
-
-// _not_ a string, as it might be an intern.
-size_t value_to_string(const struct value_t *);
+void kn_value_free(kn_value_t);
+kn_value_t kn_value_clone(kn_value_t);
 
 #endif
