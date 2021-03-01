@@ -6,6 +6,7 @@
 struct kn_string_t {
 	char *str;
 	unsigned refcount;
+	// TODO: put a length here.
 };
 
 static struct kn_string_t KN_STRING_TRUE = { "true", 0 };

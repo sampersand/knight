@@ -86,9 +86,8 @@ DECLARE_FUNCTION(system, 1, '`', {
 
 	FILE *stream = popen(command->str, "r");
 
-	if (stream == NULL) {
+	if (stream == NULL)
 		die("unable to execute command '%s'.", command->str);
-	}
 
 	kn_string_free(command);
 
@@ -102,24 +101,20 @@ DECLARE_FUNCTION(system, 1, '`', {
 	while (0 != (tmp = fread(result + len, 1, cap - len, stream))) {
 		len += tmp;
 
-		if (len == cap) {
-			cap *= 2;
-			result = xrealloc(result, cap);
-		}
+		if (len == cap)
+			result = xrealloc(result, cap *= 2);
 	}
 
 	// Abort if `stream` had an error.
-	if (ferror(stream)) {
+	if (ferror(stream))
 		die("unable to read command stream");
-	}
 
 	result = xrealloc(result, len + 1);
 	result[len] = '\0';
 
 	// Abort if we cant close stream.
-	if (pclose(stream) == -1) {
+	if (pclose(stream) == -1)
 		die("unable to close command stream.");
-	}
 
 	return kn_value_new_string(kn_string_new(result));
 });
@@ -136,8 +131,7 @@ DECLARE_FUNCTION(not, 1, '!', {
 DECLARE_FUNCTION(length, 1 ,'L', {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 
-	kn_value_t ret =
-		kn_value_new_number((kn_number_t) strlen(string->str));
+	kn_value_t ret = kn_value_new_number((kn_number_t) strlen(string->str));
 
 	kn_string_free(string);
 
@@ -212,13 +206,12 @@ DECLARE_FUNCTION(add, 2, '+', {
 		return kn_fn_add_string(
 			kn_value_as_string(lhs),
 			kn_value_to_string(args[1]));
-	} else {
-		kn_number_t number = kn_value_to_number(lhs);
-		kn_value_free(lhs);
-
-		return kn_value_new_number(
-			number + kn_value_to_number(args[1]));
 	}
+
+	kn_number_t number = kn_value_to_number(lhs);
+	kn_value_free(lhs);
+
+	return kn_value_new_number(number + kn_value_to_number(args[1]));
 });
 
 DECLARE_FUNCTION(sub, 2, '-', {
@@ -230,9 +223,10 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 	size_t lhslen = strlen(lhs->str);
 
 	// if we have an empty string, return early.
-	if (lhslen == 0 || amnt == 1) {
+	if (lhslen == 0 || amnt == 1)
 		return kn_value_new_string(kn_string_clone(lhs));
-	} else if (amnt == 0) {
+
+	if (amnt == 0) {
 		kn_string_free(lhs);
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
@@ -240,10 +234,8 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 	char *string = xmalloc(1 + lhslen * amnt);
 	char *ptr = string;
 
-	for (; amnt != 0; --amnt) {
+	for (; amnt != 0; --amnt, ptr += lhslen)
 		memcpy(ptr, lhs->str, lhslen);
-		ptr += lhslen;
-	}
 
 	*ptr = '\0';
 
@@ -260,13 +252,12 @@ DECLARE_FUNCTION(mul, 2, '*', {
 		return kn_fn_mul_string(
 			kn_value_as_string(lhs),
 			(size_t) kn_value_to_number(args[1]));
-	} else {
-		kn_number_t number = kn_value_to_number(lhs);
-		kn_value_free(lhs);
-
-		return kn_value_new_number(
-			number * kn_value_to_number(args[1]));
 	}
+	
+	kn_number_t number = kn_value_to_number(lhs);
+	kn_value_free(lhs);
+
+	return kn_value_new_number(number * kn_value_to_number(args[1]));
 });
 
 DECLARE_FUNCTION(div, 2, '/', {
@@ -310,9 +301,8 @@ DECLARE_FUNCTION(pow, 2, '^', {
 	} else {
 		result = 1;
 
-		for (; exponent > 0; --exponent) {
+		for (; exponent > 0; --exponent)
 			result *= base;
-		}
 	}
 
 	return kn_value_new_number(result);
@@ -411,8 +401,7 @@ DECLARE_FUNCTION(assign, 2, '=', {
 	// if it's an identifier, special-case it where we don't evaluate it.
 	if (kn_value_is_identifier(args[0])) {
 		ret = kn_value_run(args[1]);
-		kn_env_set(
-			kn_value_as_identifier(args[0]), kn_value_clone(ret));
+		kn_env_set(kn_value_as_identifier(args[0]), kn_value_clone(ret));
 	} else {
 		// otherwise, evaluate the expression, convert to a string,
 		// and then use that as the identifier.
@@ -436,76 +425,64 @@ DECLARE_FUNCTION(while, 2, 'W', {
 
 
 DECLARE_FUNCTION(if, 3, 'I', {
-	return kn_value_run(args[kn_value_to_boolean(args[0]) ? 1 : 2]);
+	return kn_value_run(args[1 + !kn_value_to_boolean(args[0])]);
 });
 
 
 DECLARE_FUNCTION(get, 3, 'G', {
-	assert(args != NULL);
-
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	size_t start = (size_t) kn_value_to_number(args[1]);
 	size_t amnt = (size_t) kn_value_to_number(args[2]);
+
 	kn_value_t ret;
 
 	size_t length = strlen(string->str);
 
-	if (length - 1 < start) {
+	if (length <= start) {
 		ret = kn_value_new_string(&KN_STRING_EMPTY);
-	} else {
-		char *substr = strndup(string->str + start, amnt);
-
-		if (substr == NULL) {
-			die("substring creation failed");
-		}
-
-		ret = kn_value_new_string(kn_string_new(substr));
+		goto free_and_return;
 	}
 
+	char *substr = strndup(string->str + start, amnt);
+	if (substr == NULL)
+		die("substring creation failed");
+
+	ret = kn_value_new_string(kn_string_new(substr));
+
+free_and_return:
 	kn_string_free(string);
 
 	return ret;
 });
 
 DECLARE_FUNCTION(set, 4, 'S', {
-	kn_value_t ret;
-
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	size_t start = (size_t) kn_value_to_number(args[1]);
-	kn_value_dump(args[2]);
 	size_t amnt = (size_t) kn_value_to_number(args[2]);
-	size_t length = strlen(string->str);
 	const struct kn_string_t *substr = kn_value_to_string(args[3]);
 
+	size_t string_length = strlen(string->str);
+	size_t substr_length = strlen(substr->str);
+
 	// if it's out of bounds, die.
-	if (length < start) {
-		die("index '%zu' out of bounds (length=%zu)", start, length);
-	}
+	if (string_length < start)
+		die("index '%zu' out of bounds (length=%zu)", start, string_length);
 
-	// this could be made more efficient.
-	char *retstr = xmalloc(length + strlen(substr->str) + 1);
-	printf("retstr=%p, length = %zu, strlen(substr->str)=%zu\n",
-		(void*)string, length, strlen(substr->str));
-	memcpy(retstr, string->str, start);
-	printf("start=%zu, string->str=[%s]\n", start, string->str);
-	retstr[start] = '\0';
-	printf("spot2\n");
-	strcat(retstr + start, substr->str);
-	printf("spot3a:\n\tretstr (%p)+\n\tstart (%zu)\n\t+strlen(substr->str) (%zu)\n\t=%p\n",
-		(void *) retstr, start, strlen(substr->str), (void *)(retstr + start + strlen(substr->str)));
-	printf("spot3b:\n\tstring->str (%p)+\n\tstart (%zu)\n\t+amnt (%zu)\n\t=%p\n",
-		(void *) string->str, start, amnt, (void *)(string->str + start + amnt));
-	strcat(retstr + start + strlen(substr->str), string->str + start + amnt);
-	printf("spot4\n");
+	if (string_length < start + amnt)
+		amnt = string_length - amnt;
 
-	ret = kn_value_new_string(kn_string_new(retstr));
-	printf("spot5\n");
+	char *result = xmalloc(string_length - amnt + substr_length + 1);
+	char *ptr = result;
+
+	memcpy(ptr, string->str, start);
+	ptr += start;
+	memcpy(ptr, substr->str, substr_length);
+	ptr += substr_length;
+	memcpy(ptr, string->str + start + amnt, substr_length - amnt);
+    ptr[substr_length - amnt] = '\0';
 
 	kn_string_free(string);
-	printf("spot6\n");
 	kn_string_free(substr);
-	printf("spot7\n");
-	printf("/\n");
 
-	return ret;
+	return kn_value_new_string(kn_string_new(result));
 });
