@@ -1,4 +1,7 @@
 #include "value.h"
+#include "function.h"
+#include "env.h"
+#include "ast.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -15,10 +18,6 @@
  * X...X0100 - function (nonzero `X`)
  */
 
-#define KN_FALSE 0
-#define KN_NULL 2
-#define KN_TRUE 4
-
 #define KN_MASK 7
 #define KN_TAG_STRING 0
 #define KN_TAG_NUMBER 1
@@ -28,13 +27,13 @@
 #define KN_TAG(x) ((x) & KN_MASK)
 #define KN_VALUE_AS_NUMBER(x) ((kn_number_t) (((uint64_t) (x)) >> 1))
 #define KN_VALUE_AS_STRING(x) ((struct kn_string_t *) (x))
-#define KN_VALUE_AS_IDENT(x) ((struct kn_string_t *) ((x) & ~KN_TAG_IDENT))
+#define KN_VALUE_AS_IDENT(x) ((struct kn_string_t *) ((x) & ~KN_MASK))
 #define KN_VALUE_AS_STRIDENT(x) KN_VALUE_AS_IDENT(x)
-#define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) ((x) & ~KN_TAG_IDENT))
+#define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) ((x) & ~KN_MASK))
 
 #define KN_VALUE_IS_NUMBER(x) ((x) & KN_TAG_NUMBER)
 #define KN_VALUE_IS_STRING(x) ((x) && KN_TAG(x) == KN_TAG_STRING)
-
+#define KN_VALUE_IS_LITERAL(x) ((x) <= 4 || (x) & KN_TAG_NUMBER)
 inline kn_value_t kn_value_new_number(kn_number_t number) {
 	assert(!(((uint64_t) number) >> 63));
 	return (((uint64_t) number) << 1) | KN_TAG_NUMBER;
@@ -42,10 +41,6 @@ inline kn_value_t kn_value_new_number(kn_number_t number) {
 
 inline kn_value_t kn_value_new_boolean(kn_boolean_t boolean) {
 	return ((uint64_t) boolean) << 2; // optimization yay
-}
-
-inline kn_value_t kn_value_new_null() {
-	return KN_NULL;
 }
 
 inline kn_value_t kn_value_new_string(const struct kn_string_t *string) {
@@ -189,29 +184,58 @@ void kn_value_dump(kn_value_t value) {
 	case KN_NULL:
 		printf("Null()");
 		return;
+	}
+
+	if (KN_VALUE_IS_NUMBER(value)) {
+		printf("Number(%llu)", KN_VALUE_AS_NUMBER(value));
+		return;
+	}
+
+	switch (KN_TAG(value)) {
+	case KN_TAG_STRING:
+		printf("String(%s)", KN_VALUE_AS_STRING(value)->string);
+		return;
+	case KN_TAG_IDENT:
+		printf("Identifier(%s)", KN_VALUE_AS_IDENT(value)->string);
+		return;
+	case KN_TAG_AST: {
+		struct kn_ast_t *ast = KN_VALUE_AS_AST(value);
+		printf("Function(%c", ast->func->name);
+
+		for (size_t i = 0; i < ast->func->arity; ++i) {
+			printf(", ");
+			kn_value_dump(ast->args[i]);
+		}
+		printf(")");
+		return;
+	}
 	default:
-		if (KN_VALUE_IS_NUMBER(value)) {
-			printf("Number(%llu)", KN_VALUE_AS_NUMBER(value));
-			return;
-		}
-		switch (KN_TAG(value)) {
-		case KN_TAG_STRING:
-			printf("String(%s)", KN_VALUE_AS_STRING(value)->string);
-			return;
-		case KN_TAG_IDENT:
-			printf("Identifier(%s)", KN_VALUE_AS_IDENT(value)->string);
-			return;
-		case KN_TAG_AST:
-			printf("todo: tag for ast\n");
-			exit(1);
-			// printf("Function(%c)", ((struct kn_string_t *) (value & ~KN_TAG))->ptr);
-		}
+		assert(false);
 	}
 }
 
-kn_value_t kn_value_clone(kn_value_t value) {
-	if (value <= 4 || KN_VALUE_IS_NUMBER(value))
+kn_value_t kn_value_run(kn_value_t value) {
+	if (KN_VALUE_IS_LITERAL(value))
 		return value;
+
+	if (KN_TAG(value) == KN_TAG_STRING) {
+		(void) kn_string_clone(KN_VALUE_AS_STRING(value));
+		return value;
+	}
+
+	if (KN_TAG(value) == KN_TAG_IDENT)
+		return kn_env_get(KN_VALUE_AS_IDENT(value)->string);
+
+	assert(KN_TAG(value) == KN_TAG_AST);
+	struct kn_ast_t *ast = KN_VALUE_AS_AST(value);
+
+	return (ast->func->ptr)(ast->args);
+}
+
+kn_value_t kn_value_clone(kn_value_t value) {
+	if (KN_VALUE_IS_LITERAL(value)) {
+		return value;
+	}
 	
 	if (KN_TAG(value) <= 2) {
 #ifdef NDEBUG
@@ -231,7 +255,7 @@ kn_value_t kn_value_clone(kn_value_t value) {
 }
 
 void kn_value_free(kn_value_t value) {
-	if (value <= 4 || KN_VALUE_IS_NUMBER(value))
+	if (KN_VALUE_IS_LITERAL(value))
 		return;
 
 	if (KN_TAG(value) <= 2) {

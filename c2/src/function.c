@@ -1,13 +1,31 @@
-#ifndef FUNCTION_H
-#define FUNCTION_H
-
+#include "function.h"
 #include "value.h"
+#include <assert.h>
 
-struct kn_function_t {
-	kn_value_t (*ptr)(const kn_value_t*);
-	unsigned arity;
-	char name;
-};
+
+// this is a workaround and i only use one argument.
+#define DECLARE_FUNCTION(_func, _arity, _name, ...) \
+	static kn_value_t fn_##_func##_func(const kn_value_t *args) { \
+		assert(args != NULL); \
+		__VA_ARGS__ \
+	} \
+	struct kn_function_t kn_fn_##_func = (struct kn_function_t) { \
+		.ptr = fn_##_func##_func, \
+		.arity = _arity, \
+		.name = _name \
+	}
+
+DECLARE_FUNCTION(dump, 1, 'D', {
+	kn_value_t arg = kn_value_run(args[0]);
+	kn_value_dump(arg);
+	return arg;
+});
+
+DECLARE_FUNCTION(add, 2, '+', {
+	(void) args;
+
+	return (123 << 1) | 1;
+});
 
 struct kn_function_t kn_fn_prompt;
 struct kn_function_t kn_fn_random;

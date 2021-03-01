@@ -3,7 +3,7 @@ OBJDIR ?= obj
 EXE ?= knight
 
 CC = gcc 
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-zero-variadic-macro-arguments
+CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-label-as-value
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
