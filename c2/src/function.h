@@ -9,6 +9,9 @@ struct kn_function_t {
 	char name;
 };
 
+
+void kn_function_initialize(void);
+
 struct kn_function_t kn_fn_prompt;
 struct kn_function_t kn_fn_random;
 

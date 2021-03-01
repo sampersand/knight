@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -26,6 +27,8 @@ static int isident(char c) {
 }
 
 kn_value_t kn_parse(const char **stream) {
+	assert(stream != NULL);
+	assert(*stream != NULL);
 	static const void * labels[256] = {
 		['\0'] = &&expected_token,
 		[0x01] = &&invalid,
@@ -250,7 +253,7 @@ string: {
 	}
 
 	size_t length = *stream - start - 1;
-	struct kn_string_t *string;
+	const struct kn_string_t *string;
 
 	if (length == 0)
 		string = &KN_STRING_EMPTY;
