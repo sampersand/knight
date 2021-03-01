@@ -10,10 +10,10 @@ The following is the list of all languages that's supported. All in-progress imp
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
-| [C](../c/c) | * | X | X | X | Almost fully functional---the hashmap for identifiers needs work. |
+| [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
 | [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
-| [JavaScript](../javascript/javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
+| [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
 | [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
@@ -30,6 +30,23 @@ The following is the list of all languages that's supported. All in-progress imp
 | Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
 | Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
+
+## Time Comparisons
+The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I used the command
+```sh
+  time <implementation> -f knight.kn <<<$'knight.kn\nexamples/fizzbuzz.kn'`
+```
+
+
+Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
+
+|  Language  |  Time   | `<implementation>` | Notes |
+| ---------- |:-------:|:------------------:|:-----:|
+| C          | 19.10s  | `c/knight`         | Compiled using `make optimized`; See [c/Makefile](c/Makefile) for details. |
+| C++        | 166.76s | `c++/knight`       | The virtual functions are a bottleneck |
+| JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | The default stack size was too small, so we had to bump it up. |
+| PHP        |  64.73s | `php/knight.php`   | |
+
 
 # Examples
 Here's some examples of the syntax to give you a feel for it:
@@ -170,6 +187,3 @@ $
 
 ## Details
 The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified
-
-# NOTES:
-Maybe the `O` function should just return null...?

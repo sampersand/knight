@@ -33,7 +33,7 @@ struct kn_string_t kn_string_clone(const struct kn_string_t *string) {
 	// be callable on a const pointer. However, we have interior mutability,
 	// so we cast away the constness inside.
 	if (string->rc != NULL) {
-		((struct kn_string_t *) string)->rc++;
+		++*((struct kn_string_t *) string)->rc;
 	}
 
 	return *string;

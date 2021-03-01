@@ -6,8 +6,7 @@ use warnings;
 # Not really 'perlish', as you'd generally install Perl modules globally. But, since this isn't really intended to be
 # installed globally, I've dynamically loaded the the path to `/lib`.
 use File::Basename qw/dirname basename/;
-use Cwd 'abs_path';
-use lib dirname(__FILE__) . '/lib';
+use lib dirname(__FILE__) . '/../lib';
 
 use Kn;
 
