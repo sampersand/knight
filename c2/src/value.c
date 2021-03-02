@@ -33,10 +33,10 @@
 #define KN_VALUE_AS_STRIDENT(x) KN_VALUE_AS_IDENT(x)
 #define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) KN_UNMASK(x))
 
-#ifdef FIXED_ARGC
-#define ARITY(ast) ((ast)->func->arity)
-#else
+#ifdef DYAMIC_THEN_ARGC
 #define ARITY(ast) ((ast)->argc)
+#else
+#define ARITY(ast) ((ast)->func->arity)
 #endif
 
 bool kn_value_is_number(kn_value_t value) {

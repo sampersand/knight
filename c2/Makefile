@@ -3,14 +3,18 @@ OBJDIR ?= obj
 EXE ?= knight
 
 CC = gcc 
-CFLAGS = -Wall -Wextra -Wpedantic -flto -march=native
+CFLAGS = -Wall -Wextra -Wpedantic -flto -march=native -Wno-gnu-flexible-array-initializer
 CFLAGS += $(CER)
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
 override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -O3 -DNDEBUG -DFIXED_ARGC
+CEXEFLAGS += -O3 -DNDEBUG -flto -march=native
+endif
+
+ifdef COMPUTED_GOTOS
+override CFLAGS += -DCOMPUTED_GOTOS -Wno-gnu-label-as-value -Wno-gnu-designator
 endif
 
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))

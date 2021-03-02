@@ -375,7 +375,7 @@ DECLARE_FUNCTION(or, 2, '|') {
 }
 
 DECLARE_FUNCTION(then, 2, ';') {
-#ifdef FIXED_ARGC
+#ifndef DYAMIC_THEN_ARGC
 	kn_value_free(kn_value_run(args[0]));
 
 	return kn_value_run(args[1]);
