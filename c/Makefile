@@ -3,13 +3,13 @@ OBJDIR ?= obj
 EXE ?= knight
 
 CC = gcc 
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -flto -march=native
+CFLAGS = -Wall -Wextra -Werror -Wpedantic
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
 override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -O3 -DNDEBUG
+CEXEFLAGS += -O3 -DNDEBUG -c -flto -march=native
 endif
 
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
