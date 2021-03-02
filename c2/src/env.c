@@ -68,9 +68,7 @@ static struct kn_env_pair_t *get_pair(
 	const struct kn_env_bucket_t *bucket,
 	const char *identifier
 ) {
-	// printf("%zu{%s==next_function_ret}=%d\n", bucket->length, identifier, strcmp("next_function_ret", identifier));
 	for (size_t i = 0; i < bucket->length; ++i) {
-		// printf(">{%s==next_function_ret}=%d\n", bucket->pairs[i].name, strcmp("next_function_ret", bucket->pairs[i].name));
 		if (strcmp(bucket->pairs[i].name, identifier) == 0)
 			return &bucket->pairs[i];
 	}

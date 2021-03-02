@@ -17,7 +17,6 @@ struct kn_string_t *kn_string_alloc(size_t length) {
 
 const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	assert(str != NULL);
-	// assert(strlen(str) > length);
 
 	struct kn_string_t *string = kn_string_alloc(length);
 	memcpy(string->str, str, length);
@@ -38,7 +37,8 @@ void kn_string_free(const struct kn_string_t *string) {
 	struct kn_string_t *unconst = (struct kn_string_t *) string;
 
 	if (unconst->refcount && !--unconst->refcount)
-		free(unconst);
+		// free(unconst);
+		;
 }
 
 const struct kn_string_t *kn_string_clone(const struct kn_string_t *string) {

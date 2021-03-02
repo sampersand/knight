@@ -377,11 +377,27 @@ DECLARE_FUNCTION(or, 2, '|', {
 	return kn_value_run(args[1]);
 });
 
+#ifdef FIXED_ARGC
 DECLARE_FUNCTION(then, 2, ';', {
 	kn_value_free(kn_value_run(args[0]));
 
 	return kn_value_run(args[1]);
 });
+#else
+DECLARE_FUNCTION(then, 2, ';', {
+	kn_value_t ret;
+	unsigned i = 0;
+
+	goto inner;
+
+	do {
+		kn_value_free(ret);
+	inner:
+		ret = kn_value_run(args[i++]);
+	} while (args[i] != KN_UNDEFINED);
+	return ret;
+});
+#endif
 
 DECLARE_FUNCTION(assign, 2, '=', {
 	kn_value_t ret;

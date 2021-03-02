@@ -235,8 +235,14 @@ void kn_value_dump(kn_value_t value) {
 	case KN_TAG_AST: {
 		struct kn_ast_t *ast = KN_VALUE_AS_AST(value);
 		printf("Function(%c", ast->func->name);
+		unsigned argc = 
+#ifdef FIXED_ARGC
+		ast->func->arity;
+#else
+		ast->argc;
+#endif
 
-		for (size_t i = 0; i < ast->func->arity; ++i) {
+		for (size_t i = 0; i < argc; ++i) {
 			printf(", ");
 			kn_value_dump(ast->args[i]);
 		}
@@ -315,8 +321,15 @@ void kn_value_free(kn_value_t value) {
 	}
 
 	struct kn_ast_t *ast = (struct kn_ast_t*) KN_UNMASK(value);
+	unsigned argc = 
+#ifdef FIXED_ARGC
+		ast->func->arity;
+#else
+		ast->argc;
+#endif
 
-	for (unsigned i = 0; i < ast->func->arity; ++i)
+
+	for (unsigned i = 0; i < argc; ++i)
 		kn_value_free(ast->args[i]);
 
 	free(ast);

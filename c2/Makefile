@@ -9,7 +9,7 @@ override CFLAGS += -F$(SRCDIR)
 ifdef DEBUG
 override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -Wl,-stack_size,1600000 -O3 -DNDEBUG
+CEXEFLAGS += -Wl,-stack_size,1600000 -O3 -DNDEBUG -DFIXED_ARGC
 endif
 
 # lower case because it's local to makefile.

@@ -203,22 +203,76 @@ parse_kw_function:
 
 parse_function: {
 	size_t arity = function->arity;
-	struct kn_ast_t *ast = xmalloc(
-		sizeof(struct kn_ast_t) + sizeof(kn_value_t [arity]));
+	struct kn_ast_t *ast = xmalloc(sizeof(struct kn_ast_t)
+		+ sizeof(kn_value_t [arity]));
 
 	ast->func = function;
 	ast->refcount = 1;
 
-	for (size_t i = 0; i < arity; ++i)
-		ast->args[i] = kn_parse(stream);
+#ifndef FIXED_ARGC
+	if (function != &kn_fn_then) {
+	ast->argc = arity;
+#endif
+
+	for (size_t i = 0; i < arity; ++i) {
+		if ((ast->args[i] = kn_parse(stream)) == KN_UNDEFINED) {
+			die("unable to parse argument %d for function '%c'", i,
+				function->name);
+		}
+	}
+
+#ifndef FIXED_ARGC
+	goto parse_function_end;
+	}
+
+	ast->argc = 0;
+
+	if (arity == 0)
+		goto parse_function_end;
+
+	if ((ast->args[ast->argc++] = kn_parse(stream)) == KN_UNDEFINED)
+		die("unable to parse argument 0 for function '%c'", function->name);
+
+	unsigned cap = arity;
+	do {
+		c = PEEK();
+		if (c == '#')
+			while ((c = ADVANCE_PEEK()) != '\n')
+				if (c == '\0')
+					break;
+		if (isspace(c))
+			while (isspace(c = ADVANCE_PEEK()) || isparen(c));
+
+		if (PEEK() != function->name) {
+			if ((ast->args[ast->argc++] = kn_parse(stream)) == KN_UNDEFINED)
+				die("unable to parse argument %d for function '%c'",
+					ast->argc-1, function->name);
+			break;
+		}
+
+		ADVANCE();
+		ast->args[ast->argc++] = kn_parse(stream);
+
+		if (ast->argc == cap)  {
+			ast = xrealloc(ast, sizeof(struct kn_ast_t) + sizeof(
+				kn_value_t [cap *= 2]));
+		}
+	} while (1);
+
+	ast = xrealloc(ast, sizeof(struct kn_ast_t) + sizeof(
+		kn_value_t [ast->argc + 1]));
+
+	ast->args[ast->argc] = KN_UNDEFINED;
+
+parse_function_end:
+#endif
 
 	return kn_value_new_ast(ast);
 }
 
 
 expected_token:
-	// __attribute__((cold));
-	die("unexpected end of stream");
+	return KN_UNDEFINED;
 
 invalid:
 	// __attribute__((cold));
