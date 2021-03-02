@@ -17,10 +17,11 @@ struct kn_string_t *kn_string_alloc(size_t length) {
 
 const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	assert(str != NULL);
-	assert(strlen(str) >= length);
+	// assert(strlen(str) > length);
 
 	struct kn_string_t *string = kn_string_alloc(length);
 	memcpy(string->str, str, length);
+	string->str[length] = '\0';
 
 	return string;
 }

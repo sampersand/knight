@@ -25,7 +25,7 @@ void die(const char *msg, ...) __attribute__((noreturn,cold));
  * This is identical to the stdlib's `malloc`, except the program is aborted
  * instead of returning `NULL`.
  */
-void *xmalloc(size_t size);
+void *xmalloc(size_t size) __attribute__((malloc));
 
 /*
  * Resizes the pointer to a segment of at least `size_t` bytes of memory and,

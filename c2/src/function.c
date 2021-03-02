@@ -149,7 +149,7 @@ DECLARE_FUNCTION(output, 1, 'O', {
 	// this is because we might need to replace the penult character
 	// with a `\0` if it's a backslash to prevent the printing of a
 	// newline. however, we replace it on the next line, so it's ok.
-	char *penult = (char *) &string->str[string->length];
+	char *penult = (char *) &string->str[string->length - 1];
 
 	if (string->length != 0 && *penult == '\\') {
 		*penult = '\0'; // replace the trailing `\`
@@ -173,14 +173,13 @@ static kn_value_t kn_fn_add_string(
 		return kn_value_new_string(rhs);
 	} else if (rhs->length == 0) {
 		kn_string_free(rhs);
-		return kn_value_new_string(kn_string_clone(lhs));
+		return kn_value_new_string(lhs);
 	}
 
-	struct kn_string_t *ret = kn_string_alloc(lhs->length + rhs->length + 1);
+	struct kn_string_t *ret = kn_string_alloc(lhs->length + rhs->length);
 
 	memcpy(ret->str, lhs->str, lhs->length);
 	memcpy(ret->str + lhs->length, rhs->str, rhs->length);
-
 	ret->str[lhs->length + rhs->length] = '\0';
 
 	kn_string_free(lhs);
@@ -190,7 +189,6 @@ static kn_value_t kn_fn_add_string(
 }
 
 DECLARE_FUNCTION(add, 2, '+', {
-	// TODO: do we run this or not
 	kn_value_t lhs = kn_value_run(args[0]);
 
 	// If lhs is a string, convert both to a string and concat
@@ -200,8 +198,8 @@ DECLARE_FUNCTION(add, 2, '+', {
 			kn_value_to_string(args[1]));
 	}
 
-	kn_number_t number = kn_value_to_number(lhs);
-	kn_value_free(lhs);
+	assert(kn_value_is_number(lhs));
+	kn_number_t number = kn_value_as_number(lhs);
 
 	return kn_value_new_number(number + kn_value_to_number(args[1]));
 });
@@ -212,6 +210,7 @@ DECLARE_FUNCTION(sub, 2, '-', {
 });
 
 static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
+	// die("<todo: verify mul string>");
 	// if we have an empty string, return early.
 	if (lhs->length == 0 || amnt == 1)
 		// TODO: do we cloen this or not.
@@ -245,8 +244,8 @@ DECLARE_FUNCTION(mul, 2, '*', {
 			(size_t) kn_value_to_number(args[1]));
 	}
 	
+	assert(kn_value_is_number(lhs));
 	kn_number_t number = kn_value_to_number(lhs);
-	kn_value_free(lhs);
 
 	return kn_value_new_number(number * kn_value_to_number(args[1]));
 });
@@ -302,12 +301,12 @@ DECLARE_FUNCTION(eql, 2, '?', {
 	kn_value_t lhs = kn_value_run(args[0]);
 	kn_value_t rhs = kn_value_run(args[1]);
 
-	kn_value_t ret = kn_value_new_boolean(kn_value_eql(lhs, rhs));
+	bool eql = kn_value_eql(lhs, rhs);
 
 	kn_value_free(lhs);
 	kn_value_free(rhs);
 
-	return ret;
+	return kn_value_new_boolean(eql);
 });
 
 DECLARE_FUNCTION(lth, 2, '<', {
@@ -318,14 +317,14 @@ DECLARE_FUNCTION(lth, 2, '<', {
 		const struct kn_string_t *lstr = kn_value_as_string(lhs);
 		const struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
-		less = strcmp(lstr->str, rstr->str) < 0;
+		less =/* lstr->length < rstr->length ||*/ strcmp(lstr->str, rstr->str) < 0;
 
 		kn_string_free(lstr);
 		kn_string_free(rstr);
 	} else if (kn_value_is_number(lhs)) {
 		less = kn_value_as_number(lhs) < kn_value_to_number(args[1]);
 	} else if (kn_value_is_boolean(lhs)) {
-		less = !kn_value_to_boolean(args[1]) && lhs == KN_TRUE;
+		less = kn_value_to_boolean(args[1]) && lhs == KN_FALSE;
 	} else {
 		die("invalid value %d", lhs);
 	}
@@ -341,14 +340,14 @@ DECLARE_FUNCTION(gth, 2, '>', {
 		const struct kn_string_t *lstr = kn_value_as_string(lhs);
 		const struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
-		more = strcmp(lstr->str, rstr->str) > 0;
+		more =/* lstr->length > rstr->length ||*/ strcmp(lstr->str, rstr->str) > 0;
 
 		kn_string_free(lstr);
 		kn_string_free(rstr);
 	} else if (kn_value_is_number(lhs)) {
 		more = kn_value_as_number(lhs) > kn_value_to_number(args[1]);
 	} else if (kn_value_is_boolean(lhs)) {
-		more = kn_value_to_boolean(args[1]) && lhs == KN_FALSE;
+		more = !kn_value_to_boolean(args[1]) && lhs == KN_TRUE;
 	} else {
 		die("invalid value %d", lhs);
 	}
@@ -414,7 +413,9 @@ DECLARE_FUNCTION(while, 2, 'W', {
 
 
 DECLARE_FUNCTION(if, 3, 'I', {
-	return kn_value_run(args[1 + !kn_value_to_boolean(args[0])]);
+	kn_value_t torun = args[1 + !kn_value_to_boolean(args[0])];
+
+	return kn_value_run(torun);
 });
 
 
@@ -429,7 +430,10 @@ DECLARE_FUNCTION(get, 3, 'G', {
 	}
 
 	struct kn_string_t *substr = kn_string_alloc(amnt);
-	strncpy(substr->str, string->str, amnt);
+
+	memcpy(substr->str, string->str, amnt);
+	substr->str[amnt] = '\0';
+
 	kn_string_free(string);
 
 	return kn_value_new_string(substr);
@@ -451,8 +455,10 @@ DECLARE_FUNCTION(set, 4, 'S', {
 	if (string_length < start + amnt)
 		amnt = string_length - start;
 
-	char *result = xmalloc(string_length - amnt + substr_length + 1);
-	char *ptr = result;
+	struct kn_string_t *result =
+		kn_string_alloc(string_length - amnt + substr_length);
+
+	char *ptr = result->str;
 
 	memcpy(ptr, string->str, start);
 	ptr += start;
@@ -465,5 +471,5 @@ DECLARE_FUNCTION(set, 4, 'S', {
 	kn_string_free(string);
 	kn_string_free(substr);
 
-	return kn_value_new_string(kn_string_new(result));
+	return kn_value_new_string(result);
 });

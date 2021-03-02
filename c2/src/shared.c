@@ -19,9 +19,8 @@ void die(const char *fmt, ...) {
 void *xmalloc(size_t size) {
 	void *ptr = malloc(size);
 
-	if (ptr == NULL) {
+	if (ptr == NULL)
 		die("malloc failure for size %zd", size);
-	}
 
 	return ptr;
 }
@@ -29,9 +28,8 @@ void *xmalloc(size_t size) {
 void *xrealloc(void *ptr, size_t size) {
 	ptr = realloc(ptr, size);
 
-	if (ptr == NULL) {
+	if (ptr == NULL)
 		die("realloc failure for size %zd", size);
-	}
 
 	return ptr;
 }

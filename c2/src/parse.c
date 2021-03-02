@@ -26,7 +26,7 @@ static int isident(char c) {
 	return islower(c) || isdigit(c) || c == '_';
 }
 
-kn_value_t kn_parse(const char **stream) {
+kn_value_t kn_parse(register const char **stream) {
 	assert(stream != NULL);
 	assert(*stream != NULL);
 	static const void * labels[256] = {
@@ -109,13 +109,14 @@ start:
 	goto *labels[(size_t) (c = PEEK())];
 
 comment:
-	while ((c = ADVANCE_PEEK()) != '\n') {
+	while ((c = ADVANCE_PEEK()) != '\n')
 		if (c == '\0')
 			goto expected_token;
-	}
 	// fallthrough, because we're currently a whitespace character (`\n`)
 
 whitespace:
+	// __attribute__((hot));
+
 	while (isspace(c = ADVANCE_PEEK()) || isparen(c));
 	goto start;
 
@@ -130,7 +131,6 @@ number: {
 
 identifier: {
 	// simply find the start and end of the identifier
-	//  then `strndup` it.
 	const char *start = *stream;
 
 	while (isident(ADVANCE_PEEK()));
@@ -143,12 +143,9 @@ string: {
 	ADVANCE();
 	const char *start = *stream;
 
-	while ((c = PEEK_ADVANCE()) != quote) {
-		if (c == '\0') {
-			die("unterminated quote encountered: '%s'",
-				start);
-		}
-	}
+	while ((c = PEEK_ADVANCE()) != quote)
+		if (c == '\0')
+			die("unterminated quote encountered: '%s'", start);
 
 	size_t length = *stream - start - 1;
 
@@ -156,6 +153,7 @@ string: {
 		length
 		? kn_string_emplace(start, length)
 		: &KN_STRING_EMPTY);
+
 }
 
 literal_true:
@@ -219,8 +217,10 @@ parse_function: {
 
 
 expected_token:
+	// __attribute__((cold));
 	die("unexpected end of stream");
 
 invalid:
+	// __attribute__((cold));
 	die("unknown token start '%c'", c);
 }

@@ -55,7 +55,7 @@ bool kn_value_is_identifier(kn_value_t value) {
 
 kn_number_t kn_value_as_number(kn_value_t value) {
 	assert(kn_value_is_number(value));
-	return ((uint64_t) value) >> 1;
+	return ((int64_t) value) >> 1;
 }
 
 kn_boolean_t kn_value_as_boolean(kn_value_t value) {
@@ -130,13 +130,10 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 	if (kn_value_is_number(value))
 		return kn_value_as_number(value);
 
-	if (value <= KN_NULL) {
-		assert(value == KN_FALSE || value == KN_NULL);
-		return 0;
+	if (value <= KN_TRUE) {
+		assert(value == KN_FALSE || value == KN_NULL || value == KN_TRUE);
+		return value == KN_TRUE;
 	}
-
-	if (value == KN_TRUE)
-		return 1;
 
 	if (kn_value_is_string(value))
 		return string_to_number(kn_value_as_string(value));
@@ -172,14 +169,13 @@ const struct kn_string_t *number_to_string(kn_number_t num) {
 
 	char *ptr = &buf[sizeof(buf) - 1];
 
-	if (num == 0)
-		return &KN_STRING_ZERO;
-	if (num == 1)
-		return &KN_STRING_ONE;
+	if (num == 0) return &KN_STRING_ZERO;
+	if (num == 1) return &KN_STRING_ONE;
 
 	int is_neg = num < 0;
 
-	if (is_neg) num *= -1;
+	if (is_neg)
+		num *= -1;
 
 	do {
 		*--ptr = '0' + num % 10;
@@ -188,7 +184,8 @@ const struct kn_string_t *number_to_string(kn_number_t num) {
 
 	if (is_neg) *--ptr = '-';
 
-	return kn_string_new(strdup(ptr));
+	// is this correct?
+	return kn_string_emplace(ptr, &buf[sizeof(buf) - 1] - ptr);
 }
 
 const struct kn_string_t *kn_value_to_string(kn_value_t value) {
@@ -224,7 +221,7 @@ void kn_value_dump(kn_value_t value) {
 	}
 
 	if (kn_value_is_number(value)) {
-		printf("Number(%llu)", kn_value_as_number(value));
+		printf("Number(%lld)", kn_value_as_number(value));
 		return;
 	}
 
@@ -243,20 +240,26 @@ void kn_value_dump(kn_value_t value) {
 			printf(", ");
 			kn_value_dump(ast->args[i]);
 		}
+
 		printf(")");
 		return;
 	}
+
 	default:
 		assert(false);
 	}
 }
 
 bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
-	if (lhs == rhs)
-		return true;
-	if (kn_value_is_string(lhs) && kn_value_is_string(rhs))
-		return !strcmp(
-			kn_value_as_string(lhs)->str, kn_value_as_string(rhs)->str);
+	if (lhs == rhs) return true;
+
+	if (kn_value_is_string(lhs) && kn_value_is_string(rhs)) {
+		const struct kn_string_t *lstr = kn_value_as_string(lhs);
+		const struct kn_string_t *rstr = kn_value_as_string(rhs);
+		return lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
+	}
+
+	assert(lhs <= 4 || lhs & 1 || kn_value_is_string(lhs) || KN_TAG(lhs) == KN_TAG_AST);
 	return false;
 }
 

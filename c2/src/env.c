@@ -4,7 +4,6 @@
 #include "env.h"    /* prototypes, kn_value_t, kn_value_free */
 #include "shared.h" /* xmalloc, xrealloc */
 
-
 struct kn_env_pair_t {
 	char *name;
 	kn_value_t value;
@@ -23,14 +22,12 @@ void kn_env_init(size_t capacity) {
 	assert(capacity <= SIZE_MAX / sizeof(kn_value_t));
 	assert(capacity != 0);
 
-	for (size_t i = 0; i < NBUCKETS; ++i) {
+	for (size_t i = 0; i < NBUCKETS; ++i)
 		BUCKETS[i] = (struct kn_env_bucket_t) {
 			.capacity = capacity,
 			.length = 0,
-			.pairs = xmalloc(
-				capacity * sizeof(struct kn_env_pair_t))
+			.pairs = xmalloc(sizeof(struct kn_env_pair_t [capacity]))
 		};
-	}
 
 }
 
@@ -54,7 +51,6 @@ void kn_env_free() {
 static struct kn_env_bucket_t *get_bucket(const char *identifier) {
 	assert(identifier != NULL);
 
-	// return &BUCKETS[0];
 	// This is the MurmurHash.
 	unsigned long hash = 525201411107845655;
 
@@ -72,10 +68,11 @@ static struct kn_env_pair_t *get_pair(
 	const struct kn_env_bucket_t *bucket,
 	const char *identifier
 ) {
+	// printf("%zu{%s==next_function_ret}=%d\n", bucket->length, identifier, strcmp("next_function_ret", identifier));
 	for (size_t i = 0; i < bucket->length; ++i) {
-		if (strcmp(bucket->pairs[i].name, identifier) == 0) {
+		// printf(">{%s==next_function_ret}=%d\n", bucket->pairs[i].name, strcmp("next_function_ret", bucket->pairs[i].name));
+		if (strcmp(bucket->pairs[i].name, identifier) == 0)
 			return &bucket->pairs[i];
-		}
 	}
 
 	return NULL;
@@ -85,9 +82,8 @@ kn_value_t kn_env_get(const char *identifier) {
 	struct kn_env_bucket_t *bucket = get_bucket(identifier);
 	struct kn_env_pair_t *pair = get_pair(bucket, identifier);
 
-	if (pair == NULL) {
+	if (pair == NULL)
 		die("unknown identifier '%s'", identifier);
-	}
 
 	return pair->value;
 }
@@ -99,6 +95,7 @@ void kn_env_set(const char *identifier, kn_value_t value) {
 	if (pair != NULL) {
 		kn_value_free(pair->value);
 		pair->value = value;
+
 		return;
 	}
 
@@ -108,13 +105,12 @@ void kn_env_set(const char *identifier, kn_value_t value) {
 		bucket->capacity *= 2;
 		bucket->pairs = xrealloc(
 			bucket->pairs,
-			sizeof(struct kn_env_pair_t) * bucket->capacity
+			sizeof(struct kn_env_pair_t [bucket->capacity])
 		);
 	}
 
-	bucket->pairs[bucket->length] = (struct kn_env_pair_t) {
+	bucket->pairs[bucket->length++] = (struct kn_env_pair_t) {
 		.name = strdup(identifier),
 		.value = value
 	};
-	++bucket->length;
 }
