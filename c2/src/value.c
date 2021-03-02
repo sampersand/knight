@@ -326,5 +326,5 @@ void kn_value_free(kn_value_t value) {
 	for (unsigned i = 0; i < ARITY(ast); ++i)
 		kn_value_free(ast->args[i]);
 
-	free(ast);
+	// free(ast);
 }

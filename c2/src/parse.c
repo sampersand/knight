@@ -186,7 +186,10 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 
 	while (isident(ADVANCE_PEEK()));
 
-	return kn_value_new_identifier(kn_string_emplace(start, *stream - start));
+	size_t length = *stream - start;
+
+	return kn_value_new_identifier(
+		kn_string_emplace(strndup(start, length), length));
 }
 
 LABEL(string)
@@ -204,7 +207,7 @@ CASES2('\'', '\"')
 
 	return kn_value_new_string(
 		length
-		? kn_string_emplace(start, length)
+		? kn_string_emplace(strndup(start, length), length)
 		: &KN_STRING_EMPTY);
 }
 

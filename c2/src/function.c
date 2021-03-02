@@ -443,7 +443,11 @@ DECLARE_FUNCTION(get, 3, 'G') {
 	}
 
 	char *substr;
-	// if (strig->)
+	if (string->length <= start + amnt) {
+		kn_value_t ret = kn_value_new_string(kn_string_tail(string, start));
+		kn_string_free(string); // todo: this doesnt need to eb freed
+		return ret;
+	}
 
 	substr = xmalloc(amnt + 1);
 
