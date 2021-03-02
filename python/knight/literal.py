@@ -40,5 +40,8 @@ class Literal(Value, Generic[T]):
 		return f'{type(self).__name__}({self})'
 
 	def __eq__(self, rhs: Value):
-		""" Returns whether `rhs` is of the _same_ class, and their data is equivalent. """
+		"""
+		Returns whether `rhs` is of the _same_ class, 
+		and their data is equivalent.
+		"""
 		return type(self) == type(rhs) and self.data == rhs.data

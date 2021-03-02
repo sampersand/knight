@@ -1,27 +1,48 @@
 from __future__ import annotations
-from knight import Value, Stream, RunError, run
+from knight import Value, Stream, ParseError, RunError, Identifier
 from typing import Union, Dict, List
 from random import randint
 
 import re
 import subprocess
 
-class Function():
-	_KNOWN: Dict[str, Value] = {}
+class Function(Value):
+	_KNOWN: Dict[str, callable] = {}
+	REGEX: re.Pattern = re.compile(r'[A-Z]+|.')
 
-	def __init__(self, func: callable):
+	@staticmethod
+	def parse(stream: Stream) -> Union[None, Function]:
+		name = stream.peek()
+		if name not in Function._KNOWN:
+			return None
+
+		func = Function._KNOWN[name]
+		stream.matches(Function.REGEX)
+
+		args = []
+		for arg in range(func.__code__.co_argcount):
+			value = Value.parse(stream)
+
+			if value is None:
+				raise ParseError(f'Missing argument {arg} for function {name}')
+
+			args.append(value)
+
+		return Function(func, name, args)
+
+	def __init__(self, func: callable, name: str, args: list[Value]):
 		self.func = func
+		self.name = name
+		self.args = args
 
-	@property
-	def arity(self) -> int:
-		return self.func.__code__.co_argcount
+	def run(self) -> Value:
+		return self.func(*self.args)
 
-	def __call__(self, *args: List[Value]) -> Value:
-		return knight.Value.create(self.func(*args))
+Value.TYPES.append(Function)
 
 def function(name=None):
 	return lambda body: Function._KNOWN.__setitem__(
-		name or body.__name__[0].upper(), Function(body))
+		name or body.__name__[0].upper(), body)
 
 @function()
 def prompt():
@@ -33,7 +54,10 @@ def random():
 
 @function()
 def eval_(text):
-	return knight.Value.parse(str(text.run())).run()
+	if value := Value.parse(Stream(str(text))):
+		return value.run()
+	else:
+		raise ParseError('Nothing to parse.')
 
 @function()
 def block(blk):
@@ -44,13 +68,13 @@ def call(blk):
 	return blk.run().run()
 
 @function('`')
-def system(arg):
-	text = str(arg.run())
-	return subprocess.run(text, shell=True, capture_output=True).stdout.decode()
+def system(cmd):
+	return subprocess.run(str(cmd), shell=True, capture_output=True) \
+		.stdout.decode()
 
 @function()
 def quit_(code):
-	quit(int(code.run()))
+	quit(int(code))
 
 @function('!')
 def not_(arg):
@@ -58,7 +82,7 @@ def not_(arg):
 
 @function()
 def length(arg):
-	return len(str(arg.run()))
+	return len(str(arg))
 
 @function()
 def dump(arg):
@@ -70,15 +94,14 @@ def dump(arg):
 
 @function()
 def output(arg):
-	ret = arg.run()
-	s = str(ret)
+	s = str(arg)
 
 	if s[-1] == '\\':
 		print(s[:-2], end='')
 	else:
 		print(s)
 
-	return ret
+	return Null()
 
 @function('+')
 def add(lhs, rhs):
@@ -111,7 +134,7 @@ def lth(lhs, rhs):
 @function('>')
 def gth(lhs, rhs):
 	lhs = lhs.run()
-	return rhs.run() < lhs
+	return rhs.run() > lhs
 
 @function('?')
 def eql(lhs, rhs):
@@ -119,13 +142,11 @@ def eql(lhs, rhs):
 
 @function('&')
 def and_(lhs, rhs):
-	lhs = lhs.run()
-	return rhs.run() if lhs else lhs
+	return lhs.run() and rhs.run()
 
 @function('|')
 def or_(lhs, rhs):
-	lhs = lhs.run()
-	return lhs if lhs else rhs.run()
+	return lhs.run() or rhs.run()
 
 @function(';')
 def then(lhs, rhs):
@@ -134,35 +155,35 @@ def then(lhs, rhs):
 
 @function()
 def while_(cond, body):
-	ret = None
+	while cond:
+		body.run()
 
-	while cond.run():
-		ret = body.run()
-
-	return ret
+	return Null()
 
 @function('=')
 def assign(name, value):
-	name = name.data if isinstance(name, knight.Identifier) else str(name.run())
+	if not isinstance(name, Identifier):
+		name = Identifier(str(name))
+
 	value = value.run()
-	knight.ENVIRONMENT[name] = value
+	name.assign(value)
 	return value 
 
 @function()
 def if_(cond, iftrue, iffalse):
-	return (iftrue if cond.run() else iffalse).run()
+	return (iftrue if cond else iffalse).run()
 
 @function()
 def get(text, start, length):
-	text = str(text.run())
-	start = int(start.run())
-	length = int(length.run())
+	text = str(text)
+	start = int(start)
+	length = int(length)
 	return text[start:start+length]
 
 @function()
 def set(text, start, length, repl):
-	text = str(text.run())
-	start = int(start.run())
-	length = int(length.run())
-	repl = str(repl.run())
+	text = str(text)
+	start = int(start)
+	length = int(length)
+	repl = str(repl)
 	return text[:start] + repl + text[start+length:]

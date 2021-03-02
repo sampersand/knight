@@ -11,8 +11,10 @@ class String(Literal[bool]):
 
 	@classmethod
 	def parse(cls, stream: Stream) -> Union[None, String]:
-		if not (quote := stream.matches(String.BEGIN_REGEX)):
-			return
+		quote = stream.matches(String.BEGIN_REGEX)
+
+		if not quote:
+			return None
 
 		regex = String.SINGLE_REGEX if quote == "'" else String.DOUBLE_REGEX
 
@@ -22,10 +24,9 @@ class String(Literal[bool]):
 			raise ValueError(f'unterminated string encountered: {stream}')
 
 	def __int__(self):
-		if match := String.INT_REGEX.match(self.data):
-			return int(match[0])
-		else:
-			return 0
+		match = String.INT_REGEX.match(self.data)
+
+		return int(match[0]) if match else 0
 
 	def __add__(self, rhs: Value):
 		return String(str(self) + str(rhs))
@@ -38,3 +39,5 @@ class String(Literal[bool]):
 
 	def __gt__(self, rhs: Value):
 		return self.data > str(rhs)
+
+Value.TYPES.append(String)

@@ -14,7 +14,7 @@ class Value():
 		""" Parses a value out of the `stream`, or returns `None` if nothing can be parsed. """
 		stream.strip()
 
-		for cls in TYPES:
+		for cls in Value.TYPES:
 			value = cls.parse(stream)
 
 			if value is not None:

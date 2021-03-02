@@ -3,6 +3,7 @@ from typing import Union
 
 class Stream():
 	""" The class used when parsing data. """
+	WHITESPACE: re.Pattern = re.compile(r'([\s(){}\[\]:]+|\#[^\n]*)+')
 
 	def __init__(self, source: str):
 		""" Creates a new `Stream` with the given source. """
@@ -16,9 +17,13 @@ class Stream():
 		""" Returns whether the stream is empty. """
 		return bool(self.source)
 
-	def strip(self) -> None:
+	def strip(self):
 		""" Removes all leading whitespace and quotes """
-		self.matches(r'([\s(){}\[\]:]+|\#[^\n]*)+')
+		self.matches(Stream.WHITESPACE)
+
+	def peek(self) -> Union[None, str]:
+		""" Returns the first character of the stream """
+		return self.source[0] if self.source else None
 
 	def matches(self, rxp: re.Pattern, index: int = 0) -> Union[None, str]:
 		"""

@@ -12,7 +12,7 @@ class Null(Literal[None]):
 	@classmethod
 	def parse(cls, stream: Stream) -> Union[None, Null]:
 		""" Parses `Null` if the stream starts with `N`. """
-		if stream.matches(REGEX):
+		if stream.matches(Null.REGEX):
 			return cls()
 		else:
 			return None
@@ -49,3 +49,4 @@ class Null(Literal[None]):
 		raise RunError('cannot compare Null.')
 
 Null() # ensure we initialize `Null`.
+Value.TYPES.append(Null)

@@ -25,6 +25,8 @@ class Identifier(Value):
 		"""
 		if match := stream.matches(Identifier.REGEX):
 			return cls(match)
+		else:
+			return None
 
 	def __init__(self, name: str):
 		""" Creates a new Identifier associated with the given `name`. """
@@ -48,18 +50,12 @@ class Identifier(Value):
 			return Identifier._ENV[self.name]
 
 
-	def assign(self, value: Value) -> Value:
+	def assign(self, value: Value):
 		"""
 		Associated the Value `value` with this identifier.
 
-		Note that `value` is `run`---This makes it easy to call `.assign`
-		dynamically from the `=`. The result of running this value is the
-		return value of this function.
-
 		Any previously associated value with this identifier is discarded.
 		"""
-		value = value.run()
-
 		Identifier._ENV[self.name] = value
 
-		return value
+Value.TYPES.append(Identifier)

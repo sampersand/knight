@@ -41,3 +41,4 @@ class Boolean(Literal[bool]):
 		return self and not rhs
 
 Boolean(True) # ensure we initialize `Boolean`.
+Value.TYPES.append(Boolean)
