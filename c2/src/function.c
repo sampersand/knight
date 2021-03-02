@@ -18,18 +18,15 @@ void kn_function_initialize(void) {
 
 // this is a workaround and i only use one argument.
 #define DECLARE_FUNCTION(_func, _arity, _name, ...) \
-	static kn_value_t fn_##_func##_function(const kn_value_t *args) { \
-		assert(args != NULL); \
-		__VA_ARGS__ \
-	} \
+	static kn_value_t fn_##_func##_function(const kn_value_t *); \
 	struct kn_function_t kn_fn_##_func = (struct kn_function_t) { \
 		.ptr = fn_##_func##_function, \
 		.arity = _arity, \
 		.name = _name \
-	}
+	}; \
+	static kn_value_t fn_##_func##_function(const kn_value_t *args)
 
-
-DECLARE_FUNCTION(prompt, 0, 'P', {
+DECLARE_FUNCTION(prompt, 0, 'P') {
 	(void) args;
 
 	size_t cap = 0;
@@ -53,35 +50,35 @@ DECLARE_FUNCTION(prompt, 0, 'P', {
 	ret[len] = '\0';
 
 	return kn_value_new_string(kn_string_new(ret));
-});
+}
 
 
-DECLARE_FUNCTION(rand, 0, 'R', {
+DECLARE_FUNCTION(rand, 0, 'R') {
 	(void) args;
 
 	return kn_value_new_number((kn_number_t) rand());
-});
+}
 
-DECLARE_FUNCTION(eval, 1, 'E', {
+DECLARE_FUNCTION(eval, 1, 'E') {
 	const struct kn_string_t *arg0 = kn_value_to_string(args[0]);
 	kn_value_t ret = kn_run(arg0->str);
 	kn_string_free(arg0);
 	return ret;
-});
+}
 
-DECLARE_FUNCTION(block, 1, 'B', {
+DECLARE_FUNCTION(block, 1, 'B') {
 	return kn_value_clone(args[0]);
-});
+}
 
-DECLARE_FUNCTION(call, 1, 'C', {
+DECLARE_FUNCTION(call, 1, 'C') {
 	kn_value_t arg0 = kn_value_run(args[0]);
 	kn_value_t ret = kn_value_run(arg0);
 
 	kn_value_free(arg0);
 	return ret;
-});
+}
 
-DECLARE_FUNCTION(system, 1, '`', {
+DECLARE_FUNCTION(system, 1, '`') {
 	const struct kn_string_t *command = kn_value_to_string(args[0]);
 
 	FILE *stream = popen(command->str, "r");
@@ -116,32 +113,32 @@ DECLARE_FUNCTION(system, 1, '`', {
 		die("unable to close command stream.");
 
 	return kn_value_new_string(kn_string_new(result));
-});
+}
 
-DECLARE_FUNCTION(quit, 1, 'Q', {
+DECLARE_FUNCTION(quit, 1, 'Q') {
 	// no need to free the `ecode` value because we're exiting anyways.
 	exit((int) kn_value_to_number(args[0]));
-});
+}
 
-DECLARE_FUNCTION(not, 1, '!', {
+DECLARE_FUNCTION(not, 1, '!') {
 	return kn_value_new_boolean(!kn_value_to_boolean(args[0]));
-});
+}
 
-DECLARE_FUNCTION(length, 1 ,'L', {
+DECLARE_FUNCTION(length, 1 ,'L') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	kn_number_t length = (kn_number_t) string->length;
 	kn_string_free(string);
 
 	return kn_value_new_number(length);
-});
+}
 
-DECLARE_FUNCTION(dump, 1 ,'D', {
+DECLARE_FUNCTION(dump, 1 ,'D') {
 	kn_value_t ret = kn_value_run(args[0]);
 	kn_value_dump(ret);
 	return ret;
-});
+}
 
-DECLARE_FUNCTION(output, 1, 'O', {
+DECLARE_FUNCTION(output, 1, 'O') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	assert(string != NULL);
 
@@ -162,7 +159,7 @@ DECLARE_FUNCTION(output, 1, 'O', {
 	kn_string_free(string);
 
 	return KN_NULL;
-});
+}
 
 static kn_value_t kn_fn_add_string(
 	const struct kn_string_t *lhs,
@@ -188,7 +185,7 @@ static kn_value_t kn_fn_add_string(
 	return kn_value_new_string(ret);
 }
 
-DECLARE_FUNCTION(add, 2, '+', {
+DECLARE_FUNCTION(add, 2, '+') {
 	kn_value_t lhs = kn_value_run(args[0]);
 
 	// If lhs is a string, convert both to a string and concat
@@ -202,12 +199,12 @@ DECLARE_FUNCTION(add, 2, '+', {
 	kn_number_t number = kn_value_as_number(lhs);
 
 	return kn_value_new_number(number + kn_value_to_number(args[1]));
-});
+}
 
-DECLARE_FUNCTION(sub, 2, '-', {
+DECLARE_FUNCTION(sub, 2, '-') {
 	return kn_value_new_number(
 		kn_value_to_number(args[0]) - kn_value_to_number(args[1]));
-});
+}
 
 static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 	// die("<todo: verify mul string>");
@@ -234,7 +231,7 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 	return kn_value_new_string(string);
 }
 
-DECLARE_FUNCTION(mul, 2, '*', {
+DECLARE_FUNCTION(mul, 2, '*') {
 	kn_value_t lhs = kn_value_run(args[0]);
 
 	// If lhs is a string, convert both to a string and concat
@@ -248,9 +245,9 @@ DECLARE_FUNCTION(mul, 2, '*', {
 	kn_number_t number = kn_value_to_number(lhs);
 
 	return kn_value_new_number(number * kn_value_to_number(args[1]));
-});
+}
 
-DECLARE_FUNCTION(div, 2, '/', {
+DECLARE_FUNCTION(div, 2, '/') {
 	kn_number_t dividend = kn_value_to_number(args[0]);
 	kn_number_t divisor = kn_value_to_number(args[1]);
 
@@ -258,9 +255,9 @@ DECLARE_FUNCTION(div, 2, '/', {
 		die("attempted to divide by zero");
 
 	return kn_value_new_number(dividend / divisor);
-});
+}
 
-DECLARE_FUNCTION(mod, 2, '%', {
+DECLARE_FUNCTION(mod, 2, '%') {
 	kn_number_t number = kn_value_to_number(args[0]);
 	kn_number_t base = kn_value_to_number(args[1]);
 
@@ -268,9 +265,9 @@ DECLARE_FUNCTION(mod, 2, '%', {
 		die("attempted to modulo by zero");
 
 	return kn_value_new_number(number % base);
-});
+}
 
-DECLARE_FUNCTION(pow, 2, '^', {
+DECLARE_FUNCTION(pow, 2, '^') {
 	kn_number_t result = 1;
 	kn_number_t base = kn_value_to_number(args[0]);
 	kn_number_t exponent = kn_value_to_number(args[1]);
@@ -295,9 +292,9 @@ DECLARE_FUNCTION(pow, 2, '^', {
 	}
 
 	return kn_value_new_number(result);
-});
+}
 
-DECLARE_FUNCTION(eql, 2, '?', {
+DECLARE_FUNCTION(eql, 2, '?') {
 	kn_value_t lhs = kn_value_run(args[0]);
 	kn_value_t rhs = kn_value_run(args[1]);
 
@@ -307,9 +304,9 @@ DECLARE_FUNCTION(eql, 2, '?', {
 	kn_value_free(rhs);
 
 	return kn_value_new_boolean(eql);
-});
+}
 
-DECLARE_FUNCTION(lth, 2, '<', {
+DECLARE_FUNCTION(lth, 2, '<') {
 	kn_value_t lhs = kn_value_run(args[0]);
 	bool less;
 
@@ -330,9 +327,9 @@ DECLARE_FUNCTION(lth, 2, '<', {
 	}
 
 	return kn_value_new_boolean(less);
-});
+}
 
-DECLARE_FUNCTION(gth, 2, '>', {
+DECLARE_FUNCTION(gth, 2, '>') {
 	kn_value_t lhs = kn_value_run(args[0]);
 	bool more;
 
@@ -353,9 +350,9 @@ DECLARE_FUNCTION(gth, 2, '>', {
 	}
 
 	return kn_value_new_boolean(more);
-});
+}
 
-DECLARE_FUNCTION(and, 2, '&', {
+DECLARE_FUNCTION(and, 2, '&') {
 	kn_value_t ret = kn_value_run(args[0]);
 
 	// execute the RHS if the LHS is true.
@@ -364,9 +361,9 @@ DECLARE_FUNCTION(and, 2, '&', {
 
 	kn_value_free(ret);
 	return kn_value_run(args[1]);
-});
+}
 
-DECLARE_FUNCTION(or, 2, '|', {
+DECLARE_FUNCTION(or, 2, '|') {
 	kn_value_t ret = kn_value_run(args[0]);
 
 	// execute the RHS if the LHS is true.
@@ -375,16 +372,14 @@ DECLARE_FUNCTION(or, 2, '|', {
 
 	kn_value_free(ret);
 	return kn_value_run(args[1]);
-});
+}
 
+DECLARE_FUNCTION(then, 2, ';') {
 #ifdef FIXED_ARGC
-DECLARE_FUNCTION(then, 2, ';', {
 	kn_value_free(kn_value_run(args[0]));
 
 	return kn_value_run(args[1]);
-});
 #else
-DECLARE_FUNCTION(then, 2, ';', {
 	kn_value_t ret;
 	unsigned i = 0;
 
@@ -396,10 +391,10 @@ DECLARE_FUNCTION(then, 2, ';', {
 		ret = kn_value_run(args[i++]);
 	} while (args[i] != KN_UNDEFINED);
 	return ret;
-});
+}
 #endif
 
-DECLARE_FUNCTION(assign, 2, '=', {
+DECLARE_FUNCTION(assign, 2, '=') {
 	kn_value_t ret;
 
 	// if it's an identifier, special-case it where we don't evaluate it.
@@ -417,25 +412,25 @@ DECLARE_FUNCTION(assign, 2, '=', {
 	}
 
 	return ret;
-});
+}
 
 
-DECLARE_FUNCTION(while, 2, 'W', {
+DECLARE_FUNCTION(while, 2, 'W') {
 	while (kn_value_to_boolean(args[0]))
 		(void) kn_value_run(args[1]);
 
 	return KN_NULL;
-});
+}
 
 
-DECLARE_FUNCTION(if, 3, 'I', {
+DECLARE_FUNCTION(if, 3, 'I') {
 	kn_value_t torun = args[1 + !kn_value_to_boolean(args[0])];
 
 	return kn_value_run(torun);
-});
+}
 
 
-DECLARE_FUNCTION(get, 3, 'G', {
+DECLARE_FUNCTION(get, 3, 'G') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	intptr_t start = (intptr_t) kn_value_to_number(args[1]);
 	intptr_t amnt = (intptr_t) kn_value_to_number(args[2]);
@@ -453,9 +448,9 @@ DECLARE_FUNCTION(get, 3, 'G', {
 	kn_string_free(string);
 
 	return kn_value_new_string(substr);
-});
+}
 
-DECLARE_FUNCTION(set, 4, 'S', {
+DECLARE_FUNCTION(set, 4, 'S') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	size_t start = (size_t) kn_value_to_number(args[1]);
 	size_t amnt = (size_t) kn_value_to_number(args[2]);
@@ -488,4 +483,4 @@ DECLARE_FUNCTION(set, 4, 'S', {
 	kn_string_free(substr);
 
 	return kn_value_new_string(result);
-});
+}
