@@ -10,15 +10,12 @@
 #include "function.h"
 #include "ast.h"
 
-
 static int isparen(char c) {
 	return c == ':'
 		|| c == '(' || c == ')'
 		|| c == '[' || c == ']'
 		|| c == '{' || c == '}';
 }
-
-
 
 static int isident(char c) {
 	return islower(c) || isdigit(c) || c == '_';
@@ -165,6 +162,7 @@ CASES1('#')
 
 LABEL(whitespace)
 CASES6('\t', '\n', '\v', '\f', '\r', ' ')
+CASES7('(', ')', '[', ']', '{', '}', ':')
 	while (isspace(c = ADVANCE_PEEK()) || isparen(c));
 	goto start;
 

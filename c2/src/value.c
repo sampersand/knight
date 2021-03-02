@@ -294,17 +294,14 @@ kn_value_t kn_value_run(kn_value_t value) {
 }
 
 kn_value_t kn_value_clone(kn_value_t value) {
-	if (!KN_VALUE_IS_LITERAL(value)) {
-		// note that both `kn_ast_t` and `kn_string_t` have their refcount
-		// in the same spot, with the same alignment, and the same size.
-		assert(KN_TAG(value) == KN_TAG_AST
-			|| KN_TAG(value) == KN_TAG_STRING
-			|| KN_TAG(value) == KN_TAG_IDENT);
+	if (KN_VALUE_IS_LITERAL(value))
+		return value;
 
-		unsigned *rc = &((struct kn_string_t*) KN_UNMASK(value))->refcount;
-
-		if (*rc)
-			++*rc;
+	if (KN_TAG(value) == KN_TAG_AST) {
+		++((struct kn_ast_t*) KN_UNMASK(value))->refcount;
+	} else {
+		assert(KN_TAG(value) == KN_TAG_STRING || KN_TAG(value) == KN_TAG_IDENT);
+		kn_string_clone((struct kn_string_t *) KN_UNMASK(value));
 	}
 
 	return value;
@@ -314,19 +311,17 @@ void kn_value_free(kn_value_t value) {
 	if (KN_VALUE_IS_LITERAL(value))
 		return;
 
-	// note that both `kn_ast_t` and `kn_string_t` have their refcount
-	// in the same spot, with the same alignment, and the same size.
-	unsigned *rc = &((struct kn_string_t*) KN_UNMASK(value))->refcount;
-
-	if (!*rc || --*rc)
-		return;
-
-	if (KN_TAG(value) <= 4) {
-		kn_string_free((struct kn_string_t*) KN_UNMASK(value));
+	if (KN_TAG(value) != KN_TAG_AST) {
+		kn_string_free((struct kn_string_t *) KN_UNMASK(value));
 		return;
 	}
 
+	// note that both `kn_ast_t` and `kn_string_t` have their refcount
+	// in the same spot, with the same alignment, and the same size.
 	struct kn_ast_t *ast = (struct kn_ast_t*) KN_UNMASK(value);
+
+	if (--ast->refcount)
+		return;
 
 	for (unsigned i = 0; i < ARITY(ast); ++i)
 		kn_value_free(ast->args[i]);

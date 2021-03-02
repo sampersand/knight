@@ -173,16 +173,17 @@ static kn_value_t kn_fn_add_string(
 		return kn_value_new_string(lhs);
 	}
 
-	struct kn_string_t *ret = kn_string_alloc(lhs->length + rhs->length);
+	size_t length = lhs->length + rhs->length;
+	char *str = xmalloc(length + 1);
 
-	memcpy(ret->str, lhs->str, lhs->length);
-	memcpy(ret->str + lhs->length, rhs->str, rhs->length);
-	ret->str[lhs->length + rhs->length] = '\0';
+	memcpy(str, lhs->str, lhs->length);
+	memcpy(str + lhs->length, rhs->str, rhs->length);
+	str[length] = '\0';
 
 	kn_string_free(lhs);
 	kn_string_free(rhs);
 
-	return kn_value_new_string(ret);
+	return kn_value_new_string(kn_string_emplace(str, length));
 }
 
 DECLARE_FUNCTION(add, 2, '+') {
@@ -218,8 +219,9 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
-	struct kn_string_t *string = kn_string_alloc(lhs->length * amnt);
-	char *ptr = string->str;
+	size_t length = lhs->length * amnt;
+	char *str = xmalloc(length + 1);
+	char *ptr = str;
 
 	for (; amnt != 0; --amnt, ptr += lhs->length)
 		memcpy(ptr, lhs->str, lhs->length);
@@ -228,7 +230,7 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 
 	kn_string_free(lhs);
 
-	return kn_value_new_string(string);
+	return kn_value_new_string(kn_string_emplace(str, length));
 }
 
 DECLARE_FUNCTION(mul, 2, '*') {
@@ -440,14 +442,17 @@ DECLARE_FUNCTION(get, 3, 'G') {
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
-	struct kn_string_t *substr = kn_string_alloc(amnt);
+	char *substr;
+	// if (strig->)
 
-	memcpy(substr->str, string->str, amnt);
-	substr->str[amnt] = '\0';
+	substr = xmalloc(amnt + 1);
+
+	memcpy(substr, string->str, amnt);
+	substr[amnt] = '\0';
 
 	kn_string_free(string);
 
-	return kn_value_new_string(substr);
+	return kn_value_new_string(kn_string_emplace(substr, amnt));
 }
 
 DECLARE_FUNCTION(set, 4, 'S') {
@@ -466,10 +471,9 @@ DECLARE_FUNCTION(set, 4, 'S') {
 	if (string_length < start + amnt)
 		amnt = string_length - start;
 
-	struct kn_string_t *result =
-		kn_string_alloc(string_length - amnt + substr_length);
-
-	char *ptr = result->str;
+	size_t length = string_length - amnt + substr_length;
+	char *str = xmalloc(length + 1);
+	char *ptr = str;
 
 	memcpy(ptr, string->str, start);
 	ptr += start;
@@ -482,5 +486,5 @@ DECLARE_FUNCTION(set, 4, 'S') {
 	kn_string_free(string);
 	kn_string_free(substr);
 
-	return kn_value_new_string(result);
+	return kn_value_new_string(kn_string_emplace(str, length));
 }

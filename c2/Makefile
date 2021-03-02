@@ -13,6 +13,10 @@ else
 CEXEFLAGS += -O3 -DNDEBUG -DFIXED_ARGC
 endif
 
+ifdef COMPUTED_GOTOS
+override CFLAGS += -DCOMPUTED_GOTOS -Wno-gnu-label-as-value -Wgnu-designator
+endif
+
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
 
 all: $(EXE)
