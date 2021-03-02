@@ -17,7 +17,7 @@ void kn_function_initialize(void) {
 }
 
 // this is a workaround and i only use one argument.
-#define DECLARE_FUNCTION(_func, _arity, _name, ...) \
+#define DECLARE_FUNCTION(_func, _arity, _name) \
 	static kn_value_t fn_##_func##_function(const kn_value_t *); \
 	struct kn_function_t kn_fn_##_func = (struct kn_function_t) { \
 		.ptr = fn_##_func##_function, \

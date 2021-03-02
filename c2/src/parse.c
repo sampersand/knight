@@ -10,10 +10,6 @@
 #include "function.h"
 #include "ast.h"
 
-#define ADVANCE() do { ++*stream; } while(0)
-#define PEEK() (**stream)
-#define ADVANCE_PEEK() (*++*stream)
-#define PEEK_ADVANCE() (*(*stream)++)
 
 static int isparen(char c) {
 	return c == ':'
@@ -22,21 +18,63 @@ static int isparen(char c) {
 		|| c == '{' || c == '}';
 }
 
+
+
 static int isident(char c) {
 	return islower(c) || isdigit(c) || c == '_';
 }
 
+
+#define ADVANCE() do { ++*stream; } while(0)
+#define PEEK() (**stream)
+#define ADVANCE_PEEK() (*++*stream)
+#define PEEK_ADVANCE() (*(*stream)++)
+
+
+#ifdef COMPUTED_GOTOS
+#define LABEL(x) x:
+#define CASES10(a, ...)
+#define CASES9(a, ...)
+#define CASES8(a, ...)
+#define CASES7(a, ...)
+#define CASES6(a, ...)
+#define CASES5(a, ...)
+#define CASES4(a, ...)
+#define CASES3(a, ...)
+#define CASES2(a, ...)
+#define CASES1(a)
+#else
+#define LABEL(x)
+#define CASES10(a, ...)case a: CASES9(__VA_ARGS__)
+#define CASES9(a, ...) case a: CASES8(__VA_ARGS__)
+#define CASES8(a, ...) case a: CASES7(__VA_ARGS__)
+#define CASES7(a, ...) case a: CASES6(__VA_ARGS__)
+#define CASES6(a, ...) case a: CASES5(__VA_ARGS__)
+#define CASES5(a, ...) case a: CASES4(__VA_ARGS__)
+#define CASES4(a, ...) case a: CASES3(__VA_ARGS__)
+#define CASES3(a, ...) case a: CASES2(__VA_ARGS__)
+#define CASES2(a, ...) case a: CASES1(__VA_ARGS__)
+#define CASES1(a) case a:
+#endif
+
+#define SYMBOL_FUNC(name, sym) \
+	LABEL(function_##name) CASES1(sym) \
+	function = &kn_fn_##name; \
+	ADVANCE(); \
+	goto parse_function
+
+#define WORD_FUNC(name, sym) \
+	LABEL(function_##name) CASES1(sym) \
+	function = &kn_fn_##name; \
+	goto parse_kw_function
+
 kn_value_t kn_parse(register const char **stream) {
-	assert(stream != NULL);
-	assert(*stream != NULL);
-	static const void * labels[256] = {
+
+#ifdef COMPUTED_GOTOS
+	static const void *LABELS[256] = {
 		['\0'] = &&expected_token,
 		[0x01 ... 0x08] = &&invalid,
-		['\t'] = &&whitespace,
-		['\n'] = &&whitespace,
-		['\v'] = &&whitespace,
-		['\f'] = &&whitespace,
-		['\r'] = &&whitespace,
+		['\t' ... '\r'] = &&whitespace,
 		[0x0e ... 0x1f] = &&invalid,
 		[' ']  = &&whitespace,
 		['!']  = &&function_not,
@@ -101,26 +139,38 @@ kn_value_t kn_parse(register const char **stream) {
 		['~']  = &&invalid,
 		[0x7f ... 0xff] = &&invalid,
 	};
+#endif /* COMPUTED_GOTOS */
+
+	assert(stream != NULL);
+	assert(*stream != NULL);
 
 	char c;
 	struct kn_function_t *function;
 
 start:
-	goto *labels[(size_t) (c = PEEK())];
 
-comment:
+#ifdef COMPUTED_GOTOS
+	goto *LABELS[(size_t) (c = PEEK())];
+#else
+	switch (c = PEEK()) {
+#endif /* COMPUTED_GOTOS */
+
+
+LABEL(comment)
+CASES1('#')
 	while ((c = ADVANCE_PEEK()) != '\n')
 		if (c == '\0')
 			goto expected_token;
 	// fallthrough, because we're currently a whitespace character (`\n`)
 
-whitespace:
-	// __attribute__((hot));
-
+LABEL(whitespace)
+CASES6('\t', '\n', '\v', '\f', '\r', ' ')
 	while (isspace(c = ADVANCE_PEEK()) || isparen(c));
 	goto start;
 
-number: {
+LABEL(number)
+CASES10('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+{
 	kn_number_t number = (c - '0');
 
 	while (isdigit(c = ADVANCE_PEEK()))
@@ -129,8 +179,11 @@ number: {
 	return kn_value_new_number(number);
 }
 
-identifier: {
-	// simply find the start and end of the identifier
+LABEL(identifier)
+CASES10('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j')
+CASES10('k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't')
+CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
+{	// simply find the start and end of the identifier
 	const char *start = *stream;
 
 	while (isident(ADVANCE_PEEK()));
@@ -138,7 +191,9 @@ identifier: {
 	return kn_value_new_identifier(kn_string_emplace(start, *stream - start));
 }
 
-string: {
+LABEL(string)
+CASES2('\'', '\"')
+{
 	char quote = c;
 	ADVANCE();
 	const char *start = *stream;
@@ -153,55 +208,58 @@ string: {
 		length
 		? kn_string_emplace(start, length)
 		: &KN_STRING_EMPTY);
-
 }
 
-literal_true:
+LABEL(literal_true)
+CASES1('T')
 	while(isupper(ADVANCE_PEEK()));
 	return KN_TRUE;
 
-literal_false:
+LABEL(literal_false)
+CASES1('F')
 	while(isupper(ADVANCE_PEEK()));
 	return KN_FALSE;
 
-literal_null:
+LABEL(literal_null)
+CASES1('N')
 	while(isupper(ADVANCE_PEEK()));
 	return KN_NULL;
 
-function_not:    function = &kn_fn_not;    ADVANCE(); goto parse_function;
-function_add:    function = &kn_fn_add;    ADVANCE(); goto parse_function;
-function_sub:    function = &kn_fn_sub;    ADVANCE(); goto parse_function;
-function_mul:    function = &kn_fn_mul;    ADVANCE(); goto parse_function;
-function_div:    function = &kn_fn_div;    ADVANCE(); goto parse_function;
-function_mod:    function = &kn_fn_mod;    ADVANCE(); goto parse_function;
-function_pow:    function = &kn_fn_pow;    ADVANCE(); goto parse_function;
-function_eql:    function = &kn_fn_eql;    ADVANCE(); goto parse_function;
-function_lth:    function = &kn_fn_lth;    ADVANCE(); goto parse_function;
-function_gth:    function = &kn_fn_gth;    ADVANCE(); goto parse_function;
-function_and:    function = &kn_fn_and;    ADVANCE(); goto parse_function;
-function_or:     function = &kn_fn_or;     ADVANCE(); goto parse_function;
-function_then:   function = &kn_fn_then;   ADVANCE(); goto parse_function;
-function_assign: function = &kn_fn_assign; ADVANCE(); goto parse_function;
-function_system: function = &kn_fn_system; ADVANCE(); goto parse_function;
-function_block:  function = &kn_fn_block;  goto parse_kw_function;
-function_call:   function = &kn_fn_call;   goto parse_kw_function;
-function_dump:   function = &kn_fn_dump;   goto parse_kw_function;
-function_eval:   function = &kn_fn_eval;   goto parse_kw_function;
-function_get:    function = &kn_fn_get;    goto parse_kw_function;
-function_if:     function = &kn_fn_if;     goto parse_kw_function;
-function_length: function = &kn_fn_length; goto parse_kw_function;
-function_output: function = &kn_fn_output; goto parse_kw_function;
-function_prompt: function = &kn_fn_prompt; goto parse_kw_function;
-function_quit:   function = &kn_fn_quit;   goto parse_kw_function;
-function_random: function = &kn_fn_random; goto parse_kw_function;
-function_set:    function = &kn_fn_set;    goto parse_kw_function;
-function_while:  function = &kn_fn_while;  goto parse_kw_function;
+SYMBOL_FUNC(not, '!');
+SYMBOL_FUNC(add, '+');
+SYMBOL_FUNC(sub, '-');
+SYMBOL_FUNC(mul, '*');
+SYMBOL_FUNC(div, '/');
+SYMBOL_FUNC(mod, '%');
+SYMBOL_FUNC(pow, '^');
+SYMBOL_FUNC(eql, '?');
+SYMBOL_FUNC(lth, '<');
+SYMBOL_FUNC(gth, '>');
+SYMBOL_FUNC(and, '&');
+SYMBOL_FUNC(or, '|');
+SYMBOL_FUNC(then, ';');
+SYMBOL_FUNC(assign, '=');
+SYMBOL_FUNC(system, '`');
+WORD_FUNC(block, 'B');
+WORD_FUNC(call, 'C');
+WORD_FUNC(dump, 'D');
+WORD_FUNC(eval, 'E');
+WORD_FUNC(get, 'G');
+WORD_FUNC(if, 'I');
+WORD_FUNC(length, 'L');
+WORD_FUNC(output, 'O');
+WORD_FUNC(prompt, 'P');
+WORD_FUNC(quit, 'Q');
+WORD_FUNC(random, 'R');
+WORD_FUNC(set, 'S');
+WORD_FUNC(while, 'W');
 
 parse_kw_function:
 	while (isupper(ADVANCE_PEEK()));
 	// fallthrough
 
-parse_function: {
+parse_function:
+{
 	size_t arity = function->arity;
 	struct kn_ast_t *ast = xmalloc(sizeof(struct kn_ast_t)
 		+ sizeof(kn_value_t [arity]));
@@ -270,11 +328,18 @@ parse_function_end:
 	return kn_value_new_ast(ast);
 }
 
-
 expected_token:
+CASES1('\0')
 	return KN_UNDEFINED;
 
-invalid:
-	// __attribute__((cold));
+LABEL(invalid)
+#ifndef COMPUTED_GOTOS
+	default:
+#endif
+
 	die("unknown token start '%c'", c);
+
+#ifndef COMPUTED_GOTOS
+	}
+#endif
 }
