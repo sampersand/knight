@@ -278,5 +278,4 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *ast);
  */
 struct kn_value_t kn_fn_set(const struct kn_ast_t *ast);
 
-
 #endif /* KN_FUNCTION_H */
