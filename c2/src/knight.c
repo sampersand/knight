@@ -21,5 +21,6 @@ kn_value_t kn_run(const char *stream) {
 
 	kn_value_t ret = kn_value_run(value);
 	kn_value_free(value);
+
 	return ret;
 }

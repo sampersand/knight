@@ -391,8 +391,8 @@ DECLARE_FUNCTION(then, 2, ';') {
 		ret = kn_value_run(args[i++]);
 	} while (args[i] != KN_UNDEFINED);
 	return ret;
-}
 #endif
+}
 
 DECLARE_FUNCTION(assign, 2, '=') {
 	kn_value_t ret;

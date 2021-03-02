@@ -33,6 +33,12 @@
 #define KN_VALUE_AS_STRIDENT(x) KN_VALUE_AS_IDENT(x)
 #define KN_VALUE_AS_AST(x) ((struct kn_ast_t *) KN_UNMASK(x))
 
+#ifdef FIXED_ARGC
+#define ARITY(ast) ((ast)->func->arity)
+#else
+#define ARITY(ast) ((ast)->argc)
+#endif
+
 bool kn_value_is_number(kn_value_t value) {
 	return value & KN_TAG_NUMBER;
 }
@@ -189,14 +195,19 @@ const struct kn_string_t *number_to_string(kn_number_t num) {
 }
 
 const struct kn_string_t *kn_value_to_string(kn_value_t value) {
+	static struct kn_string_t *BUILTIN_STRINGS[5] = {
+		&KN_STRING_FALSE,
+		&KN_STRING_ZERO,
+		&KN_STRING_NULL,
+		&KN_STRING_ONE,
+		&KN_STRING_TRUE
+	};
+
+	if (value <= 4)
+		return BUILTIN_STRINGS[value];
+
 	if (kn_value_is_number(value))
 		return number_to_string(kn_value_as_number(value));
-
-	switch (value) {
-	case KN_TRUE:  return &KN_STRING_TRUE;
-	case KN_FALSE: return &KN_STRING_FALSE;
-	case KN_NULL:  return &KN_STRING_NULL;
-	}
 
 	if (kn_value_is_string(value))
 		return kn_string_clone(kn_value_as_string(value));
@@ -235,14 +246,8 @@ void kn_value_dump(kn_value_t value) {
 	case KN_TAG_AST: {
 		struct kn_ast_t *ast = KN_VALUE_AS_AST(value);
 		printf("Function(%c", ast->func->name);
-		unsigned argc = 
-#ifdef FIXED_ARGC
-		ast->func->arity;
-#else
-		ast->argc;
-#endif
 
-		for (size_t i = 0; i < argc; ++i) {
+		for (size_t i = 0; i < ARITY(ast); ++i) {
 			printf(", ");
 			kn_value_dump(ast->args[i]);
 		}
@@ -265,7 +270,8 @@ bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
 		return lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
 	}
 
-	assert(lhs <= 4 || lhs & 1 || kn_value_is_string(lhs) || KN_TAG(lhs) == KN_TAG_AST);
+	assert(lhs <= 4 || lhs & 1
+		|| kn_value_is_string(lhs) || KN_TAG(lhs) == KN_TAG_AST);
 	return false;
 }
 
@@ -321,15 +327,8 @@ void kn_value_free(kn_value_t value) {
 	}
 
 	struct kn_ast_t *ast = (struct kn_ast_t*) KN_UNMASK(value);
-	unsigned argc = 
-#ifdef FIXED_ARGC
-		ast->func->arity;
-#else
-		ast->argc;
-#endif
 
-
-	for (unsigned i = 0; i < argc; ++i)
+	for (unsigned i = 0; i < ARITY(ast); ++i)
 		kn_value_free(ast->args[i]);
 
 	free(ast);
