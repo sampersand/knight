@@ -98,31 +98,16 @@ macro_rules! declare_functions {
 	};
 }
 
-use std::{io, process};
+use std::io::{self, Write};
+use std::process;
 
 declare_functions! {
 	fn 'P' () {
-		// let mut buf = String::new();
+		let mut buf = String::new();
 
-		// io::stdin().read_line(&mut buf)?;
+		io::stdin().read_line(&mut buf)?;
 
-		// Ok(Value::String(buf.into()))
-		Ok(Value::String(From::from(r##"
-; = fizzbuzz BLOCK
-	; = n 0
-	; = max (+ 1 max)
-	: WHILE < (= n + 1 n) max
-		: OUTPUT
-			: IF ! (% n 15)
-				"FizzBuzz"
-			: IF ! (% n 5)
-				"Fizz"
-			: IF ! (% n 3)
-				"Buzz"
-				n
-; = max 100
-: CALL fizzbuzz
-"##)))
+		Ok(Value::String(buf.into()))
 	}
 
 	fn 'R'() {
@@ -179,8 +164,7 @@ declare_functions! {
 		if let Some(stripped) = text.strip_suffix('\\') {
 			print!("{}", stripped);
 
-			use std::io::Write;
-			let _ = std::io::stdout().flush();
+			let _ = io::stdout().flush();
 		} else {
 			println!("{}", text);
 		}

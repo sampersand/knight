@@ -1,8 +1,9 @@
 use crate::{Function, Number, RcStr, RuntimeError};
+use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Value {
 	Null,
 	Boolean(bool),
@@ -11,6 +12,21 @@ pub enum Value {
 	Identifier(String),
 	Function(Function, Rc<[Value]>)
 }
+
+impl Debug for Value {
+	// note we need the custom impl becuase `Null()` is required by the knight spec.
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		match self {
+			Self::Null => write!(f, "Null()"),
+			Self::Boolean(boolean) => write!(f, "Boolean({})", boolean),
+			Self::Number(number) => write!(f, "Number({})", number),
+			Self::String(string) => write!(f, "String({})", string),
+			Self::Identifier(identifier) => write!(f, "Identifier({})", identifier),
+			Self::Function(function, args) => write!(f, "Function({}, {:?})", function.name(), args),
+		}
+	}
+}
+
 
 impl TryFrom<&Value> for bool {
 	type Error = RuntimeError;
@@ -55,7 +71,7 @@ impl TryFrom<&Value> for Number {
 				let mut string = string.trim();
 				let is_negative = string.chars().nth(0) == Some('-');
 
-				if is_negative {
+				if is_negative || string.chars().nth(0) == Some('+') {
 					string = string.get(1..).unwrap();
 				}
 

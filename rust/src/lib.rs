@@ -18,6 +18,6 @@ pub fn run_str<S: AsRef<str>>(input: S) -> Result<Value, RuntimeError> {
 	Value::parse_str(input)?.run()
 }
 
-pub fn parse<I: Iterator<Item=char>>(input: I) -> Result<Value, RuntimeError> {
+pub fn run<I: Iterator<Item=char>>(input: I) -> Result<Value, RuntimeError> {
 	Value::parse(input)?.run()
 }
