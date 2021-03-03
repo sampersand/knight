@@ -2,23 +2,22 @@ SRCDIR ?= src
 OBJDIR ?= obj
 EXE ?= knight
 
-CC = gcc
-CEXEFLAGS =
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wno-gnu-zero-variadic-macro-arguments
+CC = gcc 
+CFLAGS = -Wall -Wextra -Werror -Wpedantic
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-override CFLAGS += -g -fsanitize=address
+override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -Wl,-stack_size,1600000 -O2 -DNDEBUG
+CEXEFLAGS += -O3 -DNDEBUG -c -flto -march=native
 endif
 
-# lower case because it's local to makefile.
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
 
-# bar: foo
-# 		echo $(DEBUG)
 all: $(EXE)
+
+optimized:
+	gcc $(CFLAGS) $(CEXEFLAGS) -o $(EXE) $(wildcard $(SRCDIR)/*.c)
 
 $(EXE): $(objects)
 	$(CC) $(CFLAGS) $(CEXEFLAGS) -o $@ $+

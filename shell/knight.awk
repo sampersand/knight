@@ -1,20 +1,42 @@
 #!/usr/bin/awk -f
 
+# Prints a message and then exits.
+function die(msg) {
+	print msg
+	exit 1
+}
+
+# Parse command line parameters
+BEGIN {
+	if (ARGC != 3 || (ARGV[1] != "-e" && ARGV[1] != "-f")) {
+		# note there's no portable way to get script name, as `ARGV[0]` might be
+		# `/usr/bin/awk`...
+		die("usage: knight.awk (-e 'expr' | -f file)")
+	}
+
+	if (ARGV[1] == "-e") {
+		source_code = ARGV[2]
+		delete ARGV
+	} else {
+		delete ARGV[1] # but retain ARGV[2], as we'll read from that. 
+	}
+}
+
 # Collect source code.
-{ source_code = source_code "\n" $0 }
+{
+	source_code = source_code "\n" $0
+}
 
 # Execute source code.
 END {
 	$0 = source_code
 	srand()
-	run(generate_ast())
-}
+	ast_value=generate_ast()
 
-
-# Prints a message and then exits.
-function die(msg) {
-	print msg
-	exit 1
+	if (ast_value == "")
+		die("no program given")
+	else
+		run(ast_value)
 }
 
 # used internally to indicate a bug has occured.
@@ -43,7 +65,7 @@ function next_token() {
 		token = "i" substr($0, 1, RLENGTH)
 	else if (match($0, /^("[^"]*"|'[^']*')/))
 		token = "s" substr($0, 2, RLENGTH - 2) # strip out the quotes
-	else if (match($0, /^([[:upper:]]+|[-`+*\/%^<>&|!;=])/))
+	else if (match($0, /^([[:upper:]]+|[-`+*\/%^<>?&|!;=])/))
 		token = "f" substr($0, 1, 1) # ignore everything but first char for keywords
 	else
 		die("unknown token start '" substr($0, 1, 1) "'")
@@ -66,7 +88,7 @@ function generate_ast(node_idx, token) {
 
 	if (!(ast[node_idx, 1] = generate_ast()))
 		die("missing first argument for function '" substr(token, 2, 1) "'")
-	if (token ~ /f[`OEBCQ!L]/)
+	if (token ~ /f[`OEBCQ!LD]/)
 		return node_idx
 
 	if (!(ast[node_idx, 2] = generate_ast()))
@@ -147,12 +169,74 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 		return "s" tmp
 	}
 
+	# Randomly pick an integer from 0 to 0xff_ff_ff_ff
+	if (fn == "R")
+		return "n" int(rand() * 4294967295)
+
 	# At this point, all remaining functions have at least 1 argument.
 	arg1 = ast[node_idx, 1]
 
+	# When creating blocks, simply return the token number of the thing to eval.
+	if (fn == "B")
+		return ast[arg1]
+
+	# When calling a block, you need to execute the result of running `arg1`.
+	if (fn == "C")
+		return run(run(arg1))
+
+	# Evaluates the first argument as Knight code, returning the result of the
+	# evaluation.
+	if (fn == "E") {
+		$0 = to_string(arg1)
+		return run(generate_ast())
+	}
+
+	# The '`' keyword's used to execute shell commands and get the stdout.
+	if (fn == "`") {
+		#to_string(arg1) | getline
+		tmp = ""
+
+		while (to_string(arg1) | getline arg2)
+			tmp = tmp arg2 "\n"
+
+		return "s" tmp
+	}
+
 	# Logical negation. All arguments are converted to booleans first.
-	if (fn == "!") {
+	if (fn == "!")
 		return to_boolean(arg1) ? "fF" : "fT"
+
+	# Quit exits with the status code of its argument.
+	if (fn == "Q") 
+		exit to_number(arg1)
+
+	# Gets the length of the first argument, in chars.
+	if (fn == "L") 
+		return "n" length(to_string(arg1))
+
+	# Dumps a debug representation
+	if (fn == "D") {
+		arg1 = run(arg1)
+		tmp = substr(arg1, 2)
+
+		if (arg1 ~ /^s/)
+			printf "%s", "String(" tmp ")" # need `%s` so we escape things
+		else if (arg1 ~ /^n/)
+			printf "Number(" tmp ")"
+		else if (arg1 ~ /^fT/)
+			printf "Boolean(true)"
+		else if (arg1 ~ /^fF/)
+			printf "Boolean(false)"
+		else if (arg1 ~ /^fN/)
+			printf "Null()"
+		else if (arg1 ~ /^i/)
+			printf "Identifier(" tmp ")"
+		else if (arg1 ~ /^f/)
+			printf "%s", "Function(" tmp ")" # need `%s` so we escape things
+		else
+			bug("unknown value '" arg1 "'")
+
+		return arg1
 	}
 
 	# Output something to stdout. If the string ends in `\`, a newline won't be
@@ -166,40 +250,6 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 		return arg1
 	}
 
-	# When creating blocks, simply return the token number of the thing to eval.
-	if (fn == "B")
-		return arg1
-
-	# When calling a block, you need to execute the result of running `arg1`.
-	if (fn == "C")
-		return run(run(arg1))
-
-	# Evaluates the first argument as Knight code, returning the result of the
-	# evaluation.
-	if (fn == "E") {
-		$0 = to_string(arg1)
-		return run(generate_ast())
-	}
-
-	# Quit exits with the status code of its argument.
-	if (fn == "Q") 
-		exit to_number(arg1)
-
-	# Gets the length of the first argument, in chars.
-	if (fn == "L") 
-		return "n" length(to_string(arg1))
-
-	# The '`' keyword's used to execute shell commands and get the stdout.
-	if (fn == "`") {
-		#to_string(arg1) | getline
-		tmp = ""
-
-		while (to_string(arg1) | getline arg2)
-			tmp = tmp arg2 "\n"
-
-		return "s" tmp
-	}
-
 	# At this point, all remaining functions have at least 2 arguments.
 	arg2 = ast[node_idx, 2]
 
@@ -210,9 +260,8 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 	}
 
 	# The `=` operator assigns to the global scope then return the assigned val.
-	if (fn == "=") {
+	if (fn == "=")
 		return env[ast[arg1]] = run(arg2)
-	}
 
 	# The `+` operator: If the first operand's a string, we do concatenation.
 	# Otherwise, we do numerical addition.
@@ -234,6 +283,10 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 	if (fn ~ /[&|]/) 
 		return to_boolean(arg1 = run(arg1), 1) == (fn == "&") ? run(arg2) : arg1
 
+	# Checks for equality without coercion.
+	if (fn == "?")
+		return "f" (run(arg1) == run(arg2) ? "T" : "F")
+
 	# Comparison operators. We don't have to do anything fancy for string/numebrs
 	# as awk already does that for us.
 	if (fn ~ /[<>]/) {
@@ -244,6 +297,7 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 			arg1 = to_number(arg1, 1)
 			arg2 = to_number(arg2)
 		}
+
 		return (fn == "<" ? arg1 < arg2 : arg1 > arg2) ? "fT" : "fF"
 	}
 
@@ -257,11 +311,6 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 			tmp = run(arg2)
 
 		return tmp
-	}
-
-	# Randomly pick an integer from 0 to 0xff_ff_ff_ff
-	if (fn == "R") {
-		return "n" int(rand() * 4294967295)
 	}
 
 	# At this point, all remaining functions have at least 3 arguments.

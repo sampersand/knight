@@ -4,20 +4,18 @@ EXE ?= knight
 
 CXX = g++
 CEXEFLAGS =
-CXXFLAGS = -Wall -Wextra -Werror -Wpedantic -std=c++17
-override CFLAGS += -F$(SRCDIR)
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -Wpedantic -Wno-infinite-recursion
+override CXXFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-CFLAGS += -g
+override CXXFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -Wl,-stack_size,1600000 -O2
+CEXEFLAGS += -Wl,-stack_size,160000000 -O3 -DNDEBUG
 endif
 
 # lower case because it's local to makefile.
-objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.cpp))
+objects = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.cpp))
 
-# bar: foo
-# 		echo $(DEBUG)
 all: $(EXE)
 
 $(EXE): $(objects)
@@ -32,5 +30,5 @@ $(OBJDIR):
 
 $(objects): | $(OBJDIR)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

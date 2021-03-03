@@ -1,3 +1,4 @@
+
 ## Peeks at the first character in the stream.
 # ARGUMENTS:
 #    stream: The stream to peek into.
@@ -85,8 +86,8 @@
 	: IF (? chr '#')
 		; CALL advance
 		; WHILE ! | (CALL iseof) (CALL iseol)
-		; CALL advance
-		: CALL peek
+			; CALL advance
+			: CALL peek
 		: CALL strip_whitespace_and_comments
 		: NULL
 
