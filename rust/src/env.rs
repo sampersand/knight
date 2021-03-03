@@ -15,7 +15,6 @@ pub fn get(ident: &str) -> Result<Value, RuntimeError> {
 
 #[allow(unsafe_code)]
 pub fn insert(ident: &str, value: Value) {
-
 	let mut env =
 		unsafe { &ENVIRONMENT }
 			.get_or_init(Default::default)

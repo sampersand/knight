@@ -5,6 +5,12 @@ authors = ["Sam Westerman <sam@sampersand.me>"]
 edition = "2018"
 description = "The Knight programming language, in Rust"
 
+[features]
+default = ["pretty-errors"]
+
+reck = []
+pretty-errors = ["reck"]
+
 [dependencies]
 rand = "0.8.0"
 once_cell = "1.7.2"

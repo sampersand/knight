@@ -234,17 +234,20 @@ declare_functions! {
 	}
 
 	fn '=' (arg, rhs) {
-		if let Value::Identifier(ref ident) = arg {
-			let rhs = rhs.run()?;
+		let rhsval;
 
-			crate::env::insert(ident, rhs.clone());
+		if let Value::Variable(ref ident) = arg {
+			rhsval = rhs.run()?;
 
-			Ok(rhs)
+			crate::env::insert(ident, rhsval.clone());
 		} else {
 			let ident = arg.to_rcstr()?;
+			rhsval = rhs.run()?;
 
-			crate::env::get(&ident)
+			crate::env::insert(&ident, rhsval.clone());
 		}
+
+		Ok(rhsval)
 	}
 
 	fn 'W' (lhs, rhs) {

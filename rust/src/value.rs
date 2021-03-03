@@ -3,27 +3,67 @@ use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
 use std::convert::TryFrom;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub enum Value {
 	Null,
 	Boolean(bool),
 	Number(Number),
 	String(RcStr),
-	Identifier(String),
+	Variable(String),
 	Function(Function, Rc<[Value]>)
 }
 
+impl Eq for Value {}
+impl PartialEq for Value {
+	fn eq(&self, rhs: &Self) -> bool {
+		match (self, rhs) {
+			(Self::Null, Self::Null) => true,
+			(Self::Boolean(lbool), Self::Boolean(rbool)) => lbool == rbool,
+			(Self::Number(lnum), Self::Number(rnum)) => lnum == rnum,
+			(Self::String(lstr), Self::String(rstr)) => lstr == rstr,
+			(Self::Variable(lvar), Self::Variable(rvar)) => lvar == rvar,
+			(Self::Function(lfunc, largs), Self::Function(rfunc, rargs)) =>
+				lfunc == rfunc && Rc::ptr_eq(&largs, &rargs),
+			_ => false
+		}
+	}
+}
+
 impl Debug for Value {
-	// note we need the custom impl becuase `Null()` is required by the knight spec.
+	// note we need the custom impl becuase `Null()` and `Identifier(...)` is required by the knight spec.
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
 		match self {
 			Self::Null => write!(f, "Null()"),
 			Self::Boolean(boolean) => write!(f, "Boolean({})", boolean),
 			Self::Number(number) => write!(f, "Number({})", number),
 			Self::String(string) => write!(f, "String({})", string),
-			Self::Identifier(identifier) => write!(f, "Identifier({})", identifier),
+			Self::Variable(identifier) => write!(f, "Identifier({})", identifier),
 			Self::Function(function, args) => write!(f, "Function({}, {:?})", function.name(), args),
 		}
+	}
+}
+
+impl From<bool> for Value {
+	fn from(boolean: bool) -> Self {
+		Self::Boolean(boolean)
+	}
+}
+
+impl From<Number> for Value {
+	fn from(number: Number) -> Self {
+		Self::Number(number)
+	}
+}
+
+impl From<String> for Value {
+	fn from(string: String) -> Self {
+		Self::String(string.into())
+	}
+}
+
+impl From<RcStr> for Value {
+	fn from(string: RcStr) -> Self {
+		Self::String(string)
 	}
 }
 
@@ -94,7 +134,7 @@ impl Value {
 			Self::Boolean(_) => "Boolean",
 			Self::Number(_) => "Number",
 			Self::String(_) => "String",
-			Self::Identifier(_) => "Identifier",
+			Self::Variable(_) => "Variable",
 			Self::Function(_, _) => "Function",
 		}
 	}
@@ -105,7 +145,7 @@ impl Value {
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),
 			Self::Number(number) => Ok(Self::Number(*number)),
 			Self::String(rcstr) => Ok(Self::String(rcstr.clone())),
-			Self::Identifier(ident) => crate::env::get(ident),
+			Self::Variable(ident) => crate::env::get(ident),
 			Self::Function(func, args) => (func.func())(&args),
 		}
 	}
@@ -204,15 +244,33 @@ impl Value {
 	}
 
 	pub fn try_pow(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		match self {
-			Self::Number(lhs) =>
-				rhs.to_number()
-					// .map(|rhs| lhs.pow(rhs))
-					.map(|_rhs| todo!("{:?}", lhs))
-					.map(Self::Number),
+		let base = 
+			if let Self::Number(lhs) = self {
+				*lhs
+			} else {
+				return Err(RuntimeError::InvalidOperand { func: '^', operand: self.typename() });
+			};
 
-			_ => Err(RuntimeError::InvalidOperand { func: '^', operand: self.typename() })
-		}
+		let exponent = Number::try_from(rhs)?;
+
+		Ok(Self::Number(
+			if base == 1 {
+				1
+			} else if base == -1 {
+				if exponent & 1 == 1 {
+					-1
+				} else {
+					1
+				}
+			} else {
+				match exponent {
+					1 => base,
+					0 => 1,
+					_ if exponent < 0 => 0,
+					_ => base.pow(exponent as u32)
+				}
+			}
+		))
 	}
 
 	pub fn try_lth(&self, rhs: &Self) -> Result<bool, RuntimeError> {
@@ -234,10 +292,6 @@ impl Value {
 	}
 
 	pub fn try_eql(&self, rhs: &Self) -> Result<bool, RuntimeError> {
-		if matches!(self, Self::Identifier(_) | Self::Function(_, _)) {
-			Err(RuntimeError::InvalidOperand { func: '?', operand: self.typename() })
-		} else {
-			Ok(self == rhs)
-		}
+		Ok(self == rhs)
 	}
 }

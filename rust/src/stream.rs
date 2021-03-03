@@ -82,7 +82,7 @@ fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 		}
 	}
 
-	Value::Identifier(ident)
+	Value::Variable(ident)
 }
 
 fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
