@@ -1,17 +1,32 @@
-use crate::{Value, Ast};
+use crate::{Value, RuntimeError};
 use std::fmt::{self, Debug, Formatter};
+use std::hash::{Hash, Hasher};
+use std::collections::HashMap;
+use parking_lot::Mutex;
+
+type FuncPtr = fn(&[Value]) -> Result<Value, RuntimeError>;
 
 #[derive(Clone, Copy)]
 pub struct Function {
-	arity: usize,
-	func: fn(&[Ast]) -> Value
+	func: FuncPtr,
+	name: char,
+	arity: usize
 }
 
 impl Debug for Function {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		struct PointerDebug(usize);
+
+		impl Debug for PointerDebug {
+			fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+				write!(f, "{:p}", self.0 as *const ())
+			}
+		}
+
 		f.debug_tuple("Function")
+			.field(&PointerDebug(self.func as usize))
+			.field(&self.name)
 			.field(&self.arity)
-			.field(&(self.func as *const ()))
 			.finish()
 	}
 }
@@ -19,219 +34,246 @@ impl Debug for Function {
 impl Eq for Function {}
 impl PartialEq for Function {
 	fn eq(&self, rhs: &Self) -> bool {
-		let ret = (self.func as usize) == (rhs.func as usize);
-		debug_assert_eq!(self.arity == rhs.arity, ret);
+		let func_eql = (self.func as usize) == (rhs.func as usize);
 
-		ret
+		debug_assert_eq!(func_eql, self.name == rhs.name,
+			"name and functions don't match up\nself={:?}\nrhs={:?}", self, rhs);
+
+		return func_eql;
 	}
 }
 
+impl Hash for Function {
+	fn hash<H: Hasher>(&self, h: &mut H) {
+		(self.func as usize).hash(h);
+	}
+}
 
 impl Function {
-	pub fn for_name(name: u8) -> Option<Self> {
-		// SAFETY: we only ever run Knight in one thread, so there's no possibility of
-		// data races
-		unsafe {
-			FUNCTIONS[name as usize]
-		}
+	pub fn func(&self) -> FuncPtr {
+		self.func
 	}
 
-	pub fn register(name: u8, arity: usize, func: fn(&[Ast]) -> Value) {
-		// SAFETY: we only ever run Knight in one thread, so there's no possibility of
-		// data races
-		unsafe {
-			FUNCTIONS[name as usize] = Some(Function { arity, func });
-		}
-	}
-
-	pub fn run(&self, args: &[Ast]) -> Value {
-		(self.func)(args)
-	}
-
-	pub const fn arity(&self) -> usize {
+	pub fn arity(&self) -> usize {
 		self.arity
 	}
-}
 
-macro_rules! functions {
-	(@COUNT_ARITY $arity:expr;) => { $arity };
-	(@COUNT_ARITY $arity:expr; $_ident:ident $($rest:ident)*) => {
-		functions!(@COUNT_ARITY $arity + 1; $($rest)*)
-	};
-
-	($(fn $name:literal ($($args:ident),*) $body:block)*) => {
-		static mut FUNCTIONS: [Option<Function>; u8::MAX as usize] = {
-			let mut arr = [None; u8::MAX as usize];
-
-			$(
-				arr[$name as usize] = Some(Function {
-					arity: functions!(@COUNT_ARITY 0; $($args)*),
-					func: |args| {
-						if let [$($args),*] = args {
-							$body
-						} else {
-							unreachable!("invalid args length given: {:?}", args.len());
-						}
-					}
-				});
-			)*
-			arr
-		};
-	};
-}
-
-functions! {
-	fn 'T'() { Value::Boolean(true) }
-	fn 'F'() { Value::Boolean(false) }
-	fn 'N'() { Value::Null }
-	fn 'R'() { Value::Number(rand::random()) }
-
-	fn 'P'() {
-		let mut buf = String::new();
-
-		if let Err(err) = std::io::stdin().read_line(&mut buf) {
-			panic!("unable to read line from stdin: {}", err);
-		}
-
-		Value::String(buf)
+	pub fn name(&self) -> char {
+		self.name
 	}
 
+	pub fn fetch(name: char) -> Option<Self> {
+		FUNCTIONS.lock().get(&name).cloned()
+	}
+
+	pub fn register(name: char, arity: usize, func: FuncPtr) {
+		FUNCTIONS.lock().insert(name, Function { name, arity, func });
+	}
+}
+
+macro_rules! declare_functions {
+	(ARITY;) => { 0 };
+	(ARITY; $_name:ident $($rest:tt)*) => { 1 +  declare_functions!(ARITY; $($rest)*) };
+
+	($( fn $name:literal ($($arg:ident),*) $body:block  )+) => {
+		lazy_static::lazy_static! {
+			static ref FUNCTIONS: Mutex<HashMap<char, Function>> = Mutex::new({
+				let mut map = HashMap::new();
+
+				$(
+					map.insert($name, Function {
+						name: $name,
+						arity: declare_functions!(ARITY; $($arg)*),
+						func: |args|
+							if let [$($arg),*] = args {
+								$body
+							} else {
+								unreachable!("invalid args length passed to {:?}: {:?}", args.len(), $name)
+							}
+					});
+				)+
+				map
+			});
+		}
+	};
+}
+
+use std::{io, process};
+
+declare_functions! {
+	fn 'P' () {
+		// let mut buf = String::new();
+
+		// io::stdin().read_line(&mut buf)?;
+
+		// Ok(Value::String(buf.into()))
+		Ok(Value::String(From::from(r##"
+; = fizzbuzz BLOCK
+	; = n 0
+	; = max (+ 1 max)
+	: WHILE < (= n + 1 n) max
+		: OUTPUT
+			: IF ! (% n 15)
+				"FizzBuzz"
+			: IF ! (% n 5)
+				"Fizz"
+			: IF ! (% n 3)
+				"Buzz"
+				n
+; = max 100
+: CALL fizzbuzz
+"##)))
+	}
+
+	fn 'R'() {
+		Ok(Value::Number(rand::random()))
+	}
+
+
 	fn 'E' (arg) {
-		arg.run().as_string().parse::<Ast>().unwrap().run()
+		arg.to_rcstr().and_then(|arg| crate::run_str(&arg))
 	}
 
 	fn 'B' (block) {
-		block.clone().into()
+		Ok(block.clone())
 	}
 
 	fn 'C' (block) {
-		block.run().run()
+		block.run()?.run()
 	}
 
 	fn '`' (cmd) {
-		let out = std::process::Command::new("sh")
+		process::Command::new("sh")
 			.arg("-c")
-			.arg(&*cmd.run().as_string())
+			.arg(&*cmd.to_rcstr()?)
 			.output()
-			.expect("unable to execute `sh` command");
-
-		String::from_utf8_lossy(&out.stdout).into_owned().into()
+			.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())
+			.map_err(From::from)
+			.map(From::from)
+			.map(Value::String)
 	}
 
 	fn 'Q' (code) {
-		std::process::exit(code.run().as_number() as i32);
+		process::exit(code.to_number()? as i32);
 	}
 
 	fn '!' (code) {
-		Value::Boolean(!code.run().as_boolean())
+		Ok(Value::Boolean(!code.to_boolean()?))
 	}
 
 	fn 'L' (string) {
-		Value::Number(string.run().as_string().len() as _)
+		Ok(Value::Number(string.to_rcstr()?.len() as _))
+	}
+
+	fn 'D' (value) {
+		let ret = value.run()?;
+
+		println!("{:?}", ret);
+
+		Ok(ret)
 	}
 
 	fn 'O' (msg) {
-		let ret = msg.run();
-		let text = ret.as_string();
+		let text = msg.to_rcstr()?;
 
 		if let Some(stripped) = text.strip_suffix('\\') {
 			print!("{}", stripped);
+
 			use std::io::Write;
 			let _ = std::io::stdout().flush();
 		} else {
 			println!("{}", text);
 		}
 
-		ret
+		Ok(Value::Null)
 	}
 
 	fn '+' (lhs, rhs) {
-		lhs.run() + rhs.run()
+		lhs.run()?.try_add(&rhs.run()?)
 	}
 
 	fn '-' (lhs, rhs) {
-		lhs.run() - rhs.run()
+		lhs.run()?.try_sub(&rhs.run()?)
 	}
 
 	fn '*' (lhs, rhs) {
-		lhs.run() * rhs.run()
+		lhs.run()?.try_mul(&rhs.run()?)
 	}
 
 	fn '/' (lhs, rhs) {
-		lhs.run() / rhs.run()
+		lhs.run()?.try_div(&rhs.run()?)
 	}
 
 	fn '%' (lhs, rhs) {
-		lhs.run() % rhs.run()
+		lhs.run()?.try_rem(&rhs.run()?)
 	}
 
 	fn '^' (lhs, rhs) {
-		lhs.run().pow(rhs.run())
+		lhs.run()?.try_pow(&rhs.run()?)
 	}
 
 	fn '?' (lhs, rhs) {
-		(lhs.run() == rhs.run()).into()
+		lhs.run()?.try_eql(&rhs.run()?).map(Value::Boolean)
 	}
 
 	fn '<' (lhs, rhs) {
-		lhs.run().lth(&rhs.run()).into()
+		lhs.run()?.try_lth(&rhs.run()?).map(Value::Boolean)
 	}
 
 	fn '>' (lhs, rhs) {
-		lhs.run().gth(&rhs.run()).into()
+		lhs.run()?.try_gth(&rhs.run()?).map(Value::Boolean)
 	}
 
-
 	fn '&' (lhs, rhs) {
-		let lhs = lhs.run();
+		let lhs = lhs.run()?;
 
-		if lhs.as_boolean() {
+		if lhs.to_boolean()? {
 			rhs.run()
 		} else {
-			lhs
+			Ok(lhs)
 		}
 	}
 
 	fn '|' (lhs, rhs) {
-		let lhs = lhs.run();
+		let lhs = lhs.run()?;
 
-		if lhs.as_boolean() {
-			lhs
+		if lhs.to_boolean()? {
+			Ok(lhs)
 		} else {
 			rhs.run()
 		}
 	}
 
 	fn ';' (lhs, rhs) {
-		lhs.run();
+		lhs.run()?;
 		rhs.run()
 	}
 
 	fn '=' (arg, rhs) {
-		let ident =
-			if let Ast::Identifier(ref ident) = arg {
-				ident.clone()
-			} else {
-				arg.run().as_string().into_owned()
-			};
+		if let Value::Identifier(ref ident) = arg {
+			let rhs = rhs.run()?;
 
-		let rhs = rhs.run();
-		crate::env::set(ident, rhs.clone());
-		rhs
+			crate::env::insert(ident, rhs.clone());
+
+			Ok(rhs)
+		} else {
+			let ident = arg.to_rcstr()?;
+
+			crate::env::get(&ident)
+		}
 	}
 
 	fn 'W' (lhs, rhs) {
-		let mut ret = Value::Null;
-
-		while lhs.run().as_boolean() {
-			ret = rhs.run();
+		while lhs.to_boolean()? {
+			rhs.run()?;
 		}
 
-		ret
+		Ok(Value::Null)
 	}
 
+
 	fn 'I' (cond, iftrue, iffalse) {
-		if cond.run().as_boolean() {
+		if cond.to_boolean()? {
 			iftrue.run()
 		} else {
 			iffalse.run()
@@ -239,24 +281,27 @@ functions! {
 	}
 
 	fn 'G' (string, start, length) {
-		string.run()
-			.as_string()
-			.chars()
-			.skip(start.run().as_number() as usize)
-			.take(length.run().as_number() as usize)
-			.collect::<String>()
-			.into()
+		Ok(Value::String(
+			string
+				.to_rcstr()?
+				.chars()
+				.skip(start.to_number()? as usize)
+				.take(length.to_number()? as usize)
+				.collect::<String>()
+				.into()
+		))
 	}
 
 	fn 'S' (string, start, length, repl) {
-		let s = string.run().as_string().into_owned();
-		let start = start.run().as_number() as usize;
-		let stop = start + length.run().as_number() as usize;
+		let s = string.to_rcstr()?;
+		let start = start.to_number()? as usize;
+		let stop = start + length.to_number()? as usize;
 
 		let mut x = s.chars().take(start).collect::<String>();
-		x.push_str(&repl.run().as_string());
+		x.push_str(&repl.to_rcstr()?);
 		x.extend(s.chars().skip(stop));
 
-		Value::String(x)
+		Ok(Value::String(x.into()))
 	}
+
 }

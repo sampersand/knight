@@ -1,41 +1,29 @@
+use crate::{Value, RuntimeError};
 use std::collections::HashMap;
-use std::mem::MaybeUninit;
-use crate::Value;
+use once_cell::unsync::OnceCell;
+use std::cell::RefCell;
 
-static mut ENVIRONMENT: MaybeUninit<HashMap<String, Value>> = MaybeUninit::uninit();
+static mut ENVIRONMENT: OnceCell<RefCell<HashMap<&'static str, Value>>> = OnceCell::new();
 
-
-static mut INITIALIZED: bool = false;
-
-pub fn initialize() {
-	unsafe {
-		if !INITIALIZED {
-			INITIALIZED = true;
-			ENVIRONMENT.as_mut_ptr().write(HashMap::new());
-		}
-	}
+#[allow(unsafe_code)]
+pub fn get(ident: &str) -> Result<Value, RuntimeError> {
+	unsafe { &ENVIRONMENT }
+		.get()
+		.and_then(|env| env.borrow().get(ident).cloned())
+		.ok_or_else(|| RuntimeError::UnknownIdentifier(ident.to_owned()))
 }
 
-pub fn get(ident: &str) -> Option<&Value> {
-	// SAFETY: Knight only ever runs in one thread, so no race conditions.
-	//
-	// additionally, we know that `ENVIRONMENT` is initialized because `initialize` is always
-	// run before knight code is executed.
-	unsafe {
-		debug_assert!(INITIALIZED);
+#[allow(unsafe_code)]
+pub fn insert(ident: &str, value: Value) {
 
-		(*ENVIRONMENT.as_ptr()).get(ident)
-	}
-}
+	let mut env =
+		unsafe { &ENVIRONMENT }
+			.get_or_init(Default::default)
+			.borrow_mut();
 
-pub fn set(ident: String, value: Value) {
-	// SAFETY: Knight only ever runs in one thread, so no race conditions.
-	//
-	// additionally, we know that `ENVIRONMENT` is initialized because `initialize` is always
-	// run before knight code is executed.
-	unsafe {
-		debug_assert!(INITIALIZED);
-
-		(*ENVIRONMENT.as_mut_ptr()).insert(ident, value);
+	if let Some(old) = env.get_mut(ident) {
+		*old = value 
+	} else {
+		env.insert(Box::leak(ident.to_string().into_boxed_str()), value);
 	}
 }

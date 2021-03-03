@@ -1,52 +1,57 @@
-use std::borrow::Cow;
-use std::ops;
-use crate::Ast;
-
-pub type Integer = i128;
+use crate::{Function, Number, RcStr, RuntimeError};
+use std::rc::Rc;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value {
 	Null,
 	Boolean(bool),
-	Number(Integer),
-	String(String),
-	Ast(Box<Ast>)
+	Number(Number),
+	String(RcStr),
+	Identifier(String),
+	Function(Function, Rc<[Value]>)
 }
 
-impl Value {
-	pub fn as_boolean(&self) -> bool {
-		From::from(self)
-	}
+impl TryFrom<&Value> for bool {
+	type Error = RuntimeError;
 
-	pub fn as_number(&self) -> Integer {
-		From::from(self)
-	}
-
-	pub fn as_string(&self) -> Cow<str> {
-		From::from(self)
-	}
-}
-
-impl From<&Value> for bool {
-	fn from(value: &Value) -> Self {
+	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
 		match value {
-			Value::Null => false,
-			Value::Boolean(boolean) => *boolean,
-			Value::Number(number) => *number != 0,
-			Value::String(string) => !string.is_empty(),
-			Value::Ast(ast) => From::from(&ast.run())
+			Value::Null => Ok(false),
+			Value::Boolean(boolean) => Ok(*boolean),
+			Value::Number(number) => Ok(*number != 0),
+			Value::String(string) => Ok(!string.is_empty()),
+			_ => value.run().and_then(|value| TryFrom::try_from(&value))
 		}
 	}
 }
 
-impl From<&Value> for Integer {
-	fn from(value: &Value) -> Self {
+impl TryFrom<&Value> for RcStr {
+	type Error = RuntimeError;
+
+	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
 		match value {
-			Value::Null => 0,
-			Value::Boolean(false) => 0,
-			Value::Boolean(true) => 1,
-			Value::Number(number) => *number,
-			Value::String(string) => {
+			Value::Null => Ok(RcStr::new_literal("null")),
+			Value::Boolean(true) => Ok(RcStr::new_literal("true")),
+			Value::Boolean(false) => Ok(RcStr::new_literal("false")),
+			Value::Number(0) => Ok(RcStr::new_literal("0")),
+			Value::Number(number) => Ok(RcStr::new_shared(number)),
+			Value::String(string) => Ok(string.clone()),
+			_ => value.run().and_then(|value| TryFrom::try_from(&value))
+		}
+	}
+}
+
+impl TryFrom<&Value> for Number {
+	type Error = RuntimeError;
+
+	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
+		match value {
+			Value::Null => Ok(0),
+			Value::Boolean(false) => Ok(0),
+			Value::Boolean(true) => Ok(1),
+			Value::Number(number) => Ok(*number),
+			Value::String(string) => Ok({
 				let mut string = string.trim();
 				let is_negative = string.chars().nth(0) == Some('-');
 
@@ -60,162 +65,163 @@ impl From<&Value> for Integer {
 					None if string.is_empty() => 0,
 					None => string.parse().unwrap()
 				}
-			},
-			Value::Ast(ast) => From::from(&ast.run())
+			}),
+			_ => value.run().and_then(|value| TryFrom::try_from(&value))
 		}
-	}
-}
-
-impl<'a> From<&'a Value> for Cow<'a, str>  {
-	fn from(value: &'a Value) -> Self {
-		match value {
-			Value::Null => Cow::Borrowed("null"),
-			Value::Boolean(true) => Cow::Borrowed("true"),
-			Value::Boolean(false) => Cow::Borrowed("false"),
-			Value::Number(number) => Cow::Owned(number.to_string()),
-			Value::String(string) => Cow::Borrowed(string.as_ref()),
-			Value::Ast(ast) => Cow::from(&ast.run()).into_owned().into()
-		}
-	}
-}
-
-impl From<()> for Value {
-	#[inline]
-	fn from(_: ()) -> Self {
-		Self::Null
-	}
-}
-
-impl From<bool> for Value {
-	#[inline]
-	fn from(value: bool) -> Self {
-		Self::Boolean(value)
-	}
-}
-
-impl From<Integer> for Value {
-	#[inline]
-	fn from(integer: Integer) -> Self {
-		Self::Number(integer)
-	}
-}
-
-impl From<String> for Value {
-	#[inline]
-	fn from(string: String) -> Self {
-		Self::String(string)
-	}
-}
-
-impl From<Ast> for Value {
-	#[inline]
-	fn from(ast: Ast) -> Self {
-		Self::Ast(Box::new(ast))
-	}
-}
-
-impl ops::Add<Value> for Value {
-	type Output = Self;
-
-	fn add(self, rhs: Self) -> Self {
-		if let Self::String(string) = self {
-			Self::from(string.to_owned() + &rhs.as_string())
-		} else {
-			Self::from(self.as_number() + rhs.as_number())
-		}
-	}
-}
-
-impl ops::Sub<Value> for Value {
-	type Output = Self;
-
-	fn sub(self, rhs: Self) -> Self {
-		Self::from(self.as_number() - rhs.as_number())
-	}
-}
-
-impl ops::Mul<Value> for Value {
-	type Output = Self;
-
-	fn mul(self, rhs: Self) -> Self {
-		if let Self::String(string) = self {
-			let amnt = rhs.as_number();
-
-			if amnt <= 0 || string.is_empty() {
-				Self::from(String::default())
-			} else if amnt > usize::MAX as Integer {
-				panic!("Too much memory to be allocated!");
-			} else {
-				Self::from(string.repeat(amnt as usize))
-			}
-		} else {
-			Self::from(self.as_number() * rhs.as_number())
-		}
-	}
-}
-
-impl ops::Div<Value> for Value {
-	type Output = Self;
-
-	fn div(self, rhs: Self) -> Self {
-		let lhs = self.as_number();
-		let rhs = rhs.as_number();
-
-		if rhs == 0 {
-			die!("division by zero encountered.");
-		}
-
-		Self::from(lhs / rhs)
-	}
-}
-
-impl ops::Rem<Value> for Value {
-	type Output = Self;
-
-	fn rem(self, rhs: Self) -> Self {
-		let lhs = self.as_number();
-		let rhs = rhs.as_number();
-
-		if rhs == 0 {
-			die!("modulo by zero encountered.");
-		}
-
-		Self::from(lhs % rhs)
 	}
 }
 
 impl Value {
-	pub fn pow(self, rhs: Self) -> Self {
-		Self::from(self.as_number().pow(rhs.as_number() as u32))
-	}
-
-	fn cmp(&self, rhs: &Self) -> std::cmp::Ordering {
+	const fn typename(&self) -> &'static str {
 		match self {
-			Self::Null => die!("cannot compare null."),
-			Self::Boolean(boolean) => boolean.cmp(&rhs.as_boolean()),
-			Self::Number(integer) => integer.cmp(&rhs.as_number()),
-			Self::String(string) => string.as_str().cmp(&rhs.as_string()),
-			Self::Ast(ast) => ast.run().cmp(rhs)
+			Self::Null => "Null",
+			Self::Boolean(_) => "Boolean",
+			Self::Number(_) => "Number",
+			Self::String(_) => "String",
+			Self::Identifier(_) => "Identifier",
+			Self::Function(_, _) => "Function",
 		}
 	}
 
-	// note we do this because our `==` and comparison functions don't have the same
-	// comparison semantics.
-	pub fn lth(&self, rhs: &Self) -> bool {
-		self.cmp(rhs) == std::cmp::Ordering::Less
+	pub fn run(&self) -> Result<Self, RuntimeError> {
+		match self {
+			Self::Null => Ok(Self::Null),
+			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),
+			Self::Number(number) => Ok(Self::Number(*number)),
+			Self::String(rcstr) => Ok(Self::String(rcstr.clone())),
+			Self::Identifier(ident) => crate::env::get(ident),
+			Self::Function(func, args) => (func.func())(&args),
+		}
 	}
 
-	// note we do this because our `==` and comparison functions don't have the same
-	// comparison semantics.
-	pub fn gth(&self, rhs: &Self) -> bool {
-		self.cmp(rhs) == std::cmp::Ordering::Greater
+	pub fn to_boolean(&self) -> Result<bool, RuntimeError> {
+		TryFrom::try_from(self)
 	}
 
-	pub fn run(&self) -> Value {
-		if let Self::Ast(ast) = self {
-			ast.run()
+	pub fn to_number(&self) -> Result<Number, RuntimeError> {
+		TryFrom::try_from(self)
+	}
+
+	pub fn to_rcstr(&self) -> Result<RcStr, RuntimeError> {
+		TryFrom::try_from(self)
+	}
+}
+
+impl Value {
+	pub fn try_add(&self, rhs: &Self) -> Result<Self, RuntimeError> {
+		match self {
+			Self::Number(lhs) =>
+				rhs.to_number()
+					.map(|rhs| lhs + rhs)
+					.map(Self::Number),
+
+			Self::String(lhs) =>
+				rhs.to_rcstr()
+					.map(|rhs| lhs.to_string() + &rhs)
+					.map(From::from)
+					.map(Self::String),
+
+			_ => Err(RuntimeError::InvalidOperand { func: '+', operand: self.typename() })
+		}
+	}
+
+	pub fn try_sub(&self, rhs: &Self) -> Result<Self, RuntimeError> {
+		match self {
+			Self::Number(lhs) =>
+				rhs.to_number()
+					.map(|rhs| lhs - rhs)
+					.map(Self::Number),
+
+			_ => Err(RuntimeError::InvalidOperand { func: '-', operand: self.typename() })
+		}
+	}
+
+	pub fn try_mul(&self, rhs: &Self) -> Result<Self, RuntimeError> {
+		match self {
+			Self::Number(lhs) =>
+				rhs.to_number()
+					.map(|rhs| lhs * rhs)
+					.map(Self::Number),
+
+			Self::String(lhs) =>
+				rhs.to_number()
+					.map(|rhs| (0..rhs).map(|_| lhs.as_str()).collect::<String>())
+					.map(From::from)
+					.map(Self::String),
+
+			_ => Err(RuntimeError::InvalidOperand { func: '*', operand: self.typename() })
+		}
+	}
+
+	pub fn try_div(&self, rhs: &Self) -> Result<Self, RuntimeError> {
+		let lhs = 
+			if let Self::Number(lhs) =self {
+				lhs
+			} else {
+				return Err(RuntimeError::InvalidOperand { func: '/', operand: self.typename() });
+			};
+
+		let rhs = rhs.to_number()?;
+
+		if rhs == 0 {
+			Err(RuntimeError::DivisionByZero { modulo: false })
 		} else {
-			self.clone()
+			Ok(Self::Number(lhs / rhs))
+		}
+	}
+
+	pub fn try_rem(&self, rhs: &Self) -> Result<Self, RuntimeError> {
+		let lhs = 
+			if let Self::Number(lhs) =self {
+				lhs
+			} else {
+				return Err(RuntimeError::InvalidOperand { func: '%', operand: self.typename() });
+			};
+
+		let rhs = rhs.to_number()?;
+
+		if rhs == 0 {
+			Err(RuntimeError::DivisionByZero { modulo: true })
+		} else {
+			Ok(Self::Number(lhs % rhs))
+		}
+	}
+
+	pub fn try_pow(&self, rhs: &Self) -> Result<Self, RuntimeError> {
+		match self {
+			Self::Number(lhs) =>
+				rhs.to_number()
+					// .map(|rhs| lhs.pow(rhs))
+					.map(|_rhs| todo!("{:?}", lhs))
+					.map(Self::Number),
+
+			_ => Err(RuntimeError::InvalidOperand { func: '^', operand: self.typename() })
+		}
+	}
+
+	pub fn try_lth(&self, rhs: &Self) -> Result<bool, RuntimeError> {
+		match self {
+			Self::Number(lhs) => rhs.to_number().map(|rhs| *lhs < rhs),
+			Self::Boolean(lhs) => rhs.to_boolean().map(|rhs| !lhs && rhs),
+			Self::String(lhs) => rhs.to_rcstr().map(|rhs| lhs.as_str() < rhs.as_str()),
+			_ => Err(RuntimeError::InvalidOperand { func: '<', operand: self.typename() })
+		}
+	}
+
+	pub fn try_gth(&self, rhs: &Self) -> Result<bool, RuntimeError> {
+		match self {
+			Self::Number(lhs) => rhs.to_number().map(|rhs| *lhs > rhs),
+			Self::Boolean(lhs) => rhs.to_boolean().map(|rhs| *lhs && !rhs),
+			Self::String(lhs) => rhs.to_rcstr().map(|rhs| lhs.as_str() > rhs.as_str()),
+			_ => Err(RuntimeError::InvalidOperand { func: '>', operand: self.typename() })
+		}
+	}
+
+	pub fn try_eql(&self, rhs: &Self) -> Result<bool, RuntimeError> {
+		if matches!(self, Self::Identifier(_) | Self::Function(_, _)) {
+			Err(RuntimeError::InvalidOperand { func: '?', operand: self.typename() })
+		} else {
+			Ok(self == rhs)
 		}
 	}
 }
