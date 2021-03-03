@@ -15,6 +15,10 @@ void kn_function_initialize(void);
 struct kn_function_t kn_fn_prompt;
 struct kn_function_t kn_fn_random;
 
+#ifdef KN_EXT_VALUE
+struct kn_function_t kn_fn_value;
+#endif
+
 struct kn_function_t kn_fn_eval;
 struct kn_function_t kn_fn_block;
 struct kn_function_t kn_fn_call;

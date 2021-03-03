@@ -59,6 +59,18 @@ DECLARE_FUNCTION(rand, 0, 'R') {
 	return kn_value_new_number((kn_number_t) rand());
 }
 
+#ifdef KN_EXT_VALUE
+DECLARE_FUNCTION(value, 1, 'V') {
+	// otherwise, evaluate the expression, convert to a string,
+	// and then use that as the identifier.
+	const struct kn_string_t *ident = kn_value_to_string(args[0]);
+	kn_value_t *ptr = kn_env_fetch(ident->str, false);
+	kn_string_free(ident);
+
+	return kn_value_clone(*ptr);
+}
+#endif
+
 DECLARE_FUNCTION(eval, 1, 'E') {
 	const struct kn_string_t *arg0 = kn_value_to_string(args[0]);
 	kn_value_t ret = kn_run(arg0->str);
@@ -196,15 +208,22 @@ DECLARE_FUNCTION(add, 2, '+') {
 			kn_value_to_string(args[1]));
 	}
 
-	assert(kn_value_is_number(lhs));
-	kn_number_t number = kn_value_as_number(lhs);
+	assert_reckless(kn_value_is_number(lhs));
 
-	return kn_value_new_number(number + kn_value_to_number(args[1]));
+	kn_number_t lhs_num = kn_value_as_number(lhs);
+	kn_number_t rhs_num = kn_value_to_number(args[1]);
+
+	return kn_value_new_number(lhs_num + rhs_num);
 }
 
 DECLARE_FUNCTION(sub, 2, '-') {
-	return kn_value_new_number(
-		kn_value_to_number(args[0]) - kn_value_to_number(args[1]));
+	kn_value_t lhs = kn_value_run(args[0]);
+	assert_reckless(kn_value_is_number(lhs));
+
+	kn_number_t lhs_num = kn_value_as_number(lhs);
+	kn_number_t rhs_num = kn_value_to_number(args[1]);
+
+	return kn_value_new_number(lhs_num - rhs_num);
 }
 
 static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
@@ -243,35 +262,53 @@ DECLARE_FUNCTION(mul, 2, '*') {
 			(size_t) kn_value_to_number(args[1]));
 	}
 	
-	assert(kn_value_is_number(lhs));
-	kn_number_t number = kn_value_to_number(lhs);
+	assert_reckless(kn_value_is_number(lhs));
 
-	return kn_value_new_number(number * kn_value_to_number(args[1]));
+	kn_number_t lhs_num = kn_value_as_number(lhs);
+	kn_number_t rhs_num = kn_value_to_number(args[1]);
+
+	return kn_value_new_number(lhs_num * rhs_num);
 }
 
 DECLARE_FUNCTION(div, 2, '/') {
-	kn_number_t dividend = kn_value_to_number(args[0]);
+	kn_value_t lhs = kn_value_run(args[0]);
+
+	assert_reckless(kn_value_is_number(lhs));
+
+	kn_number_t dividend = kn_value_as_number(lhs);
 	kn_number_t divisor = kn_value_to_number(args[1]);
 
+#ifndef RECKLESS
 	if (divisor == 0)
 		die("attempted to divide by zero");
+#endif
 
 	return kn_value_new_number(dividend / divisor);
 }
 
 DECLARE_FUNCTION(mod, 2, '%') {
-	kn_number_t number = kn_value_to_number(args[0]);
+	kn_value_t lhs = kn_value_run(args[0]);
+
+	assert_reckless(kn_value_is_number(lhs));
+
+	kn_number_t number = kn_value_as_number(lhs);
 	kn_number_t base = kn_value_to_number(args[1]);
 
+#ifndef RECKLESS
 	if (base == 0)
 		die("attempted to modulo by zero");
+#endif
 
 	return kn_value_new_number(number % base);
 }
 
 DECLARE_FUNCTION(pow, 2, '^') {
+	kn_value_t lhs = kn_value_run(args[0]);
+
+	assert_reckless(kn_value_is_number(lhs));
+
 	kn_number_t result = 1;
-	kn_number_t base = kn_value_to_number(args[0]);
+	kn_number_t base = kn_value_as_number(lhs);
 	kn_number_t exponent = kn_value_to_number(args[1]);
 
 	// there's no builtin way to do integer exponentiation, so we have to
@@ -322,10 +359,10 @@ DECLARE_FUNCTION(lth, 2, '<') {
 		kn_string_free(rstr);
 	} else if (kn_value_is_number(lhs)) {
 		less = kn_value_as_number(lhs) < kn_value_to_number(args[1]);
-	} else if (kn_value_is_boolean(lhs)) {
-		less = kn_value_to_boolean(args[1]) && lhs == KN_FALSE;
 	} else {
-		die("invalid value %d", lhs);
+		assert_reckless(kn_value_is_boolean(lhs));
+
+		less = kn_value_to_boolean(args[1]) && lhs == KN_FALSE;
 	}
 
 	return kn_value_new_boolean(less);
@@ -345,10 +382,10 @@ DECLARE_FUNCTION(gth, 2, '>') {
 		kn_string_free(rstr);
 	} else if (kn_value_is_number(lhs)) {
 		more = kn_value_as_number(lhs) > kn_value_to_number(args[1]);
-	} else if (kn_value_is_boolean(lhs)) {
-		more = !kn_value_to_boolean(args[1]) && lhs == KN_TRUE;
 	} else {
-		die("invalid value %d", lhs);
+		assert_reckless(kn_value_is_boolean(lhs));
+
+		more = !kn_value_to_boolean(args[1]) && lhs == KN_TRUE;
 	}
 
 	return kn_value_new_boolean(more);
@@ -392,26 +429,32 @@ DECLARE_FUNCTION(then, 2, ';') {
 	inner:
 		ret = kn_value_run(args[i++]);
 	} while (args[i] != KN_UNDEFINED);
+
 	return ret;
 #endif
 }
 
 DECLARE_FUNCTION(assign, 2, '=') {
 	kn_value_t ret;
+	kn_value_t *ptr;
 
 	// if it's an identifier, special-case it where we don't evaluate it.
 	if (kn_value_is_identifier(args[0])) {
+		ptr = kn_value_as_identifier(args[0]);
 		ret = kn_value_run(args[1]);
-		kn_env_set(kn_value_as_identifier(args[0]), kn_value_clone(ret));
 	} else {
 		// otherwise, evaluate the expression, convert to a string,
 		// and then use that as the identifier.
 		const struct kn_string_t *ident = kn_value_to_string(args[0]);
+		ptr = kn_env_fetch(ident->str, false);
+		kn_string_free(ident);
 
 		ret = kn_value_run(args[1]);
-		kn_env_set(ident->str, kn_value_clone(ret));
-		kn_string_free(ident);
 	}
+
+	if (*ptr != KN_UNDEFINED)
+		kn_value_free(*ptr);
+	*ptr = kn_value_clone(ret);
 
 	return ret;
 }
@@ -442,17 +485,20 @@ DECLARE_FUNCTION(get, 3, 'G') {
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
-	char *substr;
-	// if (strig->)
+	const struct kn_string_t *result;
+	if (string->length <= amnt + start) {
+		result = kn_string_tail(string, start);
+	} else {
+		char *substr = xmalloc(amnt + 1);
 
-	substr = xmalloc(amnt + 1);
+		memcpy(substr, string->str, amnt);
+		substr[amnt] = '\0';
 
-	memcpy(substr, string->str, amnt);
-	substr[amnt] = '\0';
+		result = kn_string_emplace(substr, amnt);
+	}
 
 	kn_string_free(string);
-
-	return kn_value_new_string(kn_string_emplace(substr, amnt));
+	return kn_value_new_string(result);
 }
 
 DECLARE_FUNCTION(set, 4, 'S') {
@@ -463,6 +509,12 @@ DECLARE_FUNCTION(set, 4, 'S') {
 
 	size_t string_length = (size_t) string->length;
 	size_t substr_length = (size_t) substr->length;
+
+	if (start == 0 && substr_length == 0) {
+		kn_string_free(substr);
+		kn_string_free(string);
+		return kn_value_new_string(kn_string_tail(string, amnt));
+	}
 
 	// if it's out of bounds, die.
 	if (string_length < start)

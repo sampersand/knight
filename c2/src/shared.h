@@ -11,13 +11,15 @@
  */
 void die(const char *msg, ...) __attribute__((noreturn,cold));
 
-/* 
- * A macro that's used to indicate an internal bug occurred. This macro
- * _should_ never be executed, as doing so indicates a bug in the program.
- */
-#define bug(msg, ...) \
-	die("%s:%s:%d: bug encountered: " msg "\n", \
-		__FILE__, __func__, __LINE__, ##__VA_ARGS__)
+
+#ifdef RECKLESS
+#define assert_reckless(value) 
+#else
+#define assert_reckless(value) \
+	do { \
+		if (!(value)) die("expr failed: %s", #value); \
+	} while(0)
+#endif
 
 /*
  * Allocates `size_t` bytes of memory and returns a pointer to it.

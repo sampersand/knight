@@ -9,6 +9,7 @@
 #include "shared.h"
 #include "function.h"
 #include "ast.h"
+#include "env.h"
 
 static int isparen(char c) {
 	return c == ':'
@@ -70,7 +71,9 @@ kn_value_t kn_parse(register const char **stream) {
 #ifdef COMPUTED_GOTOS
 	static const void *LABELS[256] = {
 		['\0'] = &&expected_token,
+#ifndef RECKLESS
 		[0x01 ... 0x08] = &&invalid,
+#endif RECKLESS
 		['\t' ... '\r'] = &&whitespace,
 		[0x0e ... 0x1f] = &&invalid,
 		[' ']  = &&whitespace,
@@ -118,7 +121,11 @@ kn_value_t kn_parse(register const char **stream) {
 		['S']  = &&function_set,
 		['T']  = &&literal_true,
 		['U']  = &&invalid,
+#ifdef KN_EXT_VALUE
+		['V']  = &&function_value,
+#else
 		['V']  = &&invalid,
+#endif
 		['W']  = &&function_while,
 		['X']  = &&invalid,
 		['Y']  = &&invalid,
@@ -186,7 +193,9 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 
 	while (isident(ADVANCE_PEEK()));
 
-	return kn_value_new_identifier(kn_string_emplace(start, *stream - start));
+
+	return kn_value_new_identifier(
+		kn_env_fetch(strndup(start, *stream - start), true));
 }
 
 LABEL(string)
@@ -204,7 +213,7 @@ CASES2('\'', '\"')
 
 	return kn_value_new_string(
 		length
-		? kn_string_emplace(start, length)
+		? kn_string_emplace(strndup(start, length), length)
 		: &KN_STRING_EMPTY);
 }
 
@@ -251,6 +260,10 @@ WORD_FUNC(quit, 'Q');
 WORD_FUNC(random, 'R');
 WORD_FUNC(set, 'S');
 WORD_FUNC(while, 'W');
+
+#ifdef KN_EXT_VALUE
+WORD_FUNC(value, 'V');
+#endif
 
 parse_kw_function:
 	while (isupper(ADVANCE_PEEK()));
