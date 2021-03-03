@@ -3,6 +3,7 @@
 #include <errno.h>
 
 #include "knight.h"
+#include "value.h"
 #include "shared.h"
 
 void usage(const char *program_name) {
@@ -15,6 +16,7 @@ char *read_file(const char *filename) {
 	if (file == NULL) {
 		die("unable to read file '%s': %s", filename, strerror(errno));
 	}
+
 
 	size_t len = 0;
 	size_t cap = 2048;
@@ -68,12 +70,8 @@ int main(int argc, const char **argv) {
 	}
 
 	kn_init();
-
-	struct kn_value_t ret = kn_run(string);
-
-	kn_value_free(&ret);
-
-	// kn_free();
+	kn_value_free(kn_run(string));
+	kn_free();
 
 	return 0;
 }

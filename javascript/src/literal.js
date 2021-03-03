@@ -5,7 +5,7 @@ import { Value } from './value.js';
  * JavaScript built-in.
  *
  * @template {T}
- *
+ * @abstract
  * @see Value - For more information on why we don't simply use built-ins.
  */
 export class Literal extends Value {
@@ -38,7 +38,7 @@ export class Literal extends Value {
 	}
 
 	/**
-	 * Converts this class's `_data` to a JavaScript `String`.
+	 * Converts this class's `_data` to a JavaScript `string`.
 	 *
 	 * @return {string}
 	 */
@@ -47,7 +47,7 @@ export class Literal extends Value {
 	}
 
 	/**
-	 * Converts this class's `_data` to a JavaScript `Number`.
+	 * Converts this class's `_data` to a JavaScript `number`.
 	 *
 	 * @return {number}
 	 */
@@ -56,7 +56,7 @@ export class Literal extends Value {
 	}
 
 	/**
-	 * Converts this class's `_data` to a JavaScript `Boolean`.
+	 * Converts this class's `_data` to a JavaScript `boolean`.
 	 *
 	 * @return {boolean}
 	 */
@@ -65,7 +65,7 @@ export class Literal extends Value {
 	}
 
 	/**
-	 * A `Literal` is only equal to another instance _of the same type_, which
+	 * A `Literal` is only equal to another instance of the same type_, which
 	 * also has the same `_data`.
 	 *
 	 * @param {Value} rhs - The value to compare against `this`.

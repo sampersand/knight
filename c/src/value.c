@@ -53,8 +53,11 @@ static struct kn_string_t string_from_integer(kn_integer_t num) {
 	// start two back, as the last one's `\0`.
 	char *ptr = &buf[sizeof(buf) - 1];
 
+	// optimize for the case where we have a literal `0` or `1`.
 	if (num == 0) {
 		return kn_string_intern("0");
+	} else if (num == 1) {
+		return kn_string_intern("1");
 	}
 
 	if (is_neg) {

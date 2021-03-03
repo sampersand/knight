@@ -17,7 +17,7 @@ void die(const char *msg, ...) __attribute__((noreturn,cold));
  */
 #define bug(msg, ...) \
 	die("%s:%s:%d: bug encountered: " msg "\n", \
-		__FILE__, __func__, __LINE__, __VA_ARGS__)
+		__FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
 /*
  * Allocates `size_t` bytes of memory and returns a pointer to it.
@@ -25,7 +25,7 @@ void die(const char *msg, ...) __attribute__((noreturn,cold));
  * This is identical to the stdlib's `malloc`, except the program is aborted
  * instead of returning `NULL`.
  */
-void *xmalloc(size_t size);
+void *xmalloc(size_t size) __attribute__((malloc));
 
 /*
  * Resizes the pointer to a segment of at least `size_t` bytes of memory and,

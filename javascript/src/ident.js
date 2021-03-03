@@ -2,6 +2,10 @@ import { Value, TYPES } from './value.js';
 import { RuntimeError } from './error.js';
 
 /**
+ * @typedef {import('./stream.js').Stream} Stream
+ */
+
+/**
  * The list of all known identifiers.
  *
  * @private
@@ -20,11 +24,11 @@ export class Ident extends Value {
 	#ident;
 
 	/**
-	 * Attempts to parse an `Ident` from the `stream`.`
+	 * Attempts to parse an `Ident` from the `stream`.
 	 *
-	 * @param {import('./stream.js').Stream} stream - The stream to parse from.
-	 * @return {Ident|null} - The parsed identifier, or `null` if the stream did
-	 *                        not start with an identifier.
+	 * @param {Stream} stream - The stream with which to parse.
+	 * @return {Ident|null} - The parsed `Ident`, or `null` if the stream did not
+	 *                        start with an `Ident`.
 	 */
 	static parse(stream) {
 		const match = stream.match(/^[a-z_][a-z0-9_]*/);
@@ -55,21 +59,12 @@ export class Ident extends Value {
 	/**
 	 * Associates `value` with this class.
 	 *
-	 * Note that this will actually `run` the `value`---this is because it allows
-	 * for a much easier implementation of `assign`, where `= (+ "a" x) ...` will
-	 * only evaluate `value` after it evaluates the `Ident`.
-	 *
 	 * Any previously associated `Value` is simply discarded.
-	 * 
+	 *
 	 * @param {Value} value - The value to associate with this identifier's name.
-	 * @return {Value} - The result of running `value`.
 	 */
 	assign(value) {
-		value = value.run();
-
 		ENVIRONMENT[this.#ident] = value;
-
-		return value;
 	}
 
 	/**
@@ -81,13 +76,13 @@ export class Ident extends Value {
 	run() {
 		const value = ENVIRONMENT[this.#ident];
 
-		if (value) {
-			return value;
-		} else {
+		if (value === undefined) {
 			throw new RuntimeError(`Unknown identifier '${this.#ident}'`);
+		} else {
+			return value;
 		}
 	}
 }
 
-// Add the `Ident` class to the list of known types, so it can be parsed.	
+// Add the `Ident` class to the list of known types, so it can be parsed.
 TYPES.push(Ident);

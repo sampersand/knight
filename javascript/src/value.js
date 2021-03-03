@@ -1,4 +1,8 @@
 /**
+ * @typedef {import('./stream.js').Stream} Stream
+ */
+
+/**
  * The list of known types; used when parsing `Value`s.
  *
  * When parsing, this array will be traversed in order; the first matching
@@ -30,9 +34,8 @@ export class Value {
 	/**
 	 * Attempts to parse out a new value from the given `stream`.
 	 *
-	 * @param {}
-	 * @param {import('./stream.js').Stream} stream - The stream to parse.
-	 * @return {null|Value} - Returns the parsed value, or `null` if nothing
+	 * @param {Stream} stream - The stream to parse.
+	 * @return {Value|null} - Returns the parsed value, or `null` if nothing
 	 *                        could be parsed.
 	 */
 	static parse(stream) {
