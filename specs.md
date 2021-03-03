@@ -135,8 +135,9 @@ Functions in Knight are how everything works.
 
 Functions:
 `O` and `W` both return null always
-
+`=` technically only supports variable names as the first argument.
 
 # Details
 ## Functions
 ### Adding new functions.
+
