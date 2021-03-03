@@ -6,10 +6,12 @@ edition = "2018"
 description = "The Knight programming language, in Rust"
 
 [features]
-default = ["pretty-errors"]
+default = ["pretty-errors", "enum-value"]
 
-reck = []
-pretty-errors = ["reck"]
+reckless = []
+enum-value = []
+fatal-errors = []
+pretty-errors = []
 
 [dependencies]
 rand = "0.8.0"

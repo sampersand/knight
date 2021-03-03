@@ -1,4 +1,8 @@
-#[deny(unsafe_code)]
+#![deny(unsafe_code)]
+
+#[cfg(all(feature="pretty-errors", any(feature="reckless", feature="fatal-errors")))]
+compile_error!("'pretty-errors' cannot be enabled with either 'reckless' or 'fatal-errors'!");
+
 
 mod value;
 mod error;

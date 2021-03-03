@@ -1,4 +1,4 @@
-use crate::{Value, RuntimeError};
+use crate::{Value, RuntimeError, Number};
 use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
@@ -107,16 +107,17 @@ declare_functions! {
 
 		io::stdin().read_line(&mut buf)?;
 
-		Ok(Value::String(buf.into()))
+		Ok(buf.into())
 	}
 
 	fn 'R'() {
-		Ok(Value::Number(rand::random()))
+		Ok(rand::random::<Number>().into())
 	}
 
 
 	fn 'E' (arg) {
-		arg.to_rcstr().and_then(|arg| crate::run_str(&arg))
+		arg.to_rcstr()
+			.and_then(|arg| crate::run_str(&arg))
 	}
 
 	fn 'B' (block) {
@@ -134,8 +135,7 @@ declare_functions! {
 			.output()
 			.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())
 			.map_err(From::from)
-			.map(From::from)
-			.map(Value::String)
+			.map(Value::from)
 	}
 
 	fn 'Q' (code) {
@@ -143,11 +143,15 @@ declare_functions! {
 	}
 
 	fn '!' (code) {
-		Ok(Value::Boolean(!code.to_boolean()?))
+		code.to_boolean()
+			.map(|boolean| !boolean)
+			.map(Value::from)
 	}
 
 	fn 'L' (string) {
-		Ok(Value::Number(string.to_rcstr()?.len() as _))
+		string.to_rcstr()
+			.map(|rcstr| rcstr.len() as Number)
+			.map(Value::from)
 	}
 
 	fn 'D' (value) {
@@ -169,7 +173,7 @@ declare_functions! {
 			println!("{}", text);
 		}
 
-		Ok(Value::Null)
+		Ok(Value::default())
 	}
 
 	fn '+' (lhs, rhs) {
@@ -197,15 +201,15 @@ declare_functions! {
 	}
 
 	fn '?' (lhs, rhs) {
-		lhs.run()?.try_eql(&rhs.run()?).map(Value::Boolean)
+		lhs.run()?.try_eql(&rhs.run()?).map(Value::from)
 	}
 
 	fn '<' (lhs, rhs) {
-		lhs.run()?.try_lth(&rhs.run()?).map(Value::Boolean)
+		lhs.run()?.try_lth(&rhs.run()?).map(Value::from)
 	}
 
 	fn '>' (lhs, rhs) {
-		lhs.run()?.try_gth(&rhs.run()?).map(Value::Boolean)
+		lhs.run()?.try_gth(&rhs.run()?).map(Value::from)
 	}
 
 	fn '&' (lhs, rhs) {
