@@ -135,7 +135,7 @@ UPPER := [A-Z]
 A
 BLOCK (body) - Anonymous function.
 CALL (block) - Calls `block`.
-D
+DEBUG (code) - Prints debugging information for `code`.
 EVAL (string) - Evaluates `string`.
 FALSE () - `FALSE` literal.
 GET (string, index, length) - Gets a substring of length `length` from `string` starting at `index`.
