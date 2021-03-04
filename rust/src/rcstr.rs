@@ -8,7 +8,7 @@ pub struct RcStr(Inner);
 #[derive(Debug, Clone)]
 enum Inner {
 	Literal(&'static str),
-	Rc(Rc<str>)
+	Shared(Rc<str>)
 }
 
 impl Default for RcStr {
@@ -29,9 +29,9 @@ impl Debug for RcStr {
 					.field(&literal)
 					.finish(),
 
-			Inner::Rc(rc) =>
-				f.debug_tuple("RcStr::Rc")
-					.field(&rc)
+			Inner::Shared(shared) =>
+				f.debug_tuple("RcStr::Shared")
+					.field(&shared)
 					.finish()
 		}
 	}
@@ -75,13 +75,13 @@ impl RcStr {
 	}
 
 	pub fn new_shared(string: impl ToString) -> Self {
-		Self(Inner::Rc(string.to_string().into()))
+		Self(Inner::Shared(string.to_string().into()))
 	}
 
 	pub fn as_str(&self) -> &str {
 		match &self.0 {
 			Inner::Literal(literal) => literal,
-			Inner::Rc(rc) => &*rc
+			Inner::Shared(shared) => &*shared
 		}
 	}
 }
@@ -95,8 +95,8 @@ impl From<&'static str> for RcStr {
 
 impl From<Rc<str>> for RcStr {
 	#[inline]
-	fn from(rc: Rc<str>) -> Self {
-		Self(Inner::Rc(rc))
+	fn from(shared: Rc<str>) -> Self {
+		Self(Inner::Shared(shared))
 	}
 }
 
