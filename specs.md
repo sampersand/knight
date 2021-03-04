@@ -51,7 +51,8 @@ In Knight, all variables are lower case---upper case letters are reserved for fu
 ## Functions
 In Knight, there are two different styles of functions: symbolic and word-based functions. In both cases, the function is uniquely identified by its first character. 
 
-Word-based functions start with a single uppercase letter, such as `I` for `IF` or `R` for `RANDOM`, and may contain any amount of upper case letters afterwards. (Note that they may _not_ include `_`---that is considered the start of an identifier.) This means that `R`, `RAND`, `RANDOM`, `RANDINT`, `RANDOMNUMBER`, etc. are all the same function---the `R` function.
+Word-based functions start with a single uppercase letter, such as `I` for `IF` or `R` for `RANDOM`, and may contain any amount of upper case letters and `_` afterwards. This means that `R`, `RAND`, `RANDOM`, `RAND_INT`, `RAND_OM_NUMBER`, etc. are all the same function---the `R` function.
+_(Note: This is a change from a previous version of Knight where `_` was _ not _ a valid part of an identifier. some implementations may need to be updated)_
 
 In contrast, Symbolic functions are functions that are composed of a single symbol, such as `;` or `%`. Unlike word-based functions, they should not consume additional characters following them, word-based or not. The characters `+++` should be interpreted identically to `+ + +`---three separate addition functions.
 
@@ -122,6 +123,7 @@ The `NULL` type is used to indicate the absence of a value within Knight, and is
 - **numeric**: Null must become `0` in numeric contexts.
 - **string**: Null must become `"null"` in string contexts.
 - **boolean**: Null must become `FALSE` in boolean contexts.
+
 
 # Variables
 Variables in Knight must be able to hold all the builtin types, including other variable names and functions (both of which are returned by the `BLOCK` function).
