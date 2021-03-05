@@ -19,7 +19,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
 | [POSIX-Compliant SH](shell/knight.sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
 | [Prolog](../prolog/prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
-| [Python](../python/python) |   |   | X | X | A somewhat hacky version is completed; a cleaned up version is in progress. |
+| [Python](python) | X | X | X | X | Fully Functional, though `setrecursionlimit` is needed to ensure "FizzBuzz in Knight in Python" works. |
 | [Quest](../quest/quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
 | [Raku](raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
