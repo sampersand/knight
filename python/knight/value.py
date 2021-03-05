@@ -12,7 +12,10 @@ class Value():
 
 	@staticmethod
 	def parse(stream: Stream) -> Union[None, Value]:
-		""" Parses a value out of the `stream`, or returns `None` if nothing can be parsed. """
+		"""
+		Parses a value out of the `stream`, or returns `None` if
+		nothing can be parsed.
+		"""
 		stream.strip()
 
 		for cls in TYPES:
@@ -24,6 +27,7 @@ class Value():
 		return None
 
 	def __init_subclass__(cls):
+		""" Adds `cls` to the list of classes to parse. """
 		super().__init_subclass__()
 
 		TYPES.append(cls)
@@ -43,11 +47,3 @@ class Value():
 	def __bool__(self):
 		""" Converts this class to a boolean. """
 		return bool(self.run())
-
-	def __lt__(self, rhs: Value):
-		""" Checks to see if `self` is less than `rhs`. """
-		return self.run() < rhs.run()
-
-	def __gt__(self, rhs: Value):
-		""" Checks to see if `self` is greater than `rhs`. """
-		return self.run() > rhs.run()

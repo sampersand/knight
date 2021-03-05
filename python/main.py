@@ -3,7 +3,7 @@
 import knight
 from sys import setrecursionlimit, argv
 
-setrecursionlimit(1000000)
+setrecursionlimit(10000)
 
 if len(argv) != 3 or argv[1] not in ['-e', '-f']:
 	quit(f"usage: {argv[0]} (-e 'program' | -f file)")
