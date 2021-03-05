@@ -26,19 +26,19 @@ class Null(Literal[None]):
 		"""
 		super().__init__(None)
 
-	def __int__(self):
+	def __int__(self) -> int:
 		""" Simply returns `0` """
 		return 0
 
-	def __str__(self):
+	def __str__(self) -> str:
 		""" Simply returns `"null"` """
 		return 'null'
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		""" Gets a debugging representation of this class. """
 		return 'Null()'
 
-	def __eq__(self, rhs: Value):
+	def __eq__(self, rhs: Value) -> bool:
 		"""
 		Null is only equal to itself, and as we have one `INSTANCE`, we
 		can use `is`.

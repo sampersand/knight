@@ -4,7 +4,7 @@ from typing import TypeVar, Generic
 
 T = TypeVar('T')
 
-class Literal(Value, Generic[T]):
+class Literal(Value, Generic[T], parse=False):
 	"""
 	A class used to represent a value that has a piece of data associated
 	with it.
@@ -24,23 +24,23 @@ class Literal(Value, Generic[T]):
 		""" Running a Literal simply returns itself. """
 		return self
 
-	def __str__(self):
+	def __str__(self) -> str:
 		""" Simply converts this class's `data` to a `str`. """
 		return str(self.data)
 
-	def __int__(self):
+	def __int__(self) -> int:
 		""" Simply converts this class's `data` to an `int`. """
 		return int(self.data)
 
-	def __bool__(self):
+	def __bool__(self) -> bool:
 		""" Simply converts this class's `data` to an `bool`. """
 		return bool(self.data)
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		""" Gets a debugging representation of this class. """
 		return f'{type(self).__name__}({self})'
 
-	def __eq__(self, rhs: Value):
+	def __eq__(self, rhs: Value) -> bool:
 		"""
 		Returns whether `rhs` is of the _same_ class, 
 		and their data is equivalent.

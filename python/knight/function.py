@@ -7,18 +7,27 @@ from random import randint
 import re
 import subprocess
 
-_KNOWN: Dict[str, callable] = {}
+_FUNCS: Dict[str, callable] = {}
 
 class Function(Value):
+	""" Used to represent functions and their arguments within Knight. """
+
 	REGEX: re.Pattern = re.compile(r'[A-Z]+|.')
 
 	@staticmethod
 	def parse(stream: Stream) -> Union[None, Function]:
+		"""
+		Parses a `Function` from the stream, returning `None` if the
+		stream didn't start with a function character.
+
+		This will both parse the function name, and its arguments. If not
+		all the arguments could be parsed, a `ParseError` is raised.
+		"""
 		name = stream.peek()
-		if name not in _KNOWN:
+		if name not in _FUNCS:
 			return None
 
-		func = _KNOWN[name]
+		func = _FUNCS[name]
 		stream.matches(Function.REGEX)
 
 		args = []
@@ -33,6 +42,11 @@ class Function(Value):
 		return Function(func, name, args)
 
 	def __init__(self, func: callable, name: str, args: list[Value]):
+		"""
+		Creates a new function that'll execute `func` with `args`.
+
+		Note that the `name` is only used for `__repr__`.
+		"""
 		self.func = func
 		self.name = name
 		self.args = args
@@ -40,23 +54,31 @@ class Function(Value):
 	def run(self) -> Value:
 		return self.func(*self.args)
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'Function({self.name}, {self.args})'
 
-def function(name=None):
-	return lambda body: _KNOWN.__setitem__(
-		name or body.__name__[0].upper(), body)
+def register(name: Union[None, str] = None) -> callable:
+	"""
+	Used to register a new function with the given name.
 
-@function()
-def prompt():
+	If no name is supplied, it will use the upper-case version of the
+	first letter of the function's name.
+	"""
+	return lambda fn: _FUNCS.__setitem__(name or fn.__name__[0].upper(), fn)
+
+@register()
+def prompt() -> String:
+	""" Reads a single line from stdin. """
 	return String(input())
 
-@function()
-def random():
-	return Number(randint(0, 0xff_ff_ff_ff))
+@register()
+def random() -> Number:
+	""" Returns a random number from 0 through 0xffff_ffff. """
+	return Number(randint(0, 0xffff_ffff))
 
-@function()
-def eval_(text):
+@register()
+def eval_(text: Value) -> Value:
+	""" Evaluates `text` as Knight code, returning its result. """
 	value = Value.parse(Stream(str(text)))
 
 	if value is None:
@@ -64,42 +86,55 @@ def eval_(text):
 	else:
 		return value.run()
 
-@function()
-def block(blk):
+@register()
+def block(blk: Value) -> Value:
+	""" Simply returns its argument, unevaluated. """
 	return blk
 
-@function()
-def call(blk):
+@register()
+def call(blk: Value) -> Value:
+	""" Executes the return value of a `block`. """
 	return blk.run().run()
 
-@function('`')
-def system(cmd):
+@register('`')
+def system(cmd: Value) -> String:
+	""" Runs `cmd` in a shell, returning its stdout.  """
 	proc = subprocess.run(str(cmd), shell=True, capture_output=True)
 
 	return String(proc.stdout.decode())
 
-@function()
-def quit_(code):
+@register()
+def quit_(code: Value):
+	""" Quits with the given status code. """
 	quit(int(code))
 
-@function('!')
-def not_(arg):
+@register('!')
+def not_(arg: Value) -> Boolean:
+	""" Negates its argument. """
 	return Boolean(not arg)
 
-@function()
-def length(arg):
+@register()
+def length(arg: Value) -> Number:
+	""" Gets the length of its argument. """
 	return Number(len(str(arg)))
 
-@function()
-def dump(arg):
+@register()
+def dump(arg: Value) -> Value:
+	""" Dumps a debug representation of `arg` and returns `arg`. """
 	arg = arg.run()
 
-	print(repr(arg))
+	print(repr(arg), end='')
 
 	return arg
 
-@function()
-def output(arg):
+@register()
+def output(arg: Value) -> Null:
+	"""
+	Prints `arg` to stdout with a trailing newline.
+
+	If `arg` ends with a `\\`, the newline is omitted and the slash is 
+	removed.
+	"""
 	s = str(arg)
 
 	if s[-1] == '\\':
@@ -109,64 +144,83 @@ def output(arg):
 
 	return Null()
 
-@function('+')
-def add(lhs, rhs):
+@register('+')
+def add(lhs: Value, rhs: Value) -> Value:
+	""" Adds `rhs` to `lhs`. """
 	return lhs.run() + rhs.run()
 
-@function('-')
-def sub(lhs, rhs):
+@register('-')
+def sub(lhs: Value, rhs: Value) -> Value:
+	""" Subtracts `rhs` from `lhs`. """
 	return lhs.run() - rhs.run()
 
-@function('*')
-def mul(lhs, rhs):
+@register('*')
+def mul(lhs: Value, rhs: Value) -> Value:
+	""" Multiplies `lhs` by `rhs`. """
 	return lhs.run() * rhs.run()
 
-@function('/')
-def div(lhs, rhs):
+@register('/')
+def div(lhs: Value, rhs: Value) -> Value:
+	""" Divides `lhs` by `rhs`. """
 	return lhs.run() // rhs.run()
 
-@function('%')
-def mod(lhs, rhs):
+@register('%')
+def mod(lhs: Value, rhs: Value) -> Value:
+	""" Modulos `lhs` by `rhs`. """
 	return lhs.run() % rhs.run()
 
-@function('^')
-def pow(lhs, rhs):
+@register('^')
+def pow(lhs: Value, rhs: Value) -> Value:
+	""" Exponentiates `lhs` by `rhs`. """
 	return lhs.run() ** rhs.run()
 
-@function('<')
-def lth(lhs, rhs):
+@register('<')
+def lth(lhs: Value, rhs: Value) -> Boolean:
+	""" Checks to see if `lhs` is less than `rhs`. """
 	return Boolean(lhs.run() < rhs.run())
 
-@function('>')
-def gth(lhs, rhs):
+@register('>')
+def gth(lhs: Value, rhs: Value) -> Boolean:
+	""" Checks to see if `lhs` is greater than `rhs`. """
 	return Boolean(lhs.run() > rhs.run())
 
-@function('?')
-def eql(lhs, rhs):
+@register('?')
+def eql(lhs: Value, rhs: Value) -> Boolean:
+	""" Checks to see if `lhs` is equal to `rhs`. """
 	return Boolean(lhs.run() == rhs.run())
 
-@function('&')
-def and_(lhs, rhs):
+@register('&')
+def and_(lhs: Value, rhs: Value) -> Value:
+	""" Returns `lhs` if its falsey, otherwise `rhs`. """
 	return lhs.run() and rhs.run()
 
-@function('|')
-def or_(lhs, rhs):
+@register('|')
+def or_(lhs: Value, rhs: Value) -> Value:
+	""" Returns `lhs` if its truthy, otherwise `rhs`. """
 	return lhs.run() or rhs.run()
 
-@function(';')
-def then(lhs, rhs):
+@register(';')
+def then(lhs: Value, rhs: Value) -> Value:
+	""" Simply executes `lhs`, then `rhs`, then returns `rhs`. """
 	lhs.run()
 	return rhs.run()
 
-@function()
-def while_(cond, body):
+@register()
+def while_(cond: Value, body: Value) -> Null:
+	""" Executes `body` while `cond` is truthy. """
 	while cond:
 		body.run()
 
 	return Null()
 
-@function('=')
-def assign(name, value):
+@register('=')
+def assign(name: Value, value: Value) -> Value:
+	"""
+	Assigns `value` to `name`, converting `name` to an `Identifier` if
+	it isn't already.
+
+	Returns `value`.
+	"""
 	if not isinstance(name, Identifier):
 		name = Identifier(str(name))
 
@@ -174,21 +228,24 @@ def assign(name, value):
 	name.assign(value)
 	return value 
 
-@function()
-def if_(cond, iftrue, iffalse):
+@register()
+def if_(cond: Value, iftrue: Value, iffalse) -> Value:
+	""" Executes and returns `iftrue` or `iffalse` based on `cond`. """
 	return (iftrue if cond else iffalse).run()
 
-@function()
-def get(text, start, length):
+@register()
+def get(text: Value, start: Value, amnt: Value) -> String:
+	""" Fetches the specified substring from `text`. """
 	text = str(text)
 	start = int(start)
-	length = int(length)
-	return String(text[start:start+length])
+	amnt = int(amnt)
+	return String(text[start:start+amnt])
 
-@function()
-def substitute(text, start, length, repl):
+@register()
+def substitute(text: Value, start: Value, amnt: Value, repl: Value) -> String:
+	""" Returns a new string with the specified substring replaced. """
 	text = str(text)
 	start = int(start)
-	length = int(length)
+	amnt = int(amnt)
 	repl = str(repl)
-	return String(text[:start] + repl + text[start+length:])
+	return String(text[:start] + repl + text[start+amnt:])

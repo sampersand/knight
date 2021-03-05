@@ -9,11 +9,11 @@ class Stream():
 		""" Creates a new `Stream` with the given source. """
 		self.source = source
 
-	def __str__(self):
+	def __str__(self) -> str:
 		""" Returns the remainder of the stream. """
 		return self.source
 
-	def __bool__(self):
+	def __bool__(self) -> bool:
 		""" Returns whether the stream is empty. """
 		return bool(self.source)
 

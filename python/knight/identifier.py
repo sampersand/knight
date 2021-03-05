@@ -33,7 +33,7 @@ class Identifier(Value):
 		""" Creates a new Identifier associated with the given `name`. """
 		self.name = name
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		""" Gets a debugging mode representation of this identifier. """
 		return f"Identifier({self.name})"
 
