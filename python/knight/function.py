@@ -1,5 +1,6 @@
 from __future__ import annotations
-from knight import Value, Stream, ParseError, RunError, Identifier
+from knight import Value, Stream, ParseError, RunError, \
+                   Identifier, Boolean, Null, String, Number
 from typing import Union, Dict, List
 from random import randint
 
@@ -38,6 +39,9 @@ class Function(Value):
 	def run(self) -> Value:
 		return self.func(*self.args)
 
+	def __repr__(self):
+		return f'Function({self.name}, {self.args})'
+
 Value.TYPES.append(Function)
 
 def function(name=None):
@@ -46,18 +50,20 @@ def function(name=None):
 
 @function()
 def prompt():
-	return input()
+	return String(input())
 
 @function()
 def random():
-	return randint(0, 0xff_ff_ff_ff)
+	return Number(randint(0, 0xff_ff_ff_ff))
 
 @function()
 def eval_(text):
-	if value := Value.parse(Stream(str(text))):
-		return value.run()
-	else:
+	value = Value.parse(Stream(str(text)))
+
+	if value is None:
 		raise ParseError('Nothing to parse.')
+	else:
+		return value.run()
 
 @function()
 def block(blk):
@@ -69,8 +75,9 @@ def call(blk):
 
 @function('`')
 def system(cmd):
-	return subprocess.run(str(cmd), shell=True, capture_output=True) \
-		.stdout.decode()
+	proc = subprocess.run(str(cmd), shell=True, capture_output=True)
+
+	return String(proc.stdout.decode())
 
 @function()
 def quit_(code):
@@ -78,11 +85,11 @@ def quit_(code):
 
 @function('!')
 def not_(arg):
-	return not arg.run()
+	return Boolean(not arg)
 
 @function()
 def length(arg):
-	return len(str(arg))
+	return Number(len(str(arg)))
 
 @function()
 def dump(arg):
@@ -117,7 +124,7 @@ def mul(lhs, rhs):
 
 @function('/')
 def div(lhs, rhs):
-	return lhs.run() / rhs.run()
+	return lhs.run() // rhs.run()
 
 @function('%')
 def mod(lhs, rhs):
@@ -129,16 +136,15 @@ def pow(lhs, rhs):
 
 @function('<')
 def lth(lhs, rhs):
-	return lhs.run() < rhs.run()
+	return Boolean(lhs.run() < rhs.run())
 
 @function('>')
 def gth(lhs, rhs):
-	lhs = lhs.run()
-	return rhs.run() > lhs
+	return Boolean(lhs.run() > rhs.run())
 
 @function('?')
 def eql(lhs, rhs):
-	return lhs.run() == rhs.run()
+	return Boolean(lhs.run() == rhs.run())
 
 @function('&')
 def and_(lhs, rhs):
@@ -178,12 +184,12 @@ def get(text, start, length):
 	text = str(text)
 	start = int(start)
 	length = int(length)
-	return text[start:start+length]
+	return String(text[start:start+length])
 
 @function()
-def set(text, start, length, repl):
+def substitute(text, start, length, repl):
 	text = str(text)
 	start = int(start)
 	length = int(length)
 	repl = str(repl)
-	return text[:start] + repl + text[start+length:]
+	return String(text[:start] + repl + text[start+length:])

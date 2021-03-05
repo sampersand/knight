@@ -11,8 +11,10 @@ from knight.identifier import Identifier
 from knight.function import Function
 
 def run(stream: str) -> Value:
-	if value := Value.parse(Stream(stream)):
-		return value.run()
-	else:
+	value = Value.parse(Stream(stream))
+
+	if value is None:
 		raise ParseError('Nothing to parse.')
+	else:
+		return value.run()
 

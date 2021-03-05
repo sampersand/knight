@@ -27,6 +27,10 @@ class Null(Literal[None]):
 	def __init__(self):
 		super().__init__(None)
 
+	def __int__(self):
+		""" Simply returns `0` """
+		return 0
+
 	def __str__(self):
 		""" Simply returns `"null"` """
 		return 'null'

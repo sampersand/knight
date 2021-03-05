@@ -33,9 +33,11 @@ class Stream():
 		stream is updated, and the `index`th group is returned. (The
 		default value of `0` means the entire matched regex is returned.)
 		"""
-		if match := rxp.match(self.source):
-			string = self.source[:match.end()]
-			self.source = self.source[match.end():]
-			return match[index]
-		else:
+		match = rxp.match(self.source)
+
+		if match is None:
 			return None
+
+		string = self.source[:match.end()]
+		self.source = self.source[match.end():]
+		return match[index]

@@ -7,8 +7,6 @@ class Boolean(Literal[bool]):
 	""" Used to represent boolean types within Knight. """
 
 	REGEX: re.Pattern = re.compile(r'([TF])[A-Z]*')
-	TRUE: Boolean = None # `__new__` overrides this
-	FALSE: Boolean = None # `__new__` overrides this
 
 	@classmethod
 	def parse(cls, stream: Stream) -> Union[None, Boolean]:
@@ -18,21 +16,9 @@ class Boolean(Literal[bool]):
 		else:
 			return None
 
-	def __new__(cls, value: bool):
-		""" Returns the TRUE or FALSE instance of this class. """
-		if cls.TRUE is None: # initialize the instances if need
-			cls.TRUE = super().__new__(cls)
-			cls.FALSE = super().__new__(cls)
-
-		return cls.TRUE if value else cls.FALSE
-
 	def __str__(self):
 		""" Simply returns `"true"` when true and `"false"` when false """
 		return 'true' if self else 'false'
-
-	def __eq__(self, rhs: Value):
-		""" Booleans are only equal to themselves. """
-		return self is rhs
 
 	def __lt__(self, rhs: Value):
 		return not self and rhs

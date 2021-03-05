@@ -1,5 +1,5 @@
 from __future__ import annotations
-from knight import Value, Stream, Literal
+from knight import Value, Stream, Literal, ParseError
 from typing import Union
 import re
 
@@ -7,7 +7,7 @@ class String(Literal[bool]):
 	BEGIN_REGEX: re.Pattern = re.compile(r'[\'\"]')
 	SINGLE_REGEX: re.Pattern = re.compile(r"([^']*)'")
 	DOUBLE_REGEX: re.Pattern = re.compile(r'([^"]*)"')
-	INT_REGEX: re.Pattern = re.compile(r'^\s*\d+')
+	INT_REGEX: re.Pattern = re.compile(r'^\s*[-+]?\d+')
 
 	@classmethod
 	def parse(cls, stream: Stream) -> Union[None, String]:
@@ -17,11 +17,12 @@ class String(Literal[bool]):
 			return None
 
 		regex = String.SINGLE_REGEX if quote == "'" else String.DOUBLE_REGEX
+		body = stream.matches(regex, 1)
 
-		if body := stream.matches(regex, 1):
-			return String(body)
+		if body is None:
+			raise ParseError(f'unterminated string encountered: {stream}')
 		else:
-			raise ValueError(f'unterminated string encountered: {stream}')
+			return String(body)
 
 	def __int__(self):
 		match = String.INT_REGEX.match(self.data)
