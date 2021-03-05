@@ -9,54 +9,55 @@ In this document, some notation is used to describe what is required of implemen
 
 # Table of Contents
 
-1. [Syntax](#syntax)  
-	1.1 [Whitespace](#whitespace)  
-	1.2 [Comments](#comments)  
-	1.3 [Literals](#literals)  
-	1.4 [Variables](#variables)  
-	1.5 [Functions](#functions)  
-2. [Types](#types)  
-	2.1 [Number](#number)  
-	2.2 [String](#string)  
-	2.3 [Boolean](#boolean)  
-	2.4 [Null](#null)  
-3. [Variables](#variables-1)  
-4. [Functions](#functions-1)  
-	4.1.1 [`TRUE`](#true)  
-	4.1.2 [`FALSE`](#false)  
-	4.1.3 [`NULL`](#null-1)  
-	4.1.4 [`PROMPT`](#prompt)  
-	4.1.5 [`RANDOM`](#random)  
+1. [Syntax](#1-syntax)  
+	1.1 [Whitespace](#11-whitespace)  
+	1.2 [Comments](#12-comments)  
+	1.3 [Literals](#13-literals)  
+	1.4 [Variables](#14-variables)  
+	1.5 [Functions](#15-functions)  
+2. [Types](#2-types)  
+	2.1 [Number](#21-number)  
+	2.2 [String](#22-string)  
+	2.3 [Boolean](#23-boolean)  
+	2.4 [Null](#24-null)  
+3. [Variables](#3-variables)  
+4. [Functions](#4-functions)  
+	4.1.1 [`TRUE`](#412-true)  
+	4.1.2 [`FALSE`](#413-false)  
+	4.1.3 [`NULL`](#414-null)  
+	4.1.4 [`PROMPT`](#415-prompt)  
+	4.1.5 [`RANDOM`](#416-random)  
 
-	4.2.1 [`EVAL`](#)  
-	4.2.2 [`BLOCK`](#)  
-	4.2.3 [`CALL`](#)  
-	4.2.4 [`` ` ``](#)  
-	4.2.5 [`QUIT`](#)  
-	4.2.6 [`!`](#)  
-	4.2.7 [`LENGTH`](#)  
-	4.2.8 [`DUMP`](#)  
-	4.2.9 [`OUTPUT`](#)  
+	4.2.1 [`:`](#411-unchanged)  
+	4.2.2 [`EVAL`](#422-evalstring)  
+	4.2.3 [`BLOCK`](#423-blockunevaluated)  
+	4.2.4 [`CALL`](#424-callspecial)  
+	4.2.5 [`` ` ``](#425-string)  
+	4.2.6 [`QUIT`](#426-quitnumber)  
+	4.2.7 [`!`](#427-boolean)  
+	4.2.8 [`LENGTH`](#428-lengthstring)  
+	4.2.9 [`DUMP`](#429-dumpunchanged)  
+	4.2.10 [`OUTPUT`](#4210-outputstring)  
 
-	4.3.1 [`+`](#)  
-	4.3.2 [`-`](#)  
-	4.3.3 [`*`](#)  
-	4.3.4 [`/`](#)  
-	4.3.5 [`%`](#)  
-	4.3.6 [`^`](#)  
-	4.3.7 [`<`](#)  
-	4.3.8 [`>`](#)  
-	4.3.9 [`?`](#)  
-	4.3.10 [`|`](#)  
-	4.3.11 [`&`](#)  
-	4.3.12 [`;`](#)  
-	4.3.13 [`=`](#)  
-	4.3.14 [`WHILE`](#)  
+	4.3.1 [`+`](#431-stringnumber-coerce)  
+	4.3.2 [`-`](#432--number-number)  
+	4.3.3 [`*`](#433-stringnumber-coerce)  
+	4.3.4 [`/`](#434-number-number)  
+	4.3.5 [`%`](#435-number-number)  
+	4.3.6 [`^`](#436-number-number)  
+	4.3.7 [`<`](#437-stringnumberboolean-coerce)  
+	4.3.8 [`>`](#438-stringnumberboolean-coerce)  
+	4.3.9 [`?`](#439-unchanged-unchanged)  
+	4.3.10 [`|`](#4310-unchanged-unevaluated)  
+	4.3.11 [`&`](#4311-unchanged-unevaluated)  
+	4.3.12 [`;`](#4312-unchanged-unchanged)  
+	4.3.13 [`=`](#4313-unevaluated-unchanged)  
+	4.3.14 [`WHILE`](#4314-whileunevaluated-unevaluated)  
 
-	4.4.1 [`IF`](#)  
-	4.4.2 [`GET`](#)  
+	4.4.1 [`IF`](#441-ifboolean-unevaluated-unevaluated)  
+	4.4.2 [`GET`](#442-getstring-number-number)  
 
-	4.5.1 [`SUBSTITUTE`](#)  
+	4.5.1 [`SUBSTITUTE`](#451-substitutestring-number-number-string)  
 
 # 1 Syntax
 The language itself is inspired by Polish Notation (PN): Instead of `output(1 + 2 * 4)`, Knight has `OUTPUT + 1 * 2 4`.
@@ -233,7 +234,10 @@ Note that `RANDOM` _should_ return different numbers across subsequent calls and
 
 ## 4.2 Unary (Arity 1)
 
-### 4.2.1 `EVAL(string)`
+### 4.2.1 `:(unchanged)`
+A no-op: Simply returns its value unchanged. 
+
+### 4.2.2 `EVAL(string)`
 This function takes a single string argument, which should be executed as if it where Knight source code.
 
 This function should act _as if_ its invocation were replaced by the contents of the string, eg:
@@ -249,7 +253,7 @@ should be equivalent to
 : OUTPUT + "a*4=" (* a 4)
 ```
 
-### 4.2.2 `BLOCK(unevaluated)`
+### 4.2.3 `BLOCK(unevaluated)`
 Unlike nearly every other function in Knight, the `BLOCK` function does _not_ execute its argument---instead, it returns the argument, unevaluated. This is the only way for knight programs to get unevaluated blocks of code, which can be used for delayed execution.
 
 The `BLOCK` function is intended to be used to create user-defined functions (which can be run via `CALL`.) However, as it simply returns its argument, there's no way to provide an arity to user-defined functions: you must simply use global variables:
@@ -262,12 +266,12 @@ The `BLOCK` function is intended to be used to create user-defined functions (wh
 
 Regardless of the input, the only valid uses for the return value of this function are as the right-hand-side argument to an `=` function, or as the sole argument to `CALL`. All other uses constitute undefined behaviour.
 
-### 4.2.3 `CALL(<special>)`
+### 4.2.4 `CALL(<special>)`
 The only valid parameter to give to `CALL` is the return value of a `BLOCK`---any other value is considered undefined behaviour. 
 
 `CALL` will simply evaluate its argument, returning whatever the result of evaluating its argument is.
 
-### 4.2.4 `` `(string) ``
+### 4.2.5 `` `(string) ``
 Runs the string as a shell command, returning the stdout of the subshell.
 
 If the subshell returns a nonzero status code, this function's behaviour is undefined.
@@ -275,22 +279,22 @@ If the subshell's stdout does not contain characters that can appear in a string
 
 Everything else is left up to the implementation---what to do about stderr and stdin, whether to abort execution on failure or continue, how environment variables are propagated, etc.
 
-### 4.2.5 `QUIT(number)`
+### 4.2.6 `QUIT(number)`
 Aborts the entire knight interpreter with the given status code.
 
 Implementations must accept exit codes between 0 to 127, although they can permit higher status codes if desired.
 
 It is undefined behaviour if the given status code is negative, or is above the highest possible status code.
 
-### 4.2.6 `!(boolean)`
+### 4.2.7 `!(boolean)`
 Returns the logical negation of its argument---truthy values become `FALSE`, and falsey values beocme `TRUE`.
 
-### 4.2.7 `LENGTH(string)`
+### 4.2.8 `LENGTH(string)`
 Returns the length of the string, in bytes.
 
 Note that since Knight strings are a strict subset of ASCII, this is both the length of the string in bytes _and_ the length in unicode points.
 
-### 4.2.8 `DUMP(unchanged)`
+### 4.2.9 `DUMP(unchanged)`
 Dumps a debugging representation of its argument to stdout, without a trailing newline.
 
 Note that this is intended to be used for debugging (and unit testing) purposes, and as such it does not have a strict requirement for what a "debugging representation" means. However, if you wish to use the Knight unit tests, then the output must be in the following format:
@@ -301,7 +305,7 @@ Note that this is intended to be used for debugging (and unit testing) purposes,
 - `Identifier(<ident>)` - the name of an identifier.
 - `Function(...)` - the contents do not matter, as long as it starts with `Function` and has parens.
 
-### 4.2.9 `OUTPUT(string)`
+### 4.2.10 `OUTPUT(string)`
 Writes the string to stdout, flushes stdout, and then returns `NULL`.
 
 Normally, a newline should be written after `string` (which should also flush stdout on most systems.) However, if `string` ends with a backslash (`\`), the backslash is **not written to stdout**, and trailing newline is suppressed. 
