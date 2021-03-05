@@ -93,10 +93,10 @@ impl TryFrom<&Value> for RcStr {
 
 	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
 		match value {
-			Value::Null => Ok(RcStr::new_literal("null")),
-			Value::Boolean(true) => Ok(RcStr::new_literal("true")),
-			Value::Boolean(false) => Ok(RcStr::new_literal("false")),
-			Value::Number(0) => Ok(RcStr::new_literal("0")),
+			Value::Null => Ok(unsafe { RcStr::new_literal_unchecked(b"null") }),
+			Value::Boolean(true) => Ok(unsafe { RcStr::new_literal_unchecked(b"true") }),
+			Value::Boolean(false) => Ok(unsafe { RcStr::new_literal_unchecked(b"false") }),
+			Value::Number(0) => Ok(unsafe { RcStr::new_literal_unchecked(b"0") }),
 			Value::Number(number) => Ok(RcStr::new_shared(number)),
 			Value::String(string) => Ok(string.clone()),
 			_ => value.run().and_then(|value| TryFrom::try_from(&value))
