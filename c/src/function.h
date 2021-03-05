@@ -10,6 +10,7 @@
 struct kn_function_t {
 	size_t arity;
 	struct kn_value_t (*func)(const struct kn_ast_t *args);
+	char name; // for debugging purposes.
 };
 
 /*
@@ -30,7 +31,7 @@ const struct kn_function_t *kn_fn_fetch(char name);
  * of function names that are reserved by Knight. Execution will be aborted if
  * an additional name is attempted to be added.
  */
-void kn_fn_register_func(char name, struct kn_function_t func);
+void kn_fn_register_func(struct kn_function_t func);
 
 
 /*************************************************
@@ -123,10 +124,16 @@ struct kn_value_t kn_fn_not(const struct kn_ast_t *ast);
 struct kn_value_t kn_fn_length(const struct kn_ast_t *ast);
 
 /*
+ * `DUMP value`: Runs `value`, writing its result to stdout. Returns the result
+ * of running `value`.
+ */
+struct kn_value_t kn_fn_run(const struct kn_ast_t *ast);
+
+/*
  * `OUTPUT msg`: Outputs `msg` as a string, followed by a newline.
  *
  * If `msg` ends with a backslash (`\`), then the newline is suppressed.
-	 */
+ */
 struct kn_value_t kn_fn_output(const struct kn_ast_t *ast);
 
 
@@ -270,6 +277,5 @@ struct kn_value_t kn_fn_get(const struct kn_ast_t *ast);
  * returned.
  */
 struct kn_value_t kn_fn_set(const struct kn_ast_t *ast);
-
 
 #endif /* KN_FUNCTION_H */

@@ -4,42 +4,46 @@
 
 using namespace kn;
 
-Identifier::Identifier(std::string name) : name(name) {}
+Identifier::Identifier(std::string name) noexcept : name(name) {}
 
-bool Identifier::to_boolean() const {
-	return run().to_boolean();
-}
+// The list of all known variables.
+static std::unordered_map<std::string, SharedValue> ENVIRONMENT;
 
-number Identifier::to_number() const {
-	return run().to_number();
-}
+SharedValue Identifier::parse(std::string_view& view) {
+	char front = view.front();
 
-string Identifier::to_string() const {
-	return run().to_string();
-}
-
-static std::unordered_map<std::string, std::shared_ptr<Value>> ENVIRONMENT;
-
-UnknownIdentifier::UnknownIdentifier(std::string ident) : ident(ident), message("invalid identifier '") {
-	message.append(ident);
-	message.push_back('\'');
-}
-
-const char *UnknownIdentifier::what() const noexcept {
-	return message.c_str();
-}
-
-Literal Identifier::run() const {
-	if (ENVIRONMENT.count(name) == 0) {
-		throw UnknownIdentifier(name);
+	if (!std::islower(front) && front != '_') {
+		return nullptr;
 	}
 
-	return std::shared_ptr<Value>(ENVIRONMENT[name]);
+	auto start = view.cbegin();
+
+	do {
+		view.remove_prefix(1);
+		front = view.front();
+	} while (std::islower(front) || front == '_' || std::isdigit(front));
+
+	std::string ret(start, view.cbegin());
+
+	return std::make_shared<Identifier>(Identifier(ret));
 }
 
-void Identifier::assign(std::shared_ptr<Value> value) const {
-	ENVIRONMENT.emplace(name, std::move(value));
+std::string Identifier::dump() const {
+	return "Identifier(" + std::string(name) + ")";
 }
 
+SharedValue Identifier::run() const {
+	if (ENVIRONMENT.count(name) == 0) {
+		throw Error("unknown identifier encountered: " + name);
+	}
 
-// is there a way to change what "this" means? eg instead of taking a reference to `this`, 
+	return ENVIRONMENT[name];
+}
+
+SharedValue Identifier::assign(SharedValue value) const {
+	value = value->run();
+
+	ENVIRONMENT.insert_or_assign(name, value);
+
+	return value;
+}

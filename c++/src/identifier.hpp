@@ -1,27 +1,39 @@
 #pragma once
 
+#include "knight.hpp"
 #include "value.hpp"
+#include "literal.hpp"
 
 namespace kn {
-	struct UnknownIdentifier : std::exception {
-		std::string ident;
-		std::string message;
+	// An identifier within Knight.
+	//
+	// As per the Knigth specs, all identifiers are global.
+	class Identifier : public Value {
+		// The name of the identifier.
+		std::string const name;
 
-		UnknownIdentifier(std::string ident);
-
-  		const char* what() const noexcept;
-  	};
-
-	class Identifier : Value {
-		std::string name;
 	public:
-		Identifier(std::string name);
 
-		bool to_boolean() const override;
-		number to_number() const override;
-		string to_string() const override;
+		// Creates a new Identifier with the given name.
+		explicit Identifier(std::string name) noexcept;
 
-		Literal run() const override;
-		void assign(std::shared_ptr<Value> value) const override;
+		// There is no default Identifier.
+		Identifier() = delete;
+
+		// Parses an identifier out, or returns `nullptr` if the first character isn't a letter or `_`.
+		static SharedValue parse(std::string_view& view);
+
+		// Runs the identifier, looking up its last assigned value.
+		//
+		// Throws `UnknownIdentifier` if the identifier was never assigned.
+		SharedValue run() const override;
+
+		// Provides debugging output of this type.
+		std::string dump() const override;
+
+		// Assigns a value to this Identifier, discarding its previous value.
+		//
+		// This will run `value`, and returns the result of running it.
+		SharedValue assign(SharedValue value) const override;
 	};
 }

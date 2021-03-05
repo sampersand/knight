@@ -210,12 +210,22 @@ describe 'Number' do
 			end
 
 			# Since we only have integral types, anything (normal) raised to a negative number is zero.
-			it 'always returns zero when a non `-1`, `0`, or `1` number is raised to a negative power' do
+			it 'always returns zero when a > 1 number is raised to a negative power' do
 				assert_equal 0, eval('^ 2 (- 0 2)')
 				assert_equal 0, eval('^ 100 (- 0 2)')
 				assert_equal 0, eval('^ 4 (- 0 2)')
 				assert_equal 0, eval('^ 3 (- 0 2)')
 				assert_equal 0, eval('^ (- 0 3) (- 0 2)')
+			end
+
+			it 'returns a negative number when a negative number is raised ot an odd power' do
+				assert_equal -1, eval('^ (- 0 1) 1')
+				assert_equal -8, eval('^ (- 0 2) 3')
+				assert_equal 16, eval('^ (- 0 2) 4')
+				assert_equal -32, eval('^ (- 0 2) 5')
+				assert_equal 100, eval('^ (- 0 10) 2')
+				assert_equal -1331, eval('^ (- 0 11) 3')
+				assert_equal 20736, eval('^ (- 0 12) 4')
 			end
 
 			it 'handles one, zero, and negative one properly' do
@@ -335,36 +345,3 @@ describe 'Number' do
 		end
 	end
 end
-
-
-# 				# assert_equal eval('+ 4 13'), 17
-# 				# assert_equal eval('+ 4 (- 0 13)'), -9
-# 				# assert_equal eval('+ (- 0 4) 13'), 9
-# 				# assert_equal eval('+ (- 0 4) (- 0 13)'), -17
-
-
-# 		# describe '%' do
-# 		# 	# note that, as per the Knight spec, modulo where either number is negative is undefined.
-# 		# 	it 'modulos positive numbers normally' do
-# 		# 		assert_equal eval('% 1 1'), 0
-# 		# 		assert_equal eval('% 4 4'), 0
-# 		# 		assert_equal eval('% 15 1'), 0
-# 		# 		assert_equal eval('% 123 10'), 3
-# 		# 		assert_equal eval('% 15 3'), 0
-# 		# 	end
-
-# 		# 	it 'does modulo by zero' do
-# 		# 		assert_fails { eval('% 1 0') }
-# 		# 		assert_fails { eval('% 100 0') }
-# 		# 		assert_fails { eval('% 1 FALSE') }
-# 		# 		assert_fails { eval('% 1 NULL') }
-# 		# 	end
-
-# 		# 	it 'converts other values to integers' do
-# 		# 		assert_equal eval('% 15 "2"'), 1
-# 		# 		assert_equal eval('% 91 "4"'), 3
-# 		# 		assert_equal eval('% 9 TRUE'), 0
-# 		# 	end
-# 		# end		
-# 	end
-# end

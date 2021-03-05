@@ -3,6 +3,11 @@ name = "knight"
 version = "0.1.0"
 authors = ["Sam Westerman <sam@sampersand.me>"]
 edition = "2018"
+description = "The Knight programming language, in Rust"
 
 [dependencies]
 rand = "0.8.0"
+once_cell = "1.7.2"
+lazy_static = "1.4"
+parking_lot = "0.11"
+clap = "2.33"
