@@ -16,6 +16,7 @@ class Literal(Value, Generic[T]):
 	data: T
 
 	def __init__(self, data: T):
+		""" Creates a new `Literal` instance with the given data. """
 		super().__init__()
 		self.data = data
 

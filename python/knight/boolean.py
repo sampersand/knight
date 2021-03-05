@@ -17,14 +17,13 @@ class Boolean(Literal[bool]):
 			return None
 
 	def __str__(self):
-		""" Simply returns `"true"` when true and `"false"` when false """
+		""" Returns `"true"` when true and `"false"` when false. """
 		return 'true' if self else 'false'
 
 	def __lt__(self, rhs: Value):
+		""" Checks to see if `self` is falsey and `rhs` is truthy. """
 		return not self and rhs
 
 	def __gt__(self, rhs: Value):
+		""" Checks to see if `self` is truthy and `rhs` is falsey. """
 		return self and not rhs
-
-Boolean(True) # ensure we initialize `Boolean`.
-Value.TYPES.append(Boolean)

@@ -40,5 +40,3 @@ class String(Literal[bool]):
 
 	def __gt__(self, rhs: Value):
 		return self.data > str(rhs)
-
-Value.TYPES.append(String)

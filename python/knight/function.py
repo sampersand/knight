@@ -7,17 +7,18 @@ from random import randint
 import re
 import subprocess
 
+_KNOWN: Dict[str, callable] = {}
+
 class Function(Value):
-	_KNOWN: Dict[str, callable] = {}
 	REGEX: re.Pattern = re.compile(r'[A-Z]+|.')
 
 	@staticmethod
 	def parse(stream: Stream) -> Union[None, Function]:
 		name = stream.peek()
-		if name not in Function._KNOWN:
+		if name not in _KNOWN:
 			return None
 
-		func = Function._KNOWN[name]
+		func = _KNOWN[name]
 		stream.matches(Function.REGEX)
 
 		args = []
@@ -42,10 +43,8 @@ class Function(Value):
 	def __repr__(self):
 		return f'Function({self.name}, {self.args})'
 
-Value.TYPES.append(Function)
-
 def function(name=None):
-	return lambda body: Function._KNOWN.__setitem__(
+	return lambda body: _KNOWN.__setitem__(
 		name or body.__name__[0].upper(), body)
 
 @function()

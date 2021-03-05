@@ -1,8 +1,8 @@
 class Error(Exception):
-	pass
+	""" The parent error class to all Knight errors."""
 
 class ParseError(Error):
-	pass
+	""" A problem occurred whilst parsing Knight code. """
 
 class RunError(Error):
-	pass
+	""" A problem occurred whilst running Knight code. """

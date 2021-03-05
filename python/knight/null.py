@@ -7,7 +7,6 @@ class Null(Literal[None]):
 	""" Used to represent the null class. """
 
 	REGEX = re.compile(r'N[A-Z]*')
-	INSTANCE = None # `__new__` overrides this 
 
 	@classmethod
 	def parse(cls, stream: Stream) -> Union[None, Null]:
@@ -17,14 +16,14 @@ class Null(Literal[None]):
 		else:
 			return None
 
-	def __new__(cls):
-		""" Returns the instance of this class. """
-		if cls.INSTANCE is None: # this is run once.
-			cls.INSTANCE = super().__new__(cls)
-
-		return cls.INSTANCE
-
 	def __init__(self):
+		"""
+		Creates a new Null.
+
+		Note that this is overloaded because `Literal` expects an argument
+		for `data`, but `null` should be constructible without specifying
+		the `data` field, so this does that for us.
+		"""
 		super().__init__(None)
 
 	def __int__(self):
@@ -44,13 +43,12 @@ class Null(Literal[None]):
 		Null is only equal to itself, and as we have one `INSTANCE`, we
 		can use `is`.
 		"""
-		return self is rhs
+		return isinstance(rhs, Null)
 
 	def __lt__(self, _: Value):
-		raise RunError('cannot compare Null.')
+		""" Comparisons to Null are invalid. """
+		raise RunError('cannot compare with Null.')
 
 	def __gt__(self, _: Value):
-		raise RunError('cannot compare Null.')
-
-Null() # ensure we initialize `Null`.
-Value.TYPES.append(Null)
+		""" Comparisons to Null are invalid. """
+		raise RunError('cannot compare with Null.')

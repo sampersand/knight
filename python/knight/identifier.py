@@ -3,6 +3,8 @@ from knight import Value, Stream, RunError
 from typing import Union, Dict
 import re
 
+_ENV: Dict[str, Value] = {}
+
 class Identifier(Value):
 	"""
 	Represents an identifier within Knight.
@@ -11,8 +13,7 @@ class Identifier(Value):
 	scope---we have a single dict that keeps track of _all_ identifiers.
 	"""
 
-	REGEX: re.Patterm = re.compile(r'[a-z_][a-z0-9_]*')
-	_ENV: Dict[str, Value] = {}
+	REGEX: re.Pattern = re.compile(r'[a-z_][a-z0-9_]*')
 	name: str
 
 	@classmethod
@@ -44,10 +45,10 @@ class Identifier(Value):
 		If the identifier has not been assigned yet (cf `assign`), then a
 		`RunError` will be raised.
 		"""
-		if self.name not in Identifier._ENV:
-			raise RunError(f"unknown identifier '{self.name}'")
+		if self.name in _ENV:
+			return _ENV[self.name]
 		else:
-			return Identifier._ENV[self.name]
+			raise RunError(f"unknown identifier '{self.name}'")
 
 
 	def assign(self, value: Value):
@@ -56,6 +57,4 @@ class Identifier(Value):
 
 		Any previously associated value with this identifier is discarded.
 		"""
-		Identifier._ENV[self.name] = value
-
-Value.TYPES.append(Identifier)
+		_ENV[self.name] = value

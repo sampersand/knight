@@ -3,24 +3,30 @@ from __future__ import annotations
 from knight import Stream
 from typing import Union
 
+TYPES = []
+
 class Value():
 	"""
 	The type in Knight that represents any representable entity.
 	"""
-	TYPES = []
 
 	@staticmethod
 	def parse(stream: Stream) -> Union[None, Value]:
 		""" Parses a value out of the `stream`, or returns `None` if nothing can be parsed. """
 		stream.strip()
 
-		for cls in Value.TYPES:
+		for cls in TYPES:
 			value = cls.parse(stream)
 
 			if value is not None:
 				return value
 
 		return None
+
+	def __init_subclass__(cls):
+		super().__init_subclass__()
+
+		TYPES.append(cls)
 
 	def run(self) -> Value:
 		""" Return the result of running this value. """
