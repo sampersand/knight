@@ -3,12 +3,15 @@
 
 #include "value.h"
 
+#define KN_MAX_ARGC 4
+#define KN_OPCODE_ARGC(arg) ((arg) / 0x20)
+
 typedef enum {
 	KN_OP_UNDEFINED = 0,
-	KN_OP_PROMPT,
+	KN_OP_PROMPT = 0x01,
 	KN_OP_RANDOM,
-	KN_OP_VALUE,
-	KN_OP_EVAL,
+
+	KN_OP_EVAL = 0x20,
 	KN_OP_BLOCK,
 	KN_OP_CALL,
 	KN_OP_SYSTEM,
@@ -17,7 +20,8 @@ typedef enum {
 	KN_OP_LENGTH,
 	KN_OP_DUMP,
 	KN_OP_OUTPUT,
-	KN_OP_ADD,
+
+	KN_OP_ADD = 0x40,
 	KN_OP_SUB,
 	KN_OP_MUL,
 	KN_OP_DIV,
@@ -31,9 +35,11 @@ typedef enum {
 	KN_OP_THEN,
 	KN_OP_ASSIGN,
 	KN_OP_WHILE,
-	KN_OP_IF,
+
+	KN_OP_IF = 0x60,
 	KN_OP_GET,
-	KN_OP_SET,
+
+	KN_OP_SET = 0x80,
 } kn_opcode_t;
 
 typedef union {

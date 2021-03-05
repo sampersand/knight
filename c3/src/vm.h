@@ -14,6 +14,6 @@ typedef struct {
 } kn_vm_t;
 
 kn_vm_t *new_vm(kn_bytecode_t *code);
-void run(kn_vm_t *vm);
+kn_value_t run(kn_vm_t *vm);
 
 #endif
