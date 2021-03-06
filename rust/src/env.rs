@@ -10,7 +10,7 @@ pub fn get(ident: &str) -> Result<Value, RuntimeError> {
 	unsafe { &ENVIRONMENT }
 		.get()
 		.and_then(|env| env.borrow().get(ident).cloned())
-		.ok_or_else(|| RuntimeError::UnknownIdentifier(ident.to_owned()))
+		.ok_or_else(|| RuntimeError::UnknownIdentifier { identifier: ident.to_owned() })
 }
 
 #[allow(unsafe_code)]

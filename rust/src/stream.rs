@@ -115,10 +115,8 @@ fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Re
 	for number in 0..func.arity() {
 		match Value::parse_inner(stream) {
 			Ok(value) => args.push(value),
-			Err(ParseError::UnexpectedEOF) =>
-				return Err(ParseError::MissingFunctionArgument {
-					name: func.name(), number, lineno }
-				),
+			Err(ParseError::NothingToParse) =>
+				return Err(ParseError::MissingFunctionArgument { func: func.name(), number, lineno }),
 			Err(other) => return Err(other)
 		}
 	}
@@ -137,7 +135,7 @@ impl Value {
 
 	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Self, ParseError> {
 		loop {
-			let chr = *stream.iter.peek().ok_or(ParseError::UnexpectedEOF)?;
+			let chr = *stream.iter.peek().ok_or(ParseError::NothingToParse)?;
 
 			match chr {
 				// note that this is ascii whitespace, as non-ascii characters are invalid.
