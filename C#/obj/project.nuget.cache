@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "GyHnycUE6FDFWFyNRBIPyRot5EsCyEo2kP2DLCS/L2fBh/YyT4vSuQK++BMLo2AZzIJiU9usHS7QGVuW5e542g==",
+  "success": true,
+  "projectFilePath": "/Users/samp/me/knight/C#/Knight.csproj",
+  "expectedPackageFiles": [
+    "/Users/samp/.nuget/packages/microsoft.netcore.app/2.1.0/microsoft.netcore.app.2.1.0.nupkg.sha512",
+    "/Users/samp/.nuget/packages/microsoft.netcore.dotnetapphost/2.1.0/microsoft.netcore.dotnetapphost.2.1.0.nupkg.sha512",
+    "/Users/samp/.nuget/packages/microsoft.netcore.dotnethostpolicy/2.1.0/microsoft.netcore.dotnethostpolicy.2.1.0.nupkg.sha512",
+    "/Users/samp/.nuget/packages/microsoft.netcore.dotnethostresolver/2.1.0/microsoft.netcore.dotnethostresolver.2.1.0.nupkg.sha512",
+    "/Users/samp/.nuget/packages/microsoft.netcore.platforms/2.1.0/microsoft.netcore.platforms.2.1.0.nupkg.sha512",
+    "/Users/samp/.nuget/packages/microsoft.netcore.targets/2.1.0/microsoft.netcore.targets.2.1.0.nupkg.sha512",
+    "/Users/samp/.nuget/packages/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

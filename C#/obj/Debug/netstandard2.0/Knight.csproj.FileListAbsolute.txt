@@ -1,0 +1,9 @@
+/Users/samp/me/knight/C#/bin/Debug/netstandard2.0/Knight.deps.json
+/Users/samp/me/knight/C#/bin/Debug/netstandard2.0/Knight.dll
+/Users/samp/me/knight/C#/bin/Debug/netstandard2.0/Knight.pdb
+/Users/samp/me/knight/C#/obj/Debug/netstandard2.0/Knight.csprojAssemblyReference.cache
+/Users/samp/me/knight/C#/obj/Debug/netstandard2.0/Knight.AssemblyInfoInputs.cache
+/Users/samp/me/knight/C#/obj/Debug/netstandard2.0/Knight.AssemblyInfo.cs
+/Users/samp/me/knight/C#/obj/Debug/netstandard2.0/Knight.csproj.CoreCompileInputs.cache
+/Users/samp/me/knight/C#/obj/Debug/netstandard2.0/Knight.dll
+/Users/samp/me/knight/C#/obj/Debug/netstandard2.0/Knight.pdb
