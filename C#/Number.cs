@@ -12,11 +12,11 @@ namespace Knight
 
 			long value = 0;
 	
-			while (Char.IsDigit(stream[0])) {
+			do {
 				value += stream[0] - '0';
 
 				stream = stream.Substring(1);
-			}
+			} while(Char.IsDigit(stream[0])) ;
 
 			return new Number(value);
 		}

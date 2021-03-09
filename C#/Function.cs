@@ -7,7 +7,7 @@ namespace Knight
 {
 	public class Function : NonIdempotent
 	{
-		private static readonly Dictionary<char, (FunctionBody, int)> FUNCTIONS;
+		private static  Dictionary<char, (FunctionBody, int)> FUNCTIONS = new Dictionary<char, (FunctionBody, int)>();
 		public delegate IValue FunctionBody(params IValue[] args);
 
 		private FunctionBody _function;
@@ -50,7 +50,7 @@ namespace Knight
 			var args = new IValue[func.Item2];
 
 			for (int i = 0; i < func.Item2; ++i) {
-				if ((args[i] = IValue.Parse(ref stream)) == null) {
+				if ((args[i] = Kn.Parse(ref stream)) == null) {
 					throw new ParseException($"Unable to parse variable '{i}' for function '{name}'.");
 				}
 			}

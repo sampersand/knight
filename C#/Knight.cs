@@ -5,10 +5,51 @@ namespace Knight
 {
 	public class Kn
 	{
-		public static IValue Run(string stream) {
+
+		internal static IValue Parse(ref string stream) {
 			IValue value;
+
+			while (stream != "") {
+				if (char.IsWhiteSpace(stream[0])) {
+					stream = stream.Substring(1);
+					continue;
+				}
+
+				if (stream[0] != '#') {
+					break;
+				}
+
+				while (stream != "" && stream[0] != '\n') {
+					stream = stream.Substring(1);
+				}
+			}
+
+			if (stream == "")
+				return null;
+
+			if ((value = Number.Parse(ref stream)) != null) 
+				return value;
+			if ((value = Boolean.Parse(ref stream)) != null)
+				return value;
+			if ((value = String.Parse(ref stream)) != null)
+				return value;
+			if ((value = Null.Parse(ref stream)) != null)
+				return value;
+			if ((value = Identifier.Parse(ref stream)) != null)
+				return value;
+			if ((value = Function.Parse(ref stream)) != null)
+				return value;
+			return null;
+		}
+
+		public static IValue Run(string stream) {
+			if (stream == "") {
+				throw new ParseException("nothing to parse.");
+			}
+
+			IValue value = Parse(ref stream);
 			
-			if (stream == "" || (value = IValue.Parse(ref stream)) == null) {
+			if (value == null) {
 				throw new ParseException($"Unknown token start '{stream[0]}'.");
 			} else {
 				return value;
