@@ -7,6 +7,29 @@ namespace Knight
 	{
 		public String(string data) : base(data) {}
 
+		public static IValue Parse(ref string stream) {
+			var quote = stream[0];
+			
+			if (quote != '\'' && quote != '\"') {
+				return null;
+			}
+
+			var start = stream;
+			var string_ = "";
+
+			do {
+				string_ += stream[0];
+				stream = stream.Substring(1);
+				if (stream.Length == 0) {
+					throw new RuntimeException($"unterminated string, starting at {start}");
+				}
+			} while (start.Substring(1)[0] != quote);
+
+			return new String(string_);
+		}
+
+		public override void Dump() => Console.Write($"String({_data})");
+
 		public override bool ToBoolean() => _data != "";
 		public override long ToNumber() {
 			long ret = 0;

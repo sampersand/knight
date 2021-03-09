@@ -9,7 +9,7 @@ namespace Knight
 
 		public Literal(T data) => _data = data;
 		public IValue Run() => this;
-		public abstract IValue Parse(ref string stream);
+		public abstract void Dump();
 
 		public override string ToString() => _data.ToString();
 		public abstract bool ToBoolean();

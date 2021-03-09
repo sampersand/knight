@@ -7,7 +7,7 @@ namespace Knight
 	{
 		public Boolean(bool data) : base(data) {}
 
-		public IValue Parse(ref string stream) {
+		public static IValue Parse(ref string stream) {
 			if (stream[0] != 'T' && stream[0] != 'F') {
 				return null;
 			}
@@ -18,8 +18,10 @@ namespace Knight
 				stream = stream.Substring(1);
 			} while(char.IsUpper(stream[0]));
 
-			return new Boolean(isTrue);<
+			return new Boolean(isTrue);
 		}
+		
+		public override void Dump() => Console.Write($"Boolean({_data})");
 
 		public override bool ToBoolean() => _data;
 		public override long ToNumber() => _data ? 1 : 0;

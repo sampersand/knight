@@ -6,7 +6,7 @@ namespace Knight
 	{
 		public Number(long data) : base(data) {}
 
-		public override IValue Parse(ref string stream) {
+		public static IValue Parse(ref string stream) {
 			if (!char.IsDigit(stream[0]))
 				return null;
 
@@ -20,6 +20,8 @@ namespace Knight
 
 			return new Number(value);
 		}
+
+		public override void Dump() => Console.Write($"Number({_data})");
 
 		public override bool ToBoolean() => _data != 0;
 		public override long ToNumber() => _data;

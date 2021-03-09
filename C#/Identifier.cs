@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 
 namespace Knight
 {
@@ -10,7 +11,7 @@ namespace Knight
 
 		public Identifier(string name) => _name = name;
 
-		public override IValue Parse(ref string stream) {
+		public static IValue Parse(ref string stream) {
 			string ident = "";
 
 			while (char.IsLower(stream[0]) || stream[0] == '_') {
@@ -21,7 +22,8 @@ namespace Knight
 			return ident == "" ? null : new Identifier(ident);
 		}
 
-		// note: Throws `KeyNotFoundException` if `_name` doesn't exist.
+		public override void Dump() => Console.Write($"Identifier({_name})");
+
 		public override IValue Run() {
 			IValue result;
 
