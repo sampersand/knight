@@ -143,7 +143,13 @@ namespace Knight
 			});
 
 			Register('I', 3, args => args[0].ToBoolean() ? args[1].Run() : args[2].Run());
-			Register('G', 3, args => new String(args[0].ToString().Substring((int) args[1].ToNumber(), (int) args[2].ToNumber())));
+			Register('G', 3, args => {
+				var str = args[0].ToString();
+				var start = (int) args[1].ToNumber();
+				var length = (int) args[2].ToNumber();
+
+				return new String(str.Length <= start ? "" : str.Substring(start, length));
+			});
 
 			Register('S', 4, args => {
 				var str = args[0].ToString();
