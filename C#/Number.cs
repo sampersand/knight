@@ -13,15 +13,15 @@ namespace Knight
 			long value = 0;
 	
 			do {
-				value += stream[0] - '0';
+				value = value * 10 + (stream[0] - '0');
 
 				stream = stream.Substring(1);
-			} while(Char.IsDigit(stream[0])) ;
+			} while(stream != "" && Char.IsDigit(stream[0])) ;
 
 			return new Number(value);
 		}
 
-		public override void Dump() => Console.Write($"Number({_data})");
+		public override void Dump() => Console.Write($"Number({this})");
 
 		public override bool ToBoolean() => _data != 0;
 		public override long ToNumber() => _data;

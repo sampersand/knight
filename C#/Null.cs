@@ -12,7 +12,7 @@ namespace Knight
 
 			do {
 				stream = stream.Substring(1);
-			} while(char.IsUpper(stream[0]));
+			} while(stream != "" && char.IsUpper(stream[0]));
 
 			return new Null();
 		}

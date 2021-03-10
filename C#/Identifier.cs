@@ -12,14 +12,19 @@ namespace Knight
 		public Identifier(string name) => _name = name;
 
 		public static IValue Parse(ref string stream) {
-			string ident = "";
-
-			while (char.IsLower(stream[0]) || stream[0] == '_') {
-				ident += stream[0];
-				stream = stream.Substring(1);
+			if (!char.IsLower(stream[0]) && stream[0] != '_') {
+				return null;
 			}
 
-			return ident == "" ? null : new Identifier(ident);
+			string ident = "";
+
+			do {
+			
+				ident += stream[0];
+				stream = stream.Substring(1);
+			} while (stream != "" && (char.IsDigit(stream[0]) || char.IsLower(stream[0]) || stream[0] == '_'));
+
+			return new Identifier(ident);
 		}
 
 		public override void Dump() => Console.Write($"Identifier({_name})");

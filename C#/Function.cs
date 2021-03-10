@@ -41,11 +41,13 @@ namespace Knight
 				return null;
 			}
 
+			stream = stream.Substring(1);
+
 			if (char.IsUpper(name)) {
-				do {
+				while (stream != "" && char.IsUpper(stream[0])) {
 					stream = stream.Substring(1);
-				} while (stream != "" && char.IsUpper(stream[0]));
-			}
+				}
+			} 
 
 			var args = new IValue[func.Item2];
 

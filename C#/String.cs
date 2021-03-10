@@ -15,17 +15,21 @@ namespace Knight
 			}
 
 			var start = stream;
-			var string_ = "";
+			stream = stream.Substring(1);
+			var data = "";
 
-			do {
-				string_ += stream[0];
+			while (stream != "" && stream[0] != quote) {
+				data += stream[0];
 				stream = stream.Substring(1);
-				if (stream.Length == 0) {
-					throw new RuntimeException($"unterminated string, starting at {start}");
-				}
-			} while (start.Substring(1)[0] != quote);
+			}
 
-			return new String(string_);
+			if (stream.Length == 0) {
+				throw new RuntimeException($"unterminated string, starting at {start}");
+			}
+
+			stream = stream.Substring(1);
+
+			return new String(data);
 		}
 
 		public override void Dump() => Console.Write($"String({_data})");
@@ -33,11 +37,21 @@ namespace Knight
 		public override bool ToBoolean() => _data != "";
 		public override long ToNumber() {
 			long ret = 0;
-			;
+			var str = _data.TrimStart();
 
-			for (var s = _data.TrimStart(); s != "" && char.IsDigit(s[0]); s = s.Substring(1)) {
-				ret = ret * 10 + (s[0] - '0');
-			}
+			if (str == "")
+				return 0;
+
+			var isNegative = str[0] == '-';
+
+			if (str[0] == '-' || str[0] == '+')
+				str = str.Substring(1);
+
+			for (; str != "" && char.IsDigit(str[0]); str = str.Substring(1))
+				ret = ret * 10 + (str[0] - '0');
+
+			if (isNegative)
+				ret *= -1;
 
 			return ret;
 		}
@@ -52,6 +66,6 @@ namespace Knight
 			return new String(s);
 		}
 
-		public int CompareTo(IValue obj) => _data.CompareTo(obj.ToString());
+		public int CompareTo(IValue obj) => string.Compare(_data, obj.ToString(), StringComparison.Ordinal);
 	}
 }

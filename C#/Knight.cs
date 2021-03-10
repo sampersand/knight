@@ -10,19 +10,29 @@ namespace Knight
 			IValue value;
 
 			while (stream != "") {
-				if (char.IsWhiteSpace(stream[0])) {
-					stream = stream.Substring(1);
-					continue;
-				}
+				switch (stream[0]) {
+					case '#':
+						do {
+							stream = stream.Substring(1);
+						} while (stream != "" && stream[0] != '\n');
+						break;
 
-				if (stream[0] != '#') {
-					break;
-				}
-
-				while (stream != "" && stream[0] != '\n') {
-					stream = stream.Substring(1);
+					case '(':
+					case ')':
+					case '[':
+					case ']':
+					case '{':
+					case '}':
+					case ':':
+						stream = stream.Substring(1);
+						break;
+					default:
+						if (char.IsWhiteSpace(stream[0]))
+							goto case ':';
+						goto foo;
 				}
 			}
+			foo:
 
 			if (stream == "")
 				return null;
@@ -52,7 +62,7 @@ namespace Knight
 			if (value == null) {
 				throw new ParseException($"Unknown token start '{stream[0]}'.");
 			} else {
-				return value;
+				return value.Run();
 			}
 		}
 
@@ -66,7 +76,7 @@ namespace Knight
 				Run(args[0] == "-e" ? args[1] : File.ReadAllText(args[1]));
 				return 0;
 			} catch (KnightException err) {
-				Console.Error.WriteLine("invalid program: {0}", err);
+				Console.Error.WriteLine("invalid program: {0}", err.Message);
 				return 1;
 			}
 		}
