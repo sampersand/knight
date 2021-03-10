@@ -25,7 +25,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) | X |   | X | X | Simple implementation without comments. It intentionally captures all UB, but eventually will have an efficient implementation. |
 | Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
-| C# |   |   |   |   | Planned. I know a decent amount of C# already, so this wont be that hard. |
+| [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
 | SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
