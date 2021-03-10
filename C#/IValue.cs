@@ -2,7 +2,6 @@ namespace Knight
 {
 	public interface IValue
 	{
-
 		IValue Run();
 		void Dump();
 

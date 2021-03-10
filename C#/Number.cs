@@ -6,19 +6,10 @@ namespace Knight
 	{
 		public Number(long data) : base(data) {}
 
-		public static IValue Parse(ref string stream) {
-			if (!char.IsDigit(stream[0]))
-				return null;
-
-			long value = 0;
-	
-			do {
-				value = value * 10 + (stream[0] - '0');
-
-				stream = stream.Substring(1);
-			} while(stream != "" && Char.IsDigit(stream[0])) ;
-
-			return new Number(value);
+		public static Number Parse(Stream stream) {
+			var contents = stream.TakeWhileIfStartsWith(char.IsDigit);
+			
+			return contents == null ? null : new Number(long.Parse(contents));
 		}
 
 		public override void Dump() => Console.Write($"Number({this})");

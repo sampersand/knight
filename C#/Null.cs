@@ -5,14 +5,12 @@ namespace Knight
 {
 	public class Null : IValue, IEquatable<IValue>
 	{
-		public static IValue Parse(ref string stream) {
-			if (stream[0] != 'N') {
+		public static Null Parse(Stream stream) {
+			if (!stream.StartsWith('N')) {
 				return null;
 			}
 
-			do {
-				stream = stream.Substring(1);
-			} while(stream != "" && char.IsUpper(stream[0]));
+			stream.StripKeyword();
 
 			return new Null();
 		}

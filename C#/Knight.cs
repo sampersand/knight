@@ -1,66 +1,47 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Knight
 {
 	public class Kn
 	{
 
-		internal static IValue Parse(ref string stream) {
-			IValue value;
+		internal static IValue Parse(Stream stream) {
+			while (!stream.IsEmpty()) {
+				// strip comments.
+				if (stream.TakeWhileIfStartsWith('#', c => c != '\n') != null)
+					continue;
 
-			while (stream != "") {
-				switch (stream[0]) {
-					case '#':
-						do {
-							stream = stream.Substring(1);
-						} while (stream != "" && stream[0] != '\n');
-						break;
+				// strip whitespace.
+				if (stream.TakeWhile(c => char.IsWhiteSpace(c) || "(){}[]:".Contains(c)) != null)
+					continue;
 
-					case '(':
-					case ')':
-					case '[':
-					case ']':
-					case '{':
-					case '}':
-					case ':':
-						stream = stream.Substring(1);
-						break;
-					default:
-						if (char.IsWhiteSpace(stream[0]))
-							goto case ':';
-						goto foo;
-				}
+				// if we neither had comments or whitespace, break out.
+				break;
 			}
-			foo:
 
-			if (stream == "")
+			if (stream.IsEmpty())
 				return null;
 
-			if ((value = Number.Parse(ref stream)) != null) 
-				return value;
-			if ((value = Boolean.Parse(ref stream)) != null)
-				return value;
-			if ((value = String.Parse(ref stream)) != null)
-				return value;
-			if ((value = Null.Parse(ref stream)) != null)
-				return value;
-			if ((value = Identifier.Parse(ref stream)) != null)
-				return value;
-			if ((value = Function.Parse(ref stream)) != null)
-				return value;
-			return null;
+			return Number.Parse(stream) ??
+				Boolean.Parse(stream) ?? 
+				String.Parse(stream) ??
+				Null.Parse(stream) ??
+				(IValue) Identifier.Parse(stream) ??
+				Function.Parse(stream);
 		}
 
-		public static IValue Run(string stream) {
-			if (stream == "") {
+		public static IValue Run(string stream) => Run(new Stream(stream));
+		public static IValue Run(Stream stream) {
+			if (stream.IsEmpty()) {
 				throw new ParseException("nothing to parse.");
 			}
 
-			IValue value = Parse(ref stream);
+			IValue value = Parse(stream);
 			
 			if (value == null) {
-				throw new ParseException($"Unknown token start '{stream[0]}'.");
+				throw new ParseException($"Unknown token start '{stream.Take()}'.");
 			} else {
 				return value.Run();
 			}

@@ -3,7 +3,7 @@ using System;
 
 namespace Knight
 {
-    public class Identifier : NonIdempotent
+    public class Identifier : NonIdempotent, IValue
     {
 		private static IDictionary<string, IValue> ENV = new Dictionary<string, IValue>();
 
@@ -11,20 +11,12 @@ namespace Knight
 
 		public Identifier(string name) => _name = name;
 
-		public static IValue Parse(ref string stream) {
-			if (!char.IsLower(stream[0]) && stream[0] != '_') {
-				return null;
-			}
+		public static Identifier Parse(Stream stream) {
+			bool isLower(char c) => char.IsLower(c) || c == '_';
 
-			string ident = "";
-
-			do {
+			var contents = stream.TakeWhileIfStartsWith(isLower, c => isLower(c) || char.IsDigit(c));
 			
-				ident += stream[0];
-				stream = stream.Substring(1);
-			} while (stream != "" && (char.IsDigit(stream[0]) || char.IsLower(stream[0]) || stream[0] == '_'));
-
-			return new Identifier(ident);
+			return contents == null ? null : new Identifier(contents);
 		}
 
 		public override void Dump() => Console.Write($"Identifier({_name})");

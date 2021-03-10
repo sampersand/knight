@@ -33,26 +33,20 @@ namespace Knight
 
 		public static void Register(char name, int arity, FunctionBody body) => FUNCTIONS[name] = (body, arity);
 
-		public static IValue Parse(ref string stream) {
-			(FunctionBody, int) func;
-			char name = stream[0];
+		public static Function Parse(Stream stream) {
+			(FunctionBody, int) func = (null, 0);
+			char name;
 
-			if (!FUNCTIONS.TryGetValue(name, out func)){
+			if (!stream.StartsWith(c => FUNCTIONS.TryGetValue(c, out func)))
 				return null;
-			}
 
-			stream = stream.Substring(1);
-
-			if (char.IsUpper(name)) {
-				while (stream != "" && char.IsUpper(stream[0])) {
-					stream = stream.Substring(1);
-				}
-			} 
+			if (char.IsUpper(name = stream.Take()))
+				stream.StripKeyword();
 
 			var args = new IValue[func.Item2];
 
 			for (int i = 0; i < func.Item2; ++i) {
-				if ((args[i] = Kn.Parse(ref stream)) == null) {
+				if ((args[i] = Kn.Parse(stream)) == null) {
 					throw new ParseException($"Unable to parse variable '{i}' for function '{name}'.");
 				}
 			}

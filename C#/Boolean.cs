@@ -7,18 +7,15 @@ namespace Knight
 	{
 		public Boolean(bool data) : base(data) {}
 
-		public static Boolean Parse(ref string stream) {
-			if (stream[0] != 'T' && stream[0] != 'F') {
+		public static Boolean Parse(Stream stream) {
+			if (!stream.StartsWith('T', 'F')) {
 				return null;
 			}
 
-			var isTrue = stream[0] == 'T';
+			var ret = new Boolean(stream.Take() == 'T');
+			stream.StripKeyword();
 
-			do {
-				stream = stream.Substring(1);
-			} while(stream != "" && char.IsUpper(stream[0]));
-
-			return new Boolean(isTrue);
+			return ret;
 		}
 		
 		public override void Dump() => Console.Write($"Boolean({this})");
