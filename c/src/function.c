@@ -409,7 +409,6 @@ struct kn_value_t kn_fn_sub(const struct kn_ast_t *args) {
 	return kn_value_new_integer(minuend - subtrahend);
 }
 
-
 static struct kn_value_t kn_fn_mul_string(
 	struct kn_value_t lhs, 
 	struct kn_value_t rhs
@@ -508,7 +507,6 @@ struct kn_value_t kn_fn_pow(const struct kn_ast_t *args) {
 	kn_integer_t result = 1;
 	kn_integer_t base = kn_value_to_integer(&lhs);
 	kn_integer_t exponent = kn_value_to_integer(&rhs);
-
 
 	// there's no builtin way to do integer exponentiation, so we have to
 	// do it manually.

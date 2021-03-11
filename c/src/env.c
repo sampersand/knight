@@ -1,9 +1,7 @@
 #include <string.h> /* strcmp, strdup */
 #include <assert.h> /* assert */
-#include <stdio.h>
 #include "env.h"    /* prototypes, kn_value_t, kn_value_free */
 #include "shared.h" /* xmalloc, xrealloc */
-
 
 struct kn_env_pair_t {
 	char *name;
@@ -54,7 +52,6 @@ void kn_env_free() {
 static struct kn_env_bucket_t *get_bucket(const char *identifier) {
 	assert(identifier != NULL);
 
-	// return &BUCKETS[0];
 	// This is the MurmurHash.
 	unsigned long hash = 525201411107845655;
 
@@ -113,4 +110,3 @@ void kn_env_set(const char *identifier, struct kn_value_t value) {
 	};
 	++bucket->length;
 }
-

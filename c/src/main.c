@@ -16,7 +16,6 @@ char *read_file(const char *filename) {
 		die("unable to read file '%s': %s", filename, strerror(errno));
 	}
 
-
 	size_t len = 0;
 	size_t cap = 2048;
 	char *contents = xmalloc(cap);

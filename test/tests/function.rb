@@ -37,12 +37,12 @@ describe 'Function' do
 		end
 
 		describe 'PROMPT' do
-			it 'should return a string with the trailing newline' do
+			it 'should return a string without the \n or \r\n' do
 				return pass
 				old_stdin = $stdin
 				$stdin = StringIO.new("line one\nline two\r\nline three")
-				assert_equal "line one\n", eval("PROMPT")
-				assert_equal "line two\r\n", eval("PROMPT")
+				assert_equal "line one", eval("PROMPT")
+				assert_equal "line two", eval("PROMPT")
 				assert_equal "line three", eval("PROMPT")
 			ensure
 				$stdin = old_stdin

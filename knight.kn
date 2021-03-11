@@ -173,7 +173,7 @@
 ; = next_function_idx 0
 ; = next_ast_recur 0
 ; = next_ast BLOCK
-	; = (+ 'next_ast_name_' next_ast_recur) (+ "__ast_fn_" next_function_idx)
+	; EVAL +++"=next_ast_name_" next_ast_recur "+'__ast_fn_'" next_function_idx
 	; = next_function_idx + next_function_idx 1
 	; = next_ast_recur + next_ast_recur 1
 	; CALL strip_whitespace_and_comments
@@ -189,7 +189,7 @@
 			: CALL next_function
 	; = next_ast_recur - next_ast_recur 1
 	; = next_ast_name (EVAL + "next_ast_name_" next_ast_recur)
-	; = (+ "" next_ast_name) next_ast_tmp
+	; EVAL ++"=" next_ast_name " next_ast_tmp"
 	: next_ast_name
 
 ; = next_arg BLOCK
@@ -295,7 +295,7 @@
 		: + 'n' RANDOM
 	: IF ? 'P' value_kind
 		: + 's' PROMPT
-	; = run_ast_arg0 = (+ 'run_ast_arg0_' run_ast_recur) (CALL next_arg)
+	; = run_ast_arg0 EVAL ++'= run_ast_arg0_' run_ast_recur "Cnext_arg"
 	: IF ? 'E' value_kind
 		; CALL eval_arg0
 		; = stream CALL to_string
@@ -321,7 +321,7 @@
 	: IF ? 'O' value_kind
 		; CALL eval_arg0
 		: + 's' OUTPUT CALL to_string
-	; = (+ 'run_ast_arg1_' run_ast_recur) (CALL next_arg)
+	; EVAL ++'=run_ast_arg1_' run_ast_recur 'Cnext_arg'
 	: IF ? '+' value_kind
 		; CALL eval_arg0
 		; CALL categorize_value
@@ -336,16 +336,13 @@
 		; CALL eval_arg0
 		: CALL eval_arg1
 	: IF ? 'W' value_kind
-		; = (+ 'while_ret_'  run_ast_recur) 'N$'
 		; WHILE (; CALL eval_arg0 CALL to_boolean)
-			: = (+ 'while_ret_' run_ast_recur) CALL eval_arg1
-		: EVAL + 'while_ret_'  run_ast_recur
+			: CALL eval_arg1
+		: NULL
 	: IF ? '=' value_kind
 		; = value EVAL run_ast_arg0
 		; CALL categorize_value
-		: IF ? 'i' value_kind
-			: = (+ '_v' value_data) CALL eval_arg1
-			: = (+ '_v' ; CALL eval_arg0 : CALL to_string) CALL eval_arg1
+		: EVAL ++ "=_v" value_data "Ceval_arg1"
 	: IF ? '-' value_kind
 		; CALL eval_arg0
 		: + 'n' - (CALL to_number)
@@ -415,26 +412,26 @@
 		: IF CALL to_boolean
 			: value
 			: CALL eval_arg1
-	; = (+ 'run_ast_arg2_' run_ast_recur) (CALL next_arg)
+	; EVAL ++ '=run_ast_arg2_' run_ast_recur 'Cnext_arg'
 	: IF ? 'I' value_kind
 		; CALL eval_arg0
 		: CALL IF (CALL to_boolean) eval_arg1 eval_arg2
 	: IF ? 'G' value_kind
 		; CALL eval_arg0
-		; = (+ 'get_string' run_ast_recur) CALL to_string
+		; EVAL ++ '=get_string' run_ast_recur 'Cto_string'
 		; CALL eval_arg1
-		; = (+ 'get_start' run_ast_recur) CALL to_number
+		; EVAL ++ '=get_start' run_ast_recur 'Cto_number'
 		; CALL eval_arg2
 		; = get_length CALL to_number
 		: + 's' GET (EVAL + 'get_string' run_ast_recur) (EVAL + 'get_start' run_ast_recur) get_length
-	; = (+ 'run_ast_arg3_' run_ast_recur) (CALL next_arg)
+	; EVAL ++ '=run_ast_arg3_' run_ast_recur 'Cnext_arg'
 	: IF ? 'S' value_kind
 		; CALL eval_arg0
-		; = (+ 'set_string' run_ast_recur) CALL to_string
+		; EVAL ++ '=set_string' run_ast_recur 'Cto_string'
 		; CALL eval_arg1
-		; = (+ 'set_start' run_ast_recur) CALL to_number
+		; EVAL ++ '=set_start' run_ast_recur 'Cto_number'
 		; CALL eval_arg2
-		; = (+ 'set_length' run_ast_recur) CALL to_number
+		; EVAL ++ '=set_length' run_ast_recur 'Cto_number'
 		; CALL eval_arg3
 		; = set_substr CALL to_string
 		: + 's' SET

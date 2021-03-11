@@ -22,7 +22,6 @@ static int isident(char c) {
 	return islower(c) || isdigit(c) || c == '_';
 }
 
-
 #define ADVANCE() do { ++*stream; } while(0)
 #define PEEK() (**stream)
 #define ADVANCE_PEEK() (*++*stream)
@@ -280,7 +279,7 @@ parse_function:
 	ast->func = function;
 	ast->refcount = 1;
 
-#ifndef FIXED_ARGC
+#ifdef DYAMIC_THEN_ARGC
 	if (function != &kn_fn_then) {
 	ast->argc = arity;
 #endif
@@ -292,7 +291,7 @@ parse_function:
 		}
 	}
 
-#ifndef FIXED_ARGC
+#ifdef DYAMIC_THEN_ARGC
 	goto parse_function_end;
 	}
 

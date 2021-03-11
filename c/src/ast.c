@@ -58,7 +58,6 @@ static void strip_stream(const char **stream) {
 	}
 }
 
-
 static struct kn_ast_t kn_ast_parse_integer(const char **stream) {
 	assert(isdigit(peek(stream)));
 
@@ -137,7 +136,6 @@ static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 		.value = kn_value_new_string(string)
 	};
 }
-
 
 static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	char name = next(stream);

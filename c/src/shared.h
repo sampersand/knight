@@ -17,7 +17,7 @@ void die(const char *msg, ...) __attribute__((noreturn,cold));
  */
 #define bug(msg, ...) \
 	die("%s:%s:%d: bug encountered: " msg "\n", \
-		__FILE__, __func__, __LINE__, ##__VA_ARGS__)
+		__FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /*
  * Allocates `size_t` bytes of memory and returns a pointer to it.
