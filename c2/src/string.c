@@ -41,15 +41,13 @@ const struct kn_string_t *kn_string_new(const char *str) {
 }
 
 void kn_string_free(const struct kn_string_t *string) {
-	struct kn_string_t *unconst;
-
 	assert(string != NULL);
 
-	unconst = (struct kn_string_t *) string;
+	struct kn_string_t *unconst = (struct kn_string_t *) string;
 
 	if (string->refcount != NULL && !--*unconst->refcount) {
-		// free((void *) unconst->str);
-		// free(unconst);
+		free((void *) unconst->str);
+		free(unconst);
 	}
 }
 

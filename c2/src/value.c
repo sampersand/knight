@@ -147,6 +147,7 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 
 	kn_value_t ran = kn_value_run(value);
 	kn_number_t ret = kn_value_to_number(ran);
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
@@ -169,6 +170,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 
 	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 } 
@@ -176,6 +178,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 static const struct kn_string_t *number_to_string(kn_number_t num) {
 	// max length is `-LONG_MAX`, which is 21 characters long.
 	static char buf[22]; // initialized to zero.
+	static struct kn_string_t string = { .refcount = NULL };
 
 	// should have been checked earlier.
 	assert(num != 0 && num != 1);
@@ -193,8 +196,11 @@ static const struct kn_string_t *number_to_string(kn_number_t num) {
 
 	if (is_neg) *--ptr = '-';
 
+	string.str = ptr;
+	string.length = &buf[sizeof(buf) - 1] - ptr;
+
 	// is this correct?
-	return kn_string_emplace(ptr, &buf[sizeof(buf) - 1] - ptr);
+	return &string;
 }
 
 const struct kn_string_t *kn_value_to_string(kn_value_t value) {
@@ -215,10 +221,11 @@ const struct kn_string_t *kn_value_to_string(kn_value_t value) {
 		return number_to_string(kn_value_as_number(value));
 
 	if (kn_value_is_string(value))
-		return kn_string_clone(kn_value_as_string(value));
+		return kn_value_as_string(value);
 
 	kn_value_t ran = kn_value_run(value);
 	const struct kn_string_t *ret = kn_value_to_string(ran);
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
@@ -336,6 +343,8 @@ void kn_value_free(kn_value_t value) {
 	if (KN_VALUE_IS_LITERAL(value) || kn_value_is_identifier(value))
 		return;
 
+	printf("free: [%p]\n", (void *) KN_UNMASK(value));
+
 	if (KN_TAG(value) == KN_TAG_STRING) {
 		kn_string_free((struct kn_string_t *) KN_UNMASK(value));
 		return;
@@ -350,8 +359,10 @@ void kn_value_free(kn_value_t value) {
 	if (--ast->refcount)
 		return;
 
-	for (unsigned i = 0; i < ARITY(ast); ++i)
+	for (unsigned i = 0; i < ARITY(ast); ++i) {
+		printf(__FILE__ " %d\n", __LINE__);
 		kn_value_free(ast->args[i]);
+	}
 
 	free(ast);
 }

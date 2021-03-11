@@ -63,21 +63,12 @@ DECLARE_FUNCTION(rand, 0, 'R') {
 
 #ifdef KN_EXT_VALUE
 DECLARE_FUNCTION(value, 1, 'V') {
-	// otherwise, evaluate the expression, convert to a string,
-	// and then use that as the identifier.
-	const struct kn_string_t *ident = kn_value_to_string(args[0]);
-	kn_value_t *ptr = kn_env_fetch(ident->str, false);
-	kn_string_free(ident);
-
-	return kn_value_clone(*ptr);
+	return kn_value_clone(*kn_env_fetch(kn_value_to_string(args[0])->str, false));
 }
 #endif
 
 DECLARE_FUNCTION(eval, 1, 'E') {
-	const struct kn_string_t *arg0 = kn_value_to_string(args[0]);
-	kn_value_t ret = kn_run(arg0->str);
-	kn_string_free(arg0);
-	return ret;
+	return kn_run(kn_value_to_string(args[0])->str);
 }
 
 DECLARE_FUNCTION(block, 1, 'B') {
@@ -88,6 +79,7 @@ DECLARE_FUNCTION(call, 1, 'C') {
 	kn_value_t arg0 = kn_value_run(args[0]);
 	kn_value_t ret = kn_value_run(arg0);
 
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(arg0);
 	return ret;
 }
@@ -100,8 +92,6 @@ DECLARE_FUNCTION(system, 1, '`') {
 
 	if (stream == NULL)
 		die("unable to execute command '%s'.", command->str);
-
-	kn_string_free(command);
 
 	size_t cap = 2048;
 	size_t len = 0;
@@ -148,9 +138,7 @@ DECLARE_FUNCTION(not, 1, '!') {
 }
 
 DECLARE_FUNCTION(length, 1 ,'L') {
-	const struct kn_string_t *string = kn_value_to_string(args[0]);
-	kn_number_t length = (kn_number_t) string->length;
-	kn_string_free(string);
+	kn_number_t length = (kn_number_t) kn_value_to_string(args[0])->length;
 
 	return kn_value_new_number(length);
 }
@@ -166,7 +154,6 @@ DECLARE_FUNCTION(dump, 1 ,'D') {
 #ifndef KN_EMBEDDED
 DECLARE_FUNCTION(output, 1, 'O') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
-	assert(string != NULL);
 
 	// right here we're casting away the const.
 	// this is because we might need to replace the penult character
@@ -182,8 +169,6 @@ DECLARE_FUNCTION(output, 1, 'O') {
 		printf("%s\n", string->str);
 	}
 
-	kn_string_free(string);
-
 	return KN_NULL;
 }
 #endif /* KN_EMBEDDED */
@@ -192,13 +177,10 @@ static kn_value_t kn_fn_add_string(
 	const struct kn_string_t *lhs,
 	const struct kn_string_t *rhs
 ) {
-	if (lhs->length == 0) {
-		kn_string_free(lhs);
+	if (lhs->length == 0)
 		return kn_value_new_string(rhs);
-	} else if (rhs->length == 0) {
-		kn_string_free(rhs);
+	if (rhs->length == 0)
 		return kn_value_new_string(lhs);
-	}
 
 	size_t length = lhs->length + rhs->length;
 	char *str = xmalloc(length + 1);
@@ -206,9 +188,6 @@ static kn_value_t kn_fn_add_string(
 	memcpy(str, lhs->str, lhs->length);
 	memcpy(str + lhs->length, rhs->str, rhs->length);
 	str[length] = '\0';
-
-	kn_string_free(lhs);
-	kn_string_free(rhs);
 
 	return kn_value_new_string(kn_string_emplace(str, length));
 }
@@ -248,10 +227,8 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 		// TODO: do we clone this or not.
 		return kn_value_new_string(kn_string_clone(lhs));
 
-	if (amnt == 0) {
-		kn_string_free(lhs);
+	if (amnt == 0)
 		return kn_value_new_string(&KN_STRING_EMPTY);
-	}
 
 	size_t length = lhs->length * amnt;
 	char *str = xmalloc(length + 1);
@@ -261,8 +238,6 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 		memcpy(ptr, lhs->str, lhs->length);
 
 	*ptr = '\0';
-
-	kn_string_free(lhs);
 
 	return kn_value_new_string(kn_string_emplace(str, length));
 }
@@ -354,7 +329,9 @@ DECLARE_FUNCTION(eql, 2, '?') {
 
 	bool eql = kn_value_eql(lhs, rhs);
 
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(lhs);
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(rhs);
 
 	return kn_value_new_boolean(eql);
@@ -369,9 +346,6 @@ DECLARE_FUNCTION(lth, 2, '<') {
 		const struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
 		less =/* lstr->length < rstr->length ||*/ strcmp(lstr->str, rstr->str) < 0;
-
-		kn_string_free(lstr);
-		kn_string_free(rstr);
 	} else if (kn_value_is_number(lhs)) {
 		less = kn_value_as_number(lhs) < kn_value_to_number(args[1]);
 	} else {
@@ -392,9 +366,6 @@ DECLARE_FUNCTION(gth, 2, '>') {
 		const struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
 		more =/* lstr->length > rstr->length ||*/ strcmp(lstr->str, rstr->str) > 0;
-
-		kn_string_free(lstr);
-		kn_string_free(rstr);
 	} else if (kn_value_is_number(lhs)) {
 		more = kn_value_as_number(lhs) > kn_value_to_number(args[1]);
 	} else {
@@ -413,6 +384,7 @@ DECLARE_FUNCTION(and, 2, '&') {
 	if (!kn_value_to_boolean(ret))
 		return ret;
 
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ret);
 	return kn_value_run(args[1]);
 }
@@ -424,13 +396,16 @@ DECLARE_FUNCTION(or, 2, '|') {
 	if (kn_value_to_boolean(ret))
 		return ret;
 
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ret);
 	return kn_value_run(args[1]);
 }
 
 DECLARE_FUNCTION(then, 2, ';') {
 #ifndef DYAMIC_THEN_ARGC
-	kn_value_free(kn_value_run(args[0]));
+	kn_value_t val = kn_value_run(args[0]);
+	printf(__FILE__ " %d(%p)\n", __LINE__, val & ~0b111);
+	kn_value_free(val);
 
 	return kn_value_run(args[1]);
 #else
@@ -440,6 +415,7 @@ DECLARE_FUNCTION(then, 2, ';') {
 	goto inner;
 
 	do {
+	printf(__FILE__ " %d\n", __LINE__);
 		kn_value_free(ret);
 	inner:
 		ret = kn_value_run(args[i++]);
@@ -460,15 +436,14 @@ DECLARE_FUNCTION(assign, 2, '=') {
 	} else {
 		// otherwise, evaluate the expression, convert to a string,
 		// and then use that as the identifier.
-		const struct kn_string_t *ident = kn_value_to_string(args[0]);
-		ptr = kn_env_fetch(ident->str, false);
-		kn_string_free(ident);
+		ptr = kn_env_fetch(kn_value_to_string(args[0])->str, false);
 
 		ret = kn_value_run(args[1]);
 	}
 
-	if (*ptr != KN_UNDEFINED)
-		kn_value_free(*ptr);
+	if (*ptr != KN_UNDEFINED) {
+	printf(__FILE__ " %d\n", __LINE__);
+		kn_value_free(*ptr);}
 	*ptr = kn_value_clone(ret);
 
 	return ret;
@@ -491,46 +466,42 @@ DECLARE_FUNCTION(if, 3, 'I') {
 
 
 DECLARE_FUNCTION(get, 3, 'G') {
-	const struct kn_string_t *string = kn_value_to_string(args[0]);
-	intptr_t start = (intptr_t) kn_value_to_number(args[1]);
-	intptr_t amnt = (intptr_t) kn_value_to_number(args[2]);
+	const struct kn_string_t *string;
+	intptr_t start, amnt;
 
-	if (string->length <= start) {
-		kn_string_free(string);
+	string = kn_value_to_string(args[0]);
+	start = (intptr_t) kn_value_to_number(args[1]);
+	amnt = (intptr_t) kn_value_to_number(args[2]);
+
+	if (string->length <= start)
 		return kn_value_new_string(&KN_STRING_EMPTY);
-	}
 
-	const struct kn_string_t *result;
+	if (string->length <= amnt + start)
+		return kn_value_new_string(kn_string_tail(string, start));
 
-	if (string->length <= amnt + start) {
-		result = kn_string_tail(string, start);
-	} else {
-		char *substr = xmalloc(amnt + 1);
+	char *substr = xmalloc(amnt + 1);
 
-		memcpy(substr, string->str, amnt);
-		substr[amnt] = '\0';
+	memcpy(substr, string->str, amnt);
+	substr[amnt] = '\0';
 
-		result = kn_string_emplace(substr, amnt);
-	}
-
-	kn_string_free(string);
-	return kn_value_new_string(result);
+	return kn_value_new_string(kn_string_emplace(substr, amnt));
 }
 
 DECLARE_FUNCTION(set, 4, 'S') {
-	const struct kn_string_t *string = kn_value_to_string(args[0]);
-	size_t start = (size_t) kn_value_to_number(args[1]);
-	size_t amnt = (size_t) kn_value_to_number(args[2]);
-	const struct kn_string_t *substr = kn_value_to_string(args[3]);
+	const struct kn_string_t *string, *substr;
+	size_t start, amnt;
+
+
+	string = kn_value_to_string(args[0]);
+	start = (size_t) kn_value_to_number(args[1]);
+	amnt = (size_t) kn_value_to_number(args[2]);
+	substr = kn_value_to_string(args[3]);
 
 	size_t string_length = (size_t) string->length;
 	size_t substr_length = (size_t) substr->length;
 
-	if (start == 0 && substr_length == 0) {
-		kn_string_free(substr);
-		kn_string_free(string);
+	if (start == 0 && substr_length == 0)
 		return kn_value_new_string(kn_string_tail(string, amnt));
-	}
 
 	// if it's out of bounds, die.
 	if (string_length < start)
@@ -550,9 +521,6 @@ DECLARE_FUNCTION(set, 4, 'S') {
 	memcpy(ptr, string->str + start + amnt, string_length - amnt);
 	ptr += string_length - amnt;
 	*ptr = '\0';
-
-	kn_string_free(string);
-	kn_string_free(substr);
 
 	return kn_value_new_string(kn_string_emplace(str, length));
 }

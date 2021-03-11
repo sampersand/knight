@@ -63,6 +63,7 @@ int main(int argc, const char *argv[]) {
 	}
 
 	kn_init();
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(kn_run(string));
 	kn_free();
 
