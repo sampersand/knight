@@ -10,11 +10,11 @@ override CFLAGS += -F$(SRCDIR)
 ifdef DEBUG
 override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -O3 -DNDEBUG -DFIXED_ARGC
+CEXEFLAGS += -O3 -DNDEBUG
 endif
 
 ifdef COMPUTED_GOTOS
-override CFLAGS += -DCOMPUTED_GOTOS -Wno-gnu-label-as-value -Wgnu-designator
+override CFLAGS += -DCOMPUTED_GOTOS -Wno-gnu-label-as-value -Wno-gnu-designator
 endif
 
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))

@@ -41,8 +41,8 @@ void kn_string_free(const struct kn_string_t *string) {
 
 	struct kn_string_t *unconst = (struct kn_string_t *) string;
 
-	if (unconst->refcount && !--*unconst->refcount && 0) {
-		// free(unconst->str);
+	if (string->refcount != NULL && !--*unconst->refcount) {
+		// free((void *) unconst->str);
 		// free(unconst);
 	}
 }
@@ -50,7 +50,7 @@ void kn_string_free(const struct kn_string_t *string) {
 const struct kn_string_t *kn_string_clone(const struct kn_string_t *string) {
 	assert(string != NULL);
 
-	if (string->refcount)
+	if (string->refcount != NULL)
 		++*((struct kn_string_t *) string)->refcount;
 
 	return string;

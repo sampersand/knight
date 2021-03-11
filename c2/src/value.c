@@ -17,7 +17,7 @@
  * X...X0000 - string (nonzero `X`)
  * X...X0010 - identifier (nonzero `X`)
  * X...X0100 - function (nonzero `X`)
- * X...X1XXX - free value after use.
+ * 0...01000 - undefined.
  */
 
 #define KN_MASK 7
@@ -25,7 +25,6 @@
 #define KN_TAG_NUMBER 1
 #define KN_TAG_IDENT 2
 #define KN_TAG_AST 4
-#define FREE_MEMORY 8
 
 #define KN_TAG(x) ((x) & KN_MASK)
 #define KN_UNMASK(x) ((x) & ~KN_MASK)
@@ -133,6 +132,8 @@ static kn_number_t string_to_number(const struct kn_string_t *value) {
 }
 
 kn_number_t kn_value_to_number(kn_value_t value) {
+	assert(value != KN_UNDEFINED);
+
 	if (kn_value_is_number(value))
 		return kn_value_as_number(value);
 
@@ -151,6 +152,8 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 }
 
 kn_boolean_t kn_value_to_boolean(kn_value_t value) {
+	assert(value != KN_UNDEFINED);
+
 	if (value <= 2) {
 		assert(value == KN_NULL
 			|| value == KN_FALSE
@@ -170,21 +173,21 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 	return ret;
 } 
 
-const struct kn_string_t *number_to_string(kn_number_t num) {
-	static char buf[41]; // initialized to zero.
+static const struct kn_string_t *number_to_string(kn_number_t num) {
+	// max length is `-LONG_MAX`, which is 21 characters long.
+	static char buf[22]; // initialized to zero.
+
+	// should have been checked earlier.
+	assert(num != 0 && num != 1);
 
 	char *ptr = &buf[sizeof(buf) - 1];
-
-	if (num == 0) return &KN_STRING_ZERO;
-	if (num == 1) return &KN_STRING_ONE;
-
-	int is_neg = num < 0;
+	bool is_neg = num < 0;
 
 	if (is_neg)
 		num *= -1;
 
 	do {
-		*--ptr = '0' + num % 10;
+		*--ptr = '0' + (num % 10);
 		num /= 10;
 	} while (num);
 
@@ -203,6 +206,8 @@ const struct kn_string_t *kn_value_to_string(kn_value_t value) {
 		&KN_STRING_TRUE
 	};
 
+	assert(value != KN_UNDEFINED);
+
 	if (value <= 4)
 		return BUILTIN_STRINGS[value];
 
@@ -219,6 +224,8 @@ const struct kn_string_t *kn_value_to_string(kn_value_t value) {
 }
 
 void kn_value_dump(kn_value_t value) {
+	assert(value != KN_UNDEFINED);
+
 	switch (value) {
 	case KN_TRUE:
 		printf("Boolean(true)");
@@ -262,6 +269,9 @@ void kn_value_dump(kn_value_t value) {
 }
 
 bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
+	assert(lhs != KN_UNDEFINED);
+	assert(rhs != KN_UNDEFINED);
+
 	if (lhs == rhs) return true;
 
 	if (kn_value_is_string(lhs) && kn_value_is_string(rhs)) {
@@ -270,12 +280,17 @@ bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
 		return lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
 	}
 
-	assert(lhs <= 4 || lhs & 1
-		|| kn_value_is_string(lhs) || KN_TAG(lhs) == KN_TAG_AST);
+	assert(lhs <= 4
+		|| lhs & 1
+		|| kn_value_is_string(lhs)
+		|| KN_TAG(lhs) == KN_TAG_AST);
+
 	return false;
 }
 
 kn_value_t kn_value_run(kn_value_t value) {
+	assert(value != KN_UNDEFINED);
+
 	if (KN_VALUE_IS_LITERAL(value))
 		return value;
 

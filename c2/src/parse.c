@@ -73,7 +73,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['\0'] = &&expected_token,
 #ifndef RECKLESS
 		[0x01 ... 0x08] = &&invalid,
-#endif RECKLESS
+#endif /* RECKLESS */
 		['\t' ... '\r'] = &&whitespace,
 		[0x0e ... 0x1f] = &&invalid,
 		[' ']  = &&whitespace,
@@ -125,7 +125,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['V']  = &&function_value,
 #else
 		['V']  = &&invalid,
-#endif
+#endif /* KN_EXT_VALUE */
 		['W']  = &&function_while,
 		['X']  = &&invalid,
 		['Y']  = &&invalid,
@@ -141,7 +141,9 @@ kn_value_t kn_parse(register const char **stream) {
 		['|']  = &&function_or,
 		['}']  = &&whitespace,
 		['~']  = &&invalid,
-		[0x7f ... 0xff] = &&invalid,
+#ifndef RECKLESS
+		[0x7f ... 0xff] = &&invalid
+#endif /* RECKLESS */
 	};
 #endif /* COMPUTED_GOTOS */
 

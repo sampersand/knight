@@ -92,6 +92,7 @@ kn_value_t *kn_env_fetch(const char *identifier, _Bool owned) {
 	if (pair != NULL) {
 		if (owned)
 			free((char *) identifier);
+
 		return &pair->value;
 	}
 
@@ -105,12 +106,9 @@ kn_value_t *kn_env_fetch(const char *identifier, _Bool owned) {
 		);
 	}
 
-	if (!owned)
-		identifier = strdup(identifier);
-
 	// note we retain ownership of the ident.
 	bucket->pairs[bucket->length] = (struct kn_env_pair_t) {
-		.name = identifier,
+		.name = owned ? identifier : strdup(identifier),
 		.value = KN_UNDEFINED
 	};
 

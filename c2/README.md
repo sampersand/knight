@@ -6,6 +6,7 @@
 - `COMPUTED_GOTOS`: enables the use of computed gotos with some minor performance gains.
 - `FIXED_ARGC`: Without this, `;` will take a variable amount of arguments.
 - `KN_EXT_VALUE`: Enables the use of the `VALUE` function, which looks up a variable indirectly based on its argument.
+- `KN_EMBEDDED`: Used to disable functions that cannot be used when embedding Knight, such as `` ` `` and `QUIT`.
 
 
 TODO: update everything to include RECKLESS.

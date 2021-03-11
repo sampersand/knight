@@ -26,6 +26,7 @@ void kn_function_initialize(void) {
 	}; \
 	static kn_value_t fn_##_func##_function(const kn_value_t *args)
 
+#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(prompt, 0, 'P') {
 	(void) args;
 
@@ -51,6 +52,7 @@ DECLARE_FUNCTION(prompt, 0, 'P') {
 
 	return kn_value_new_string(kn_string_new(ret));
 }
+#endif /* KN_EMBEDDED */
 
 
 DECLARE_FUNCTION(rand, 0, 'R') {
@@ -90,6 +92,7 @@ DECLARE_FUNCTION(call, 1, 'C') {
 	return ret;
 }
 
+#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(system, 1, '`') {
 	const struct kn_string_t *command = kn_value_to_string(args[0]);
 
@@ -126,11 +129,19 @@ DECLARE_FUNCTION(system, 1, '`') {
 
 	return kn_value_new_string(kn_string_new(result));
 }
+#endif /* KN_EMBEDDED */
 
+#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(quit, 1, 'Q') {
-	// no need to free the `ecode` value because we're exiting anyways.
-	exit((int) kn_value_to_number(args[0]));
+	kn_number_t code = kn_value_to_number(args[0]);
+
+#ifndef RECKLESS
+	assert((kn_number_t) (int) code == code);
+#endif
+
+	exit((int) code);
 }
+#endif /* KN_EMBEDDED */
 
 DECLARE_FUNCTION(not, 1, '!') {
 	return kn_value_new_boolean(!kn_value_to_boolean(args[0]));
@@ -144,12 +155,15 @@ DECLARE_FUNCTION(length, 1 ,'L') {
 	return kn_value_new_number(length);
 }
 
+#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(dump, 1 ,'D') {
 	kn_value_t ret = kn_value_run(args[0]);
 	kn_value_dump(ret);
 	return ret;
 }
+#endif /* KN_EMBEDDED */
 
+#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(output, 1, 'O') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
 	assert(string != NULL);
@@ -172,6 +186,7 @@ DECLARE_FUNCTION(output, 1, 'O') {
 
 	return KN_NULL;
 }
+#endif /* KN_EMBEDDED */
 
 static kn_value_t kn_fn_add_string(
 	const struct kn_string_t *lhs,
@@ -230,7 +245,7 @@ static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 	// die("<todo: verify mul string>");
 	// if we have an empty string, return early.
 	if (lhs->length == 0 || amnt == 1)
-		// TODO: do we cloen this or not.
+		// TODO: do we clone this or not.
 		return kn_value_new_string(kn_string_clone(lhs));
 
 	if (amnt == 0) {
@@ -486,6 +501,7 @@ DECLARE_FUNCTION(get, 3, 'G') {
 	}
 
 	const struct kn_string_t *result;
+
 	if (string->length <= amnt + start) {
 		result = kn_string_tail(string, start);
 	} else {
