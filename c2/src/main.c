@@ -6,17 +6,12 @@
 #include "value.h"
 #include "shared.h"
 
-void usage(const char *program_name) {
-	die("usage: %s [-e program] [-f file]", program_name);
-}
-
 char *read_file(const char *filename) {
 	FILE *file = fopen(filename, "r");
 
 	if (file == NULL) {
 		die("unable to read file '%s': %s", filename, strerror(errno));
 	}
-
 
 	size_t len = 0;
 	size_t cap = 2048;
@@ -46,15 +41,13 @@ char *read_file(const char *filename) {
 	return xrealloc(contents, len);
 }
 
-int main(int argc, const char **argv) {
+int main(int argc, const char *argv[]) {
 	// note: to keep it cross-platform, i opted not to use optparse.
-	if (argc != 3) {
-		usage(argv[0]);
-	}
+	if (argc != 3)
+		goto usage;
 
- 	if (strlen(argv[1]) != 2 || argv[1][0] != '-') {
- 		usage(argv[0]);
- 	}
+ 	if (strlen(argv[1]) != 2 || argv[1][0] != '-')
+ 		goto usage;
 
 	const char *string;
 
@@ -66,7 +59,7 @@ int main(int argc, const char **argv) {
 		string = read_file(argv[2]);
 		break;
 	default:
-		usage(argv[0]);
+		goto usage;
 	}
 
 	kn_init();
@@ -74,4 +67,6 @@ int main(int argc, const char **argv) {
 	kn_free();
 
 	return 0;
+usage:
+	die("usage: %s [-e program] [-f file]", argv[0]);
 }

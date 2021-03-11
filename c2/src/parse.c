@@ -70,9 +70,7 @@ kn_value_t kn_parse(register const char **stream) {
 #ifdef COMPUTED_GOTOS
 	static const void *LABELS[256] = {
 		['\0'] = &&expected_token,
-#ifndef RECKLESS
 		[0x01 ... 0x08] = &&invalid,
-#endif /* RECKLESS */
 		['\t' ... '\r'] = &&whitespace,
 		[0x0e ... 0x1f] = &&invalid,
 		[' ']  = &&whitespace,
@@ -140,9 +138,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['|']  = &&function_or,
 		['}']  = &&whitespace,
 		['~']  = &&invalid,
-#ifndef RECKLESS
 		[0x7f ... 0xff] = &&invalid
-#endif /* RECKLESS */
 	};
 #endif /* COMPUTED_GOTOS */
 
@@ -153,11 +149,11 @@ kn_value_t kn_parse(register const char **stream) {
 	struct kn_function_t *function;
 
 start:
-
+	c = PEEK();
 #ifdef COMPUTED_GOTOS
-	goto *LABELS[(size_t) (c = PEEK())];
+	goto *LABELS[(size_t) c];
 #else
-	switch (c = PEEK()) {
+	switch (c) {
 #endif /* COMPUTED_GOTOS */
 
 
@@ -166,6 +162,7 @@ CASES1('#')
 	while ((c = ADVANCE_PEEK()) != '\n')
 		if (c == '\0')
 			goto expected_token;
+
 	// fallthrough, because we're currently a whitespace character (`\n`)
 
 LABEL(whitespace)
@@ -193,7 +190,6 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 	const char *start = *stream;
 
 	while (isident(ADVANCE_PEEK()));
-
 
 	return kn_value_new_identifier(
 		kn_env_fetch(strndup(start, *stream - start), true));

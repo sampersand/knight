@@ -8,7 +8,10 @@ const struct kn_string_t *kn_string_tail(
 	const struct kn_string_t *string,
 	size_t start
 ) {
-	struct kn_string_t *result = xmalloc(sizeof(struct kn_string_t));
+	struct kn_string_t *result;
+
+	result = xmalloc(sizeof(struct kn_string_t));
+
 	result->length = string->length - start;
 	result->refcount = string->refcount;
 	result->str = string->str + start;
@@ -18,9 +21,11 @@ const struct kn_string_t *kn_string_tail(
 }
 
 const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
+	struct kn_string_t *string;
+
 	assert(str != NULL);
 
-	struct kn_string_t *string = xmalloc(sizeof(struct kn_string_t));
+	string = xmalloc(sizeof(struct kn_string_t));
 
 	string->length = length;
 	string->refcount = xmalloc(sizeof(unsigned));
@@ -30,16 +35,17 @@ const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 }
 
 const struct kn_string_t *kn_string_new(const char *str) {
-
 	assert(str != NULL);
 
 	return kn_string_emplace(str, strlen(str));
 }
 
 void kn_string_free(const struct kn_string_t *string) {
+	struct kn_string_t *unconst;
+
 	assert(string != NULL);
 
-	struct kn_string_t *unconst = (struct kn_string_t *) string;
+	unconst = (struct kn_string_t *) string;
 
 	if (string->refcount != NULL && !--*unconst->refcount) {
 		// free((void *) unconst->str);

@@ -9,7 +9,7 @@ struct kn_ast_t {
 	struct kn_function_t *func;
 	unsigned refcount;
 
-#ifndef FIXED_ARGC
+#ifndef DYAMIC_THEN_ARGC
 	unsigned argc;
 #endif
 
