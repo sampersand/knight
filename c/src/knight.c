@@ -5,7 +5,6 @@
 #include "knight.h" /* prototypes, kn_value_t */
 #include "env.h"    /* kn_env_init */
 
-
 // We define the environment size as starting at 256 identifiers.
 #ifndef KNIGHT_ENV_INIT_SIZE
 #define KNIGHT_ENV_INIT_SIZE 256

@@ -58,7 +58,6 @@ static void strip_stream(const char **stream) {
 	}
 }
 
-
 static struct kn_ast_t kn_ast_parse_integer(const char **stream) {
 	assert(isdigit(peek(stream)));
 
@@ -93,10 +92,12 @@ static struct kn_ast_t kn_ast_parse_identifier(const char **stream) {
 	} while (isident(peek(stream)));
 
 	char *identifier = strndup(start, *stream - start);
+	size_t *refcount = xmalloc(sizeof(size_t));
+	*refcount = 1;
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_IDENTIFIER,
-		.refcount = 1,
+		.refcount = refcount,
 		.identifier = identifier
 	};
 }
@@ -120,15 +121,21 @@ static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 		advance(stream);
 	} while (c != quote);
 
-	// subtract one because we've already advanced the ending quote.
-	char *string = strndup(start, *stream - start - 1);
+	size_t length = *stream - start - 1;
+	struct kn_string_t string;
+
+	if (length == 0) {
+		// optimize for the empty string.
+		string = kn_string_intern("");
+	} else {
+		string = kn_string_new(strndup(start, length));
+	}
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_VALUE,
-		.value = kn_value_new_string(kn_string_new(string))
+		.value = kn_value_new_string(string)
 	};
 }
-
 
 static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	char name = next(stream);
@@ -147,10 +154,12 @@ static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	}
 
 	size_t arity = function->arity;
+	size_t *refcount = xmalloc(sizeof(size_t));
+	*refcount = 1;
 
 	struct kn_ast_t ast = (struct kn_ast_t) {
 		.kind = KN_TT_FUNCTION,
-		.refcount = 1,
+		.refcount = refcount,
 		.function = function,
 		.arguments = xmalloc(arity * sizeof(struct kn_ast_t))
 	};
@@ -216,7 +225,7 @@ void kn_ast_dump(const struct kn_ast_t *ast) {
 	}
 
 	default:
-		bug("unknown kind '%d'");
+		bug("unknown kind '%d'", ast->kind);
 
 	}
 }
@@ -240,7 +249,7 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 		return (ast->function->func)(ast->arguments);
 
 	default:
-		bug("unknown kind '%d'");
+		bug("unknown kind '%d'", ast->kind);
 	}
 }
 
@@ -255,7 +264,7 @@ struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
 			ast->kind == KN_TT_IDENTIFIER
 		);
 
-		++((struct kn_ast_t *) ast)->refcount;
+		++*((struct kn_ast_t *) ast)->refcount;
 		return *ast;
 	}
 }
@@ -267,19 +276,21 @@ void kn_ast_free(struct kn_ast_t *ast) {
 		break;
 
 	case KN_TT_IDENTIFIER:
-		if (--ast->refcount == 0) {
+		if (--*ast->refcount == 0) {
 			free((void *) ast->identifier);
+			free((void *) ast->refcount);
 		}
 
 		break;
 
 	case KN_TT_FUNCTION:
-		if (--ast->refcount == 0) {
+		if (--*ast->refcount == 0) {
 			for (size_t i = 0; i < ast->function->arity; ++i) {
 				kn_ast_free(&ast->arguments[i]);
 			}
 
 			free((void *) ast->arguments);
+			free((void *) ast->refcount);
 		}
 
 		break;

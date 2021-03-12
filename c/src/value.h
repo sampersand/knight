@@ -9,7 +9,6 @@
  */
 typedef intmax_t kn_integer_t;
 
-
 /*
  * The type that's used to represent boolean values in Knight.
  */
@@ -108,7 +107,6 @@ struct kn_value_t kn_value_new_ast(struct kn_ast_t *ast);
  * - Null: `null`.
  */
 struct kn_string_t kn_value_to_string(const struct kn_value_t *value);
-
 
 /*
  * Converts the given value to a boolean.

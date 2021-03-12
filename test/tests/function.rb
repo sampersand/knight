@@ -37,12 +37,12 @@ describe 'Function' do
 		end
 
 		describe 'PROMPT' do
-			it 'should return a string with the trailing newline' do
+			it 'should return a string without the \n or \r\n' do
 				return pass
 				old_stdin = $stdin
 				$stdin = StringIO.new("line one\nline two\r\nline three")
-				assert_equal "line one\n", eval("PROMPT")
-				assert_equal "line two\r\n", eval("PROMPT")
+				assert_equal "line one", eval("PROMPT")
+				assert_equal "line two", eval("PROMPT")
 				assert_equal "line three", eval("PROMPT")
 			ensure
 				$stdin = old_stdin
@@ -136,36 +136,36 @@ describe 'Function' do
 
 		describe '!' do
 			it 'negates its argument' do
-				assert_equal true, '! FALSE'
-				assert_equal false, '! TRUE'
+				assert_equal true,  eval('! FALSE')
+				assert_equal false, eval( '! TRUE')
 			end
 
 			it 'converts its argument to a boolean' do
-				assert_equal true, '! ""'
-				assert_equal false, '! "0"'
-				assert_equal false, '! "1"'
+				assert_equal true,  eval('! ""')
+				assert_equal false, eval( '! "0"')
+				assert_equal false, eval( '! "1"')
 
-				assert_equal true, '! NULL'
+				assert_equal true,  eval('! NULL')
 
-				assert_equal false, '! 0'
-				assert_equal true, '! 1'
+				assert_equal false, eval( '! 0')
+				assert_equal true,  eval('! 1')
 			end
 		end
 
 		describe 'L' do
 			it 'gets the length of a string' do
-				assert_equal 0, 'LENGTH ""'
-				assert_equal 1, 'LENGTH "0"'
-				assert_equal 2, 'LENGTH "foo"'
-				assert_equal 9, 'LENGTH "foobarbaz"'
+				assert_equal 0, eval('LENGTH ""')
+				assert_equal 1, eval('LENGTH "0"')
+				assert_equal 2, eval('LENGTH "foo"')
+				assert_equal 9, eval('LENGTH "foobarbaz"')
 			end
 
 			it 'converts its value to a string' do
-				assert_equal 1, 'LENGTH 0'
-				assert_equal 1, 'LENGTH 9'
-				assert_equal 4, 'LENGTH TRUE'
-				assert_equal 5, 'LENGTH FALSE'
-				assert_equal 4, 'LENGTH NULL'
+				assert_equal 1, eval('LENGTH 0')
+				assert_equal 1, eval('LENGTH 9')
+				assert_equal 4, eval('LENGTH TRUE')
+				assert_equal 5, eval('LENGTH FALSE')
+				assert_equal 4, eval('LENGTH NULL')
 			end
 		end
 
