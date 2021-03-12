@@ -56,7 +56,7 @@ module Kn
 		register '/' do _1 / _2 end
 		register '%' do _1 % _2 end
 		register '^' do _1 ** _2 end
-		register '?' do Boolean.new _1 == _2 end
+		register '?' do Boolean.new _1.run == _2.run end
 		register '<' do Boolean.new _1 < _2 end
 		register '>' do Boolean.new _1 > _2 end
 		register '&' do (l = _1.run).truthy? ? _2.run : l end

@@ -22,7 +22,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Python](python) | X | X | X | X | Fully Functional, though `setrecursionlimit` is needed to ensure "FizzBuzz in Knight in Python" works. |
 | [Quest](../quest/quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
 | [Raku](raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
-| [Ruby](../ruby/ruby) |   |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
+| [Ruby](../ruby/ruby) | X |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) | X |   | X | X | Simple implementation without comments. It intentionally captures all UB, but eventually will have an efficient implementation. |
 | Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
 | [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |

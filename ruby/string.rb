@@ -16,6 +16,6 @@ module Kn
 		def *(rhs) = String.new(@str * rhs.to_i)
 
 		def <=>(rhs) = @str <=> rhs.to_s
-		def ==(rhs) = (rhs = rhs.run).is_a?(self.class) && @str == rhs.to_s
+		def ==(rhs) = rhs.is_a?(self.class) && @str == rhs.to_s
 	end
 end
