@@ -64,7 +64,7 @@ describe 'Block' do
 				assert_equal 1, eval('; = ident 1 : CALL BLOCK ident')
 			end
 		end
-
+=begin
 		describe '?' do
 			it 'is only equivalent to _the exact instance_' do
 				assert_equal true, eval('; = x B R : ? x x')
@@ -75,5 +75,6 @@ describe 'Block' do
 				assert_equal false, eval('? B (! TRUE) FALSE')
 			end
 		end
+=end
 	end
 end
