@@ -23,94 +23,94 @@
 #define TAG_NUMBER 1
 #define TAG_VARIABLE 2
 #define TAG_BLOCK 4
-#define TAG(value) (((kn_value_t) (value)) & 7)
-#define UNMASK(value) (((kn_value_t) (value)) & ~7)
+#define TAG(value) (((value_t) (value)) & 7)
+#define UNMASK(value) (((value_t) (value)) & ~7)
 
-kn_value_t kn_value_new_number(kn_number_t number) {
-	return (number << 1) | TAG_NUMBER;
+value_t value_new_number(number_t number) {
+	return ((value_t) number << 1) | TAG_NUMBER;
 }
 
-kn_value_t kn_value_new_boolean(kn_boolean_t boolean) {
-	return ((kn_value_t) boolean) << 2;
+value_t value_new_boolean(boolean_t boolean) {
+	return ((value_t) boolean) << 2;
 }
 
-kn_value_t kn_value_new_string(kn_string_t *string) {
+value_t value_new_string(string_t *string) {
 	assert(string != NULL);
 	assert(TAG(string) == 0);
 
-	return ((kn_value_t) string) | TAG_STRING;
+	return ((value_t) string) | TAG_STRING;
 }
 
-kn_value_t kn_value_new_variable(kn_variable_t *variable) {
+value_t value_new_variable(variable_t *variable) {
 	assert(variable != NULL);
 	assert(TAG(variable) == 0);
 
-	return ((kn_value_t) variable) | TAG_VARIABLE;
+	return ((value_t) variable) | TAG_VARIABLE;
 }
 
-kn_value_t kn_value_new_block(kn_block_t *block) {
+value_t value_new_block(block_t *block) {
 	assert(block != NULL);
 	assert(TAG(block) == 0);
 
-	return ((kn_value_t) block) | TAG_BLOCK;
+	return ((value_t) block) | TAG_BLOCK;
 }
 
-bool kn_value_is_number(kn_value_t value) {
+bool value_is_number(value_t value) {
 	return value & 1;
 }
 
-bool kn_value_is_boolean(kn_value_t value) {
-	return !value || value == KN_TRUE;
+bool value_is_boolean(value_t value) {
+	return !value || value == TRUE_;
 }
 
-bool kn_value_is_string(kn_value_t value) {
+bool value_is_string(value_t value) {
 	return value > 4 && TAG(value) == TAG_STRING;
 }
 
-bool kn_value_is_variable(kn_value_t value) {
+bool value_is_variable(value_t value) {
 	return value > 4 && TAG(value) == TAG_VARIABLE;
 }
 
-bool kn_value_is_block(kn_value_t value) {
+bool value_is_block(value_t value) {
 	return value > 4 && TAG(value) == TAG_BLOCK;
 }
 
-static bool kn_value_is_literal(kn_value_t value) {
-	return value <= 4 || kn_value_is_number(value);
+static bool value_is_literal(value_t value) {
+	return value <= 4 || value_is_number(value);
 }
 
-kn_number_t kn_value_as_number(kn_value_t value) {
-	assert(kn_value_is_number(value));
+number_t value_as_number(value_t value) {
+	assert(value_is_number(value));
 
-	return (kn_number_t) (value >> 1);
+	return ((number_t) value) >> 1;
 }
 
-kn_boolean_t kn_value_as_boolean(kn_value_t value) {
-	assert(kn_value_is_boolean(value));
+boolean_t value_as_boolean(value_t value) {
+	assert(value_is_boolean(value));
 
 	return value >> 2;
 }
 
-kn_string_t *kn_value_as_string(kn_value_t value) {
-	assert(kn_value_is_string(value));
+string_t *value_as_string(value_t value) {
+	assert(value_is_string(value));
 
-	return (kn_string_t *) value;
+	return (string_t *) value;
 }
 
-kn_variable_t *kn_value_as_variable(kn_value_t value) {
-	assert(kn_value_is_variable(value));
+variable_t *value_as_variable(value_t value) {
+	assert(value_is_variable(value));
 
-	return (kn_variable_t *) UNMASK(value);
+	return (variable_t *) UNMASK(value);
 }
 
-kn_block_t *kn_value_as_block(kn_value_t value) {
-	assert(kn_value_is_block(value));
+block_t *value_as_block(value_t value) {
+	assert(value_is_block(value));
 
-	return (kn_block_t *) UNMASK(value);
+	return (block_t *) UNMASK(value);
 }
 
-static kn_number_t string_to_number(kn_string_t *value) {
-	kn_number_t ret = 0;
+static number_t string_to_number(string_t *value) {
+	number_t ret = 0;
 	const char *ptr = value->str;
 
 	// strip leading whitespace.
@@ -132,47 +132,47 @@ static kn_number_t string_to_number(kn_string_t *value) {
 	return ret;
 }
 
-kn_number_t kn_value_to_number(kn_value_t value) {
-	if (kn_value_is_number(value))
-		return kn_value_as_number(value);
+number_t value_to_number(value_t value) {
+	if (value_is_number(value))
+		return value_as_number(value);
 
-	if (value <= KN_TRUE) {
-		assert(value == KN_FALSE || value == KN_NULL || value == KN_TRUE);
-		return value == KN_TRUE;
+	if (value <= TRUE_) {
+		assert(value == FALSE_ || value == NULL_ || value == TRUE_);
+		return value == TRUE_;
 	}
 
-	if (kn_value_is_string(value))
-		return string_to_number(kn_value_as_string(value));
+	if (value_is_string(value))
+		return string_to_number(value_as_string(value));
 
-	kn_value_t ran = kn_value_run(value);
-	kn_number_t ret = kn_value_to_number(ran);
-	kn_value_free(ran);
+	value_t ran = value_run(value);
+	number_t ret = value_to_number(ran);
+	value_free(ran);
 	return ret;
 }
 
-kn_boolean_t kn_value_to_boolean(kn_value_t value) {
-	if (value <= KN_NULL) 
+boolean_t value_to_boolean(value_t value) {
+	if (value <= NULL_) 
 		return 0;
 
-	if (kn_value_is_number(value) || value == KN_TRUE)
+	if (value_is_number(value) || value == TRUE_)
 		return 1;
 
-	if (kn_value_is_string(value))
-		return kn_value_as_string(value)->length;
+	if (value_is_string(value))
+		return value_as_string(value)->length;
 
-	kn_value_t ran = kn_value_run(value);
-	kn_boolean_t boolean = kn_value_to_string(ran);
-	kn_value_free(ran);
+	value_t ran = value_run(value);
+	boolean_t boolean = value_to_string(ran);
+	value_free(ran);
 	return boolean;
 }
 
-kn_string_t *number_to_string(kn_number_t num) {
+string_t *number_to_string(number_t num) {
 	static char buf[41]; // initialized to zero.
 
 	char *ptr = &buf[sizeof(buf) - 1];
 
-	if (num == 0) return &KN_STRING_ZERO;
-	if (num == 1) return &KN_STRING_ONE;
+	if (num == 0) return &STRING_ZERO;
+	if (num == 1) return &STRING_ONE;
 
 	int is_neg = num < 0;
 
@@ -187,132 +187,132 @@ kn_string_t *number_to_string(kn_number_t num) {
 	if (is_neg) *--ptr = '-';
 
 	// is this correct?
-	return kn_string_emplace(ptr, &buf[sizeof(buf) - 1] - ptr);
+	return string_emplace(ptr, &buf[sizeof(buf) - 1] - ptr);
 }
 
-kn_string_t *kn_value_to_string(kn_value_t value) {
-	static kn_string_t *BUILTIN_STRINGS[5] = {
-		&KN_STRING_FALSE,
-		&KN_STRING_ZERO,
-		&KN_STRING_NULL,
-		&KN_STRING_ONE,
-		&KN_STRING_TRUE
+string_t *value_to_string(value_t value) {
+	static string_t *BUILTIN_STRINGS[5] = {
+		&STRING_FALSE,
+		&STRING_ZERO,
+		&STRING_NULL,
+		&STRING_ONE,
+		&STRING_TRUE
 	};
 
 	if (value <= 4)
 		return BUILTIN_STRINGS[value];
 
-	if (kn_value_is_number(value))
-		return number_to_string(kn_value_as_number(value));
+	if (value_is_number(value))
+		return number_to_string(value_as_number(value));
 
-	if (kn_value_is_string(value))
-		return kn_string_clone(kn_value_as_string(value));
+	if (value_is_string(value))
+		return string_clone(value_as_string(value));
 
-	kn_value_t ran = kn_value_run(value);
-	kn_string_t *string = kn_value_to_string(ran);
-	kn_value_free(ran);
+	value_t ran = value_run(value);
+	string_t *string = value_to_string(ran);
+	value_free(ran);
 	return string;
 }
 
-void kn_value_dump(kn_value_t value) {
+void value_dump(value_t value) {
 	switch (value) {
-	case KN_TRUE:
+	case TRUE_:
 		printf("Boolean(true)");
 		return;
-	case KN_FALSE:
+	case FALSE_:
 		printf("Boolean(false)");
 		return;
-	case KN_NULL:
+	case NULL_:
 		printf("Null()");
 		return;
 	}
 
-	if (kn_value_is_number(value)) {
-		printf("Number(%lld)", kn_value_as_number(value));
+	if (value_is_number(value)) {
+		printf("Number(%lli)", value_as_number(value));
 		return;
 	}
 
 	switch (TAG(value)) {
 	case TAG_STRING:
-		printf("String(%s)", kn_value_as_string(value)->str);
+		printf("String(%s)", value_as_string(value)->str);
 		return;
 	case TAG_VARIABLE:
-		printf("Identifier(%s)", kn_value_as_variable(value)->name);
+		printf("Identifier(%s)", value_as_variable(value)->name);
 		return;
 	case TAG_BLOCK:
-		printf("Function(%p)", (void *) kn_value_as_block(value));
+		printf("Function(%p)", (void *) value_as_block(value));
 		return;
 	default:
 		assert(false);
 	}
 }
 
-bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
+bool value_eql(value_t lhs, value_t rhs) {
 	if (lhs == rhs)
 		return true;
 
-	if (kn_value_is_string(lhs) && kn_value_is_string(rhs)) {
-		kn_string_t *lstr = kn_value_as_string(lhs);
-		kn_string_t *rstr = kn_value_as_string(rhs);
+	if (value_is_string(lhs) && value_is_string(rhs)) {
+		string_t *lstr = value_as_string(lhs);
+		string_t *rstr = value_as_string(rhs);
 		return lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
 	}
 
 	return false;
 }
 
-kn_value_t kn_value_run(kn_value_t value) {
-	if (kn_value_is_literal(value))
+value_t value_run(value_t value) {
+	if (value_is_literal(value))
 		return value;
 
-	if (kn_value_is_string(value)) {
-		(void) kn_string_clone(kn_value_as_string(value));
+	if (value_is_string(value)) {
+		(void) string_clone(value_as_string(value));
 		return value;
 	}
 
-	if (kn_value_is_variable(value)) {
-		kn_variable_t *ret = kn_value_as_variable(value);
+	if (value_is_variable(value)) {
+		variable_t *ret = value_as_variable(value);
 
-		if (ret->value == KN_UNDEFINED)
+		if (ret->value == UNDEFINED)
 			die("undefined variable '%s'", ret->name);
 
-		return kn_value_clone(ret->value);
+		return value_clone(ret->value);
 	}
 
 	die("todo: eval block");
-	// struct kn_ast_t *ast = KN_VALUE_AS_AST(value);
+	// struct ast_t *ast = KN_VALUE_AS_AST(value);
 
 	// return (ast->func->ptr)(ast->args);
 }
 
-kn_value_t kn_value_clone(kn_value_t value) {
-	assert(value != KN_UNDEFINED);
+value_t value_clone(value_t value) {
+	assert(value != UNDEFINED);
 
-	if (kn_value_is_literal(value) || kn_value_is_variable(value))
+	if (value_is_literal(value) || value_is_variable(value))
 		return value;
 
-	if (kn_value_is_variable(value)) {
-		(void) kn_string_clone(kn_value_as_string(value));
+	if (value_is_variable(value)) {
+		(void) string_clone(value_as_string(value));
 		return value;
 	}
 
-	kn_value_as_block(value)->refcount++;
+	value_as_block(value)->refcount++;
 
 	return value;
 }
 
-void kn_value_free(kn_value_t value) {
-	assert(value != KN_UNDEFINED);
+void value_free(value_t value) {
+	assert(value != UNDEFINED);
 
-	if (kn_value_is_literal(value) || kn_value_is_variable(value))
+	if (value_is_literal(value) || value_is_variable(value))
 		return;
 
-	if (kn_value_is_string(value)) {
-		kn_string_free(kn_value_as_string(value));
+	if (value_is_string(value)) {
+		string_free(value_as_string(value));
 		return;
 	}
 
 
-	kn_block_t *block = kn_value_as_block(value);
+	block_t *block = value_as_block(value);
 
 	if (--block->refcount)
 		return;

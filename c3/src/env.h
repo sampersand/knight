@@ -1,15 +1,15 @@
-#ifndef KN_ENV_H
-#define KN_ENV_H
+#ifndef ENV_H
+#define ENV_H
 
 #include "value.h"
 
-typedef struct _kn_variable_t {
-	kn_value_t value;
+typedef struct _variable_t {
+	value_t value;
 	const char *name;
-} kn_variable_t;
+} variable_t;
 
-void kn_env_init(size_t);
-void kn_env_free(void);
-kn_variable_t *kn_env_fetch(const char *, bool);
+void env_init(size_t);
+void env_free(void);
+variable_t *env_fetch(const char *, bool);
 
 #endif

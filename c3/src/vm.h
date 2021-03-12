@@ -4,16 +4,11 @@
 #include "value.h"
 #include "bytecode.h"
 
-#define STACKSIZE 1000
+#define STACKSIZE 10000
 
-typedef struct {
-	kn_bytecode_t *code;
-	kn_value_t *stack;
-	int ip;
-	int sp;
-} kn_vm_t;
+typedef struct _vm_t vm_t;
 
-kn_vm_t *new_vm(kn_bytecode_t *code);
-kn_value_t run(kn_vm_t *vm);
+vm_t *vm_new(const bytecode_t *, unsigned);
+value_t vm_run(vm_t *);
 
 #endif

@@ -5,24 +5,24 @@
 #include <string.h>
 #include <assert.h>
 
-kn_string_t *kn_string_tail(kn_string_t *string, unsigned start) {
-	kn_string_t *result = xmalloc(sizeof(kn_string_t));
+string_t *string_tail(string_t *string, unsigned start) {
+	string_t *result = xmalloc(sizeof(string_t));
 
 	result->length = string->length - start;
 	result->refcount = string->refcount;
 	result->str = string->str + start;
-	kn_string_clone(string);
+	string_clone(string);
 
 	return result;
 }
 
-kn_string_t *kn_string_emplace(char *str, unsigned length) {
+string_t *string_emplace(char *str, unsigned length) {
 	if (length == 0) {
 		assert(strlen(str) == 0);
-		return &KN_STRING_EMPTY;
+		return &STRING_EMPTY;
 	}
 
-	kn_string_t *string = xmalloc(sizeof(kn_string_t));
+	string_t *string = xmalloc(sizeof(string_t));
 
 	string->length = length;
 	string->refcount = xmalloc(sizeof(unsigned));
@@ -31,19 +31,19 @@ kn_string_t *kn_string_emplace(char *str, unsigned length) {
 	return string;
 }
 
-kn_string_t *kn_string_new(char *str) {
-	return kn_string_emplace(str, strlen(str));
+string_t *string_new(char *str) {
+	return string_emplace(str, strlen(str));
 }
 
-void kn_string_free(kn_string_t *string) {
-	if (string->refcount && !--*string->refcount) {
+void string_free(string_t *string) {
+	if (string->refcount != NULL && !--*string->refcount) {
 		free(string->str);
 		free(string);
 	}
 }
 
-kn_string_t *kn_string_clone(kn_string_t *string) {
-	if (string->refcount)
+string_t *string_clone(string_t *string) {
+	if (string->refcount != NULL)
 		++*string->refcount;
 
 	return string;
