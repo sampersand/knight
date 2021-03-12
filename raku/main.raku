@@ -1,36 +1,20 @@
-grammar Knight {
-	
-}
-# grammar Knight {
-# 	rule TOP {
-# 		.*
-# 	}
-# }
-# 
-# say Knight.parse(q/a/);
+#!/usr/bin/env raku
 
-grammar Calculator {
-    token TOP { [ <add> | <sub> ] }
-    rule  add { <num> '+' <num> }
-    rule  sub { <num> '-' <num> }
-    token num { \d+ }
+use lib $*PROGRAM.parent.add('lib');
+use Knight;
+
+@*ARGS = @*ARGS.join('=') if @*ARGS.elems == 2;
+
+multi sub MAIN(Str :$) is hidden-from-USAGE {
+	say $*USAGE;
 }
 
-say Calculator.parse: '2 + 3 ';
+#| the expression to execute
+multi sub MAIN(Str :e(:$expr)) {
+	Knight::run $expr;
+}
 
-# =>
-# ｢2+3｣
-#  add => ｢2+3｣
-#   num => ｢2｣
-#   num => ｢3｣
-
- #
-#class Calculations {
-#    method TOP ($/) { make $<add> ?? $<add>.made !! $<sub>.made; }
-#    method add ($/) { make [+] $<num>; }
-#    method sub ($/) { make [-] $<num>; }
-#}
- #
-#, actions => Calculations).made;
- #
-## OUTPUT: «5␤»
+#| the file to execute
+multi sub MAIN(Str :f(:$file)) {
+	MAIN expr => $file.IO.slurp
+}

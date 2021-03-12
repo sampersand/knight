@@ -1,6 +1,7 @@
 #include <ctype.h>  /* isspace, isdigit, islower, isupper */
 #include <string.h> /* strdup */
 #include <assert.h> /* assert */
+#include <stdio.h>  /* printf */
 
 #include "env.h"    /* kn_env_get */
 #include "ast.h"    /* prototypes, kn_function_t, kn_value_t */
@@ -57,7 +58,6 @@ static void strip_stream(const char **stream) {
 	}
 }
 
-
 static struct kn_ast_t kn_ast_parse_integer(const char **stream) {
 	assert(isdigit(peek(stream)));
 
@@ -92,9 +92,12 @@ static struct kn_ast_t kn_ast_parse_identifier(const char **stream) {
 	} while (isident(peek(stream)));
 
 	char *identifier = strndup(start, *stream - start);
+	size_t *refcount = xmalloc(sizeof(size_t));
+	*refcount = 1;
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_IDENTIFIER,
+		.refcount = refcount,
 		.identifier = identifier
 	};
 }
@@ -118,24 +121,30 @@ static struct kn_ast_t kn_ast_parse_string(const char **stream) {
 		advance(stream);
 	} while (c != quote);
 
-	// subtract one because we've already advanced the ending quote.
-	char *string = strndup(start, *stream - start - 1);
+	size_t length = *stream - start - 1;
+	struct kn_string_t string;
+
+	if (length == 0) {
+		// optimize for the empty string.
+		string = kn_string_intern("");
+	} else {
+		string = kn_string_new(strndup(start, length));
+	}
 
 	return (struct kn_ast_t) {
 		.kind = KN_TT_VALUE,
-		.value = kn_value_new_string(kn_string_new(string))
+		.value = kn_value_new_string(string)
 	};
 }
-
 
 static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	char name = next(stream);
 
 	// strip trailing function words, if we're a non-symbolic function.
 	if (isupper(name)) {
-		do {
+		while (isupper(peek(stream))) {
 			advance(stream);
-		} while (isupper(peek(stream)));
+		}
 	}
 
 	const struct kn_function_t *function = kn_fn_fetch(name);
@@ -145,9 +154,12 @@ static struct kn_ast_t kn_ast_parse_function(const char **stream) {
 	}
 
 	size_t arity = function->arity;
+	size_t *refcount = xmalloc(sizeof(size_t));
+	*refcount = 1;
 
 	struct kn_ast_t ast = (struct kn_ast_t) {
 		.kind = KN_TT_FUNCTION,
+		.refcount = refcount,
 		.function = function,
 		.arguments = xmalloc(arity * sizeof(struct kn_ast_t))
 	};
@@ -190,6 +202,34 @@ struct kn_ast_t kn_ast_parse(const char **stream) {
 	}
 }
 
+void kn_ast_dump(const struct kn_ast_t *ast) {
+	switch (ast->kind) {
+	case KN_TT_VALUE:
+		kn_value_dump(&ast->value);
+		break;
+	
+	case KN_TT_IDENTIFIER:
+		printf("Identifier(%s)", ast->identifier);
+		break;
+
+	case KN_TT_FUNCTION:{
+		printf("Function(%c", ast->function->name);
+
+		for (size_t i = 0; i < ast->function->arity; ++i) {
+			printf(", ");
+			kn_ast_dump(&ast->arguments[i]);
+		}
+
+		printf(")");
+		break;
+	}
+
+	default:
+		bug("unknown kind '%d'", ast->kind);
+
+	}
+}
+
 struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 	switch (ast->kind) {
 	case KN_TT_VALUE:
@@ -209,45 +249,23 @@ struct kn_value_t kn_ast_run(const struct kn_ast_t *ast) {
 		return (ast->function->func)(ast->arguments);
 
 	default:
-		bug("unknown kind '%d'");
+		bug("unknown kind '%d'", ast->kind);
 	}
 }
 
 struct kn_ast_t kn_ast_clone(const struct kn_ast_t *ast) {
-	struct kn_ast_t ret = (struct kn_ast_t) {
-		.kind = ast->kind
-	};
+	if (ast->kind == KN_TT_VALUE) {
+		return (struct kn_ast_t) {
+			.kind = KN_TT_VALUE,
+			.value = kn_value_clone(&ast->value)
+		};
+	} else {
+		assert(ast->kind == KN_TT_FUNCTION ||
+			ast->kind == KN_TT_IDENTIFIER
+		);
 
-	switch (ret.kind) {
-	case KN_TT_VALUE:
-		ret.value = kn_value_clone(&ast->value);
-		return ret;
-
-	case KN_TT_IDENTIFIER: {
-		ret.identifier = strdup((char *) ast->identifier);
-
-		if (ret.identifier == NULL) {
-			die("unable to duplicate identifier");
-		}
-
-		return ret;
-	}
-
-	case KN_TT_FUNCTION: {
-		ret.function = ast->function;
-		size_t arity = ret.function->arity;
-
-		ret.arguments = xmalloc(arity * sizeof(struct kn_ast_t));
-
-		for (size_t i = 0; i < arity; i++) {
-			ret.arguments[i] = kn_ast_clone(&ast->arguments[i]);
-		}
-
-		return ret;
-	}
-
-	default:
-		bug("unknown kind '%d'", ast->kind);
+		++*((struct kn_ast_t *) ast)->refcount;
+		return *ast;
 	}
 }
 
@@ -258,15 +276,23 @@ void kn_ast_free(struct kn_ast_t *ast) {
 		break;
 
 	case KN_TT_IDENTIFIER:
-		free((void *) ast->identifier);
+		if (--*ast->refcount == 0) {
+			free((void *) ast->identifier);
+			free((void *) ast->refcount);
+		}
+
 		break;
 
 	case KN_TT_FUNCTION:
-		for (size_t i = 0; i < ast->function->arity; ++i) {
-			kn_ast_free(&ast->arguments[i]);
+		if (--*ast->refcount == 0) {
+			for (size_t i = 0; i < ast->function->arity; ++i) {
+				kn_ast_free(&ast->arguments[i]);
+			}
+
+			free((void *) ast->arguments);
+			free((void *) ast->refcount);
 		}
 
-		free((void *) ast->arguments);
 		break;
 
 	default:

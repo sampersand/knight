@@ -1,48 +1,98 @@
 #include "value.hpp"
+#include "identifier.hpp"
+#include "function.hpp"
+#include "literal.hpp"
+
 using namespace kn;
 
+static void remove_whitespace(std::string_view &view) {
+	while (true) {
+		// note that in Knight, all forms of parens and `:` are considered whitespace.
+		switch (view.front()) {
+			case ' ': case '\t': case '\n': case '\r': case '\v': case '\f':
+			case ':':
+			case '(': case ')':
+			case '[': case ']':
+			case '{': case '}':
+				view.remove_prefix(1);
+				continue;
 
-value::value(bool boolean) : data(boolean) {}
-value::value(integer_t integer) : data(integer) {}
-value::value(std::string string) : data(string) {}
+			case '#':
+				do {
+					view.remove_prefix(1);
+				} while (!view.empty() && view.front() != '\n');
 
-
-// shamelessly copied from the cpp docs.
-template<class... Ts>
-struct overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
- 
-// copied from a dude on discord.
-template <class Variant, class... Visitors>
-decltype(auto) match (Variant&& variant,Visitors&&...visitors) {
-   return std::visit(overloaded{std::forward<Visitors>(visitors)...},std::forward<Variant>(variant));
+				continue;
+			default:
+				return;
+		}
+	}
 }
 
-bool value::to_boolean() const {
-	return match(data,
-		[](bool boolean) { return boolean; },
-		[](integer_t integer) { return integer != 0; },
-		[](std::string string) { return !string.empty(); }
-	);
+SharedValue Value::parse(std::string_view& view) {
+	SharedValue ret;
+
+	remove_whitespace(view);
+
+	if ((ret = Literal::parse(view)) || (ret = Identifier::parse(view)) || (ret = Function::parse(view))) {
+		return ret;
+	} else if (view.empty()) {
+		throw std::invalid_argument("nothing to parse");
+	} else {
+		throw std::invalid_argument("invalid character encountered: " + std::to_string(view.front()));
+	}
 }
 
-// namespace kn {E
-// 	typedef intmax_t integer_t;
+SharedValue Value::assign(SharedValue value) const {
+	return Identifier(to_string()).assign(value);
+}
 
-// 	class value {
-// 		std::variant<bool, integer_t, std::string> data;
-// 	public:
-// 		value(bool boolean);
-// 		value(integer_t integer);
-// 		value(std::string string);
+bool Value::to_boolean() const {
+	return run()->to_boolean();
+}
 
-// 		bool to_boolean(void) const;
-// 		integer_t to_integer(void) const;
-// 		std::string to_string(void) const;
+number Value::to_number() const {
+	return run()->to_number();
+}
+
+string Value::to_string() const {
+	return run()->to_string();
+}
 
 
-// 		// value operator+(const value& rhs) const  {
-// 		// 	return integer(to_integer() + rhs.to_integer());
-// 		// }
-// 	};
-// }
+SharedValue Value::operator+(Value const& rhs) const {
+	return *run() + *rhs.run();
+}
+
+SharedValue Value::operator-(Value const& rhs) const {
+	return *run() - *rhs.run();
+}
+
+SharedValue Value::operator*(Value const& rhs) const {
+	return *run() * *rhs.run();
+}
+
+SharedValue Value::operator/(Value const& rhs) const {
+	return *run() / *rhs.run();
+}
+
+SharedValue Value::operator%(Value const& rhs) const {
+	return *run() % *rhs.run();
+}
+
+SharedValue Value::pow(Value const& rhs) const {
+	return run()->pow(*rhs.run());
+}
+
+bool Value::operator==(Value const& rhs) const {
+	return *run() == *rhs.run();
+}
+
+bool Value::operator<(Value const& rhs) const {
+	return *run() < *rhs.run();
+}
+
+bool Value::operator>(Value const& rhs) const {
+	return *run() > *rhs.run();
+}
+

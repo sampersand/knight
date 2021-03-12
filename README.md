@@ -1,6 +1,53 @@
 # Knight
 An extremely simple programming language that I've designed to be easy to implement in a variety of languages. It's not actually meant to be used, though it is a fully-functional lang.
 
+Unofficial Tag-line: "Knight: Runs everywhere. Not because it's cross-platform, but because it has a implementation in virtually all major languages."
+
+# Implementations
+The following is the list of all languages that's supported. All in-progress implementations are in separate branches.
+
+| Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
+| -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
+| [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
+| [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
+| [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
+| [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
+| [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
+| [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
+| [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
+| [Perl](perl) | X | X | X | X | Fully Functional on at least v5.18. |
+| [PHP](php) | X | X | X | X | Fully Functional, with type annotations. |
+| [POSIX-Compliant SH](shell/knight.sh) |   |   | X | X | Mostly works, but has some bug fixes that need to be done. It could definitely use some TL&C, though. |
+| [Prolog](../prolog/prolog) |   |   |   | X | The very beginnings of a Prolog implementation. |
+| [Python](python) | X | X | X | X | Fully Functional, though `setrecursionlimit` is needed to ensure "FizzBuzz in Knight in Python" works. |
+| [Quest](../quest/quest) |   |    |   | X | An implementation in [my other programming language](https://github.com/sampersand/quest). |
+| [Raku](raku) | X | X | X | X | Fully Functional, but quite slow. But hey, it was fun to write in. |
+| [Ruby](../ruby/ruby) | X |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
+| [Rust](../rust/rust) | X |   | X | X | Simple implementation without comments. It intentionally captures all UB, but eventually will have an efficient implementation. |
+| Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
+| [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
+| SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
+| Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
+| LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
+| Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
+
+## Time Comparisons
+The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I used the command
+```sh
+  time <implementation> -f knight.kn <<<$'knight.kn\nexamples/fizzbuzz.kn'`
+```
+
+
+Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
+
+|  Language  |  Time   | `<implementation>` | Notes |
+| ---------- |--------:|--------------------|-------|
+| C          | 19.10s  | `c/knight`         | Compiled using `make optimized`; See [c/Makefile](c/Makefile) for details. |
+| C++        | 166.76s | `c++/knight`       | The virtual functions are a bottleneck |
+| JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | The default stack size was too small, so we had to bump it up. |
+| PHP        |  64.73s | `php/knight.php`   | |
+
+
 # Examples
 Here's some examples of the syntax to give you a feel for it:
 
@@ -37,6 +84,8 @@ OUTPUT (+ 'tries: ' nguess)                   # print('tries: ' + n)
 ```
 # Specs
 
+For exact details please see [specs.md](specs.md). The following is just a rough overview, and may be slightly out of date.
+
 ## Syntax
 Every Knight program is a single expression. (The `;` function can be used to write more than one expression, sequentially.) Because of this, parsing is extremely simple: Parse a token, then parse as many arguments as that expression dictates.
 
@@ -65,7 +114,7 @@ nullary
   ;
 
 unary
- := ('B' | 'C' | 'O' | 'P' | 'Q' | 'S' | 'L') {UPPER}
+ := ('B' | 'C' | 'O' | 'Q' | 'L') {UPPER}
   | '`'
   | '!'
   ;
@@ -80,39 +129,31 @@ binary
 ternary := 'I' | 'G' ;
 quaternary := 'S' ;
 
-UPPER := [A-Z]
+UPPER := [A-Z_]
 ```
 
 ## Functions
 ```
-A
+# - comment until EOL
+
+TRUE () - `TRUE` literal.
+FALSE () - `FALSE` literal.
+NULL () - `NULL` literal.
+PROMPT () - Reads a line from stdin.
+RAND () - Returns a random integer.
+
+EVAL (string) - Evaluates `string`.
 BLOCK (body) - Anonymous function.
 CALL (block) - Calls `block`.
-D
-EVAL (string) - Evaluates `string`.
-FALSE () - `FALSE` literal.
-GET (string, index, length) - Gets a substring of length `length` from `string` starting at `index`.
-H
-IF (cond, if_t, if_f) - Evaluates and returns `if_t` if `cond` is truthy. Otherwise, evaluates and returns `if_f`.
-J
-K
-LENGTH (string) - Length of `string`.
-M
-NULL () - `NULL` literal.
-OUTPUT (thing) - Prints `thing`. If `thing` ends with `\`, it omits the last character, otherwise appends a newline.
-PROMPT () - Reads a line from stdin.
 QUIT (status) - Quits with `status`.
-RAND () - Returns a random integer.
-SET (string, start, len, repl) - Returns a new string with the substring of length `len`, starting at `start`, replaced with `repl`.
-TRUE () - `TRUE` literal.
-U
-V
-W WHILE (cond, body) - Evaluates the `body` while the `cond`s true. Returns `body`s last value, or `NULL` if it never ran.
-X
-Y
-Z
+! (x) - Boolean negation of `x`.
+` (x) - Runs `x` as a shell command, returns `x`'s stdout.
+DEBUG (code) - Prints debugging information for `code`.
+LENGTH (string) - Length of `string`.
+OUTPUT (thing) - Prints `thing`. If `thing` ends with `\`, it omits the last character, otherwise appends a newline.
 
-# - comment until EOL
+X(...) -- This function identifier is explicitly unassigned, so extensions may do with it as they wish.
+
 + (x, y) - If `x` is a string, converts `y` to a string and concats. Otherwise, convert both to a number and add them.
 - (x, y) - Converts both to an integer returns `x - y`.
 * (x, y) - Converts both to an integer returns `x * y`.
@@ -125,20 +166,15 @@ has easy support for it.
 < (x, y) - If `x` is a string, converts `y` to a string and checks to see if `x` is less than `y` in the current local. Otherwise, converts both to an integer and sees if `x` is less than `y`.
 > (x, y) - If `x` is a string, converts `y` to a string and checks to see if `x` is greater than `y` in the current local. Otherwise, converts both to an integer and sees if `x` is greater than `y`.
 ? (x, y) - If `x` is a string, converts `y` to a string and checks to see if both are equal. Otherwise, converts both to an integer and sees if theyre both equal.
-! (x) - Boolean negation of `x`.
-
-` (x) - Runs `x` as a shell command, returns `x`'s stdout.
 ; (x, y) - Evaluates `x`, then `y`, and returns `y`.
 = (x, y) - Sets `x` in the global scope to `y`, crashing if `x` isnt an identifier.
-,
-@
-~
-$
-.
-\
+WHILE (cond, body) - Evaluates the `body` while the `cond`s true. Returns `body`s last value, or `NULL` if it never ran.
+
+GET (string, index, length) - Gets a substring of length `length` from `string` starting at `index`.
+IF (cond, if_t, if_f) - Evaluates and returns `if_t` if `cond` is truthy. Otherwise, evaluates and returns `if_f`.
+
+SET (string, start, len, repl) - Returns a new string with the substring of length `len`, starting at `start`, replaced with `repl`.
 ```
 
-
-
 ## Details
-The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified, some functions are not included (such as the "system" function `` ` ``, `O`, `C`)
+The exact details of the language are not nailed down: This is intentional, as it's meant to be fairly easy to be implemented in each language. Thus, the maximum and minimum of integer types is unspecified

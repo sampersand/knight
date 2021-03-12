@@ -1,164 +1,77 @@
+# frozen_string_literal: true
+
 module Kn
-	class Function < Proc
-		@functions = {}
+	class Function
+		@funcs = {}
 
-		def self.define(tt=nil, name, &block)
-			self[tt || name[0]] = new(name, &block)
+		def self.register(name, &block) 
+			raise ArgumentError, 'name must be exactly one character' unless name.length == 1
+			@funcs[name] = block
 		end
 
-		def self.[](name)
-			@functions[name]
-		end
+		def self.[](name) = @funcs[name]
 
-		def self.[]=(name, func)
-			@functions[name] = func
-		end
-
-		attr_reader :name
-
-		def initialize(name, ...)
-			super(...)
+		def initialize(func, name, args)
+			@func = func
 			@name = name
+			@args = args
 		end
 
-		def inspect = "#{self.class}::#@name"
-		alias to_s name
+		def inspect = "Function(#@name#{@args.map { ", #{_1.inspect}" }.join})"
 
-		def call(*) = Value.new(super)
+		def run = @func.call(*@args)
 
-		alias run call
+		undef ==
+		undef to_s
 
-		define 'TRUE' do 
-			true
-		end
+		def respond_to_missing?(...) = run.respond_to_missing?(...)
+		def method_missing(...) = run.public_send(...)
 
-		define 'FALSE' do
-			false
-		end
+		register 'P' do String.new gets.chomp end
+		register 'R' do Number.new rand 0..0xffff_ffff end
 
-		define 'NULL' do
-			nil
-		end
+		register 'E' do Kn.run _1 end
+		register 'B' do _1 end
+		register 'C' do _1.run.run end
+		register '`' do String.new `#{p(_1.to_s)}` end
+		register 'Q' do exit _1.to_i end
+		register '!' do Boolean.new !_1.truthy? end
+		register 'L' do Number.new _1.to_s.length end
+		register 'D' do print _1.run.inspect end
+		register 'O' do
+			str = _1.to_s
 
-		define 'PROMPT' do
-			$stdin.gets # so we don't read from ARGV
-		end
-
-		define 'RANDOM' do 
-			rand 0..0xff_ff_ff_ff
-		end
-
-		define 'EVAL' do |what|
-			Value.new(what.to_s).run
-		end
-
-		define 'BLOCK' do |block|
-			block
-		end
-
-		define 'CALL' do |block|
-			block.run.run
-		end
-
-		define '`', 'SYSTEM' do |cmd|
-			`#{cmd}`
-		end
-
-		define 'QUIT' do |code|
-			exit code.to_i
-		end
-
-		define '!', 'NOT' do |arg|
-			!arg
-		end
-
-		define 'LENGTH' do |arg|
-			arg.to_s.length
-		end
-
-		define 'OUTPUT' do |msg|
-			text = (msg = msg.run).to_s
-
-			if text.end_with? '\\'
-				print text[..-2]
+			if str[-1] == '\\'
+				print str[0..-2]
 			else
-				puts text
+				puts str
 			end
 
-			msg
+			Null.new
 		end
 
-		define '+', 'ADD' do |lhs, rhs|
-			lhs + rhs
-		end
+		register '+' do _1 + _2 end
+		register '-' do _1 - _2 end
+		register '*' do _1 * _2 end
+		register '/' do _1 / _2 end
+		register '%' do _1 % _2 end
+		register '^' do _1 ** _2 end
+		register '?' do Boolean.new _1.run == _2.run end
+		register '<' do Boolean.new _1 < _2 end
+		register '>' do Boolean.new _1 > _2 end
+		register '&' do (l = _1.run).truthy? ? _2.run : l end
+		register '|' do (l = _1.run).truthy? ? l : _2.run end
+		register ';' do _1.run; _2.run end
+		register '=' do _1.value = _2.run end
+		register 'W' do _2.run while _1.truthy? ; Null.new end
 
-		define '-', 'SUB' do |lhs, rhs|
-			lhs - rhs
-		end
+		register 'I' do _1.truthy? ? _2.run : _3.run end
+		register 'G' do String.new _1.to_s[_2.to_i, _3.to_i] end
 
-		define '*', 'MUL' do |lhs, rhs|
-			lhs * rhs
-		end
-
-		define '/', 'DIV' do |lhs, rhs|
-			lhs / rhs
-		end
-
-		define '%', 'MOD' do |lhs, rhs|
-			lhs % rhs
-		end
-
-		define '^', 'POW' do |lhs, rhs|
-			lhs ** rhs
-		end
-
-		define '<', 'LTH' do |lhs, rhs|
-			lhs < rhs
-		end
-
-		define '>', 'GTH' do |lhs, rhs|
-			lhs > rhs
-		end
-
-		define '?', 'EQL' do |lhs, rhs|
-			lhs == rhs
-		end
-
-		define '&', 'AND' do |lhs, rhs|
-			(lhs = lhs.run).to_b ? rhs.run : lhs
-		end
-
-		define '|', 'OR' do |lhs, rhs|
-			(lhs = lhs.run).to_b ? lhs : rhs.run
-		end
-
-		define ';', 'THEN' do |lhs, rhs|
-			lhs.run
-			rhs.run
-		end
-
-		define 'WHILE' do |cond, body|
-			ret = body.run while cond.to_b
-			ret
-		end
-
-		define '=', 'ASSIGN' do |var, arg|
-			Kn::ENVIRONMENT[var.is_a?(Identifier) ? var.data : var.to_s] = arg.run
-		end
-
-		define 'IF' do |cond, ift, iff|
-			(cond.to_b ? ift : iff).run
-		end
-
-		define 'GET' do |string, start, count|
-			string.to_s[start.to_i, count.to_i]
-		end
-
-		define 'SET' do |string, start, count, repl|
-			ret = string.to_s.dup
-			ret[start.to_i..count.to_i] = repl.to_s
-			ret
+		register 'S' do
+			str = _1.to_s.dup
+			str[_2.to_i, _3.to_i] = _4.to_s
+			String.new str
 		end
 	end
 end
-
