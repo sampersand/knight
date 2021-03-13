@@ -1,21 +1,21 @@
 %% Whitespace is any of `\t\n\v\f\r`.
-whitespace(C) :- 9 =< C, C =< 13. % `\t\n\v\f\r`
-whitespace(32). % space
+whitespace(C) :- member(C, " \t\n\v\f\r").
 
 %% A Quote is either a single or double quote
-quote(39). % `'`
-quote(93). % `"'`
+quote(C) :- member(C, "\"\'").
 
 %% A digit is simply a number from 0-9
-digit(C) :- 48 =< C, C =< 57.
+digit(C) :- member(C, "0123456789").
+
+%% An underscore, used for parsing part of `upper`.
+underscore(95).
 
 %% "Lower" is either a letter or an underscore.
-lower(95). % underscore.
-lower(C) :- 97 =< C, C =< 122.
+lower(C) :- member(C, "abcdefghijklmnopqrstuvwxyz"); underscore(C).
 
 %% "Upper" is simply an uppercase number.
-upper(C) :- 65 =< C, C =< 90.
+upper(C) :- member(C, "ABCDEFGHIJKLMNOPQRSTUVWXYZ").
+upper_under(C) :- upper(C); underscore(C).
 
 %% These are all the symbols defined within knight.
 symbol(C) :- member(C, "`!+-*/%^?&|;=<>").
-
