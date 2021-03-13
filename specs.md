@@ -39,14 +39,14 @@ In this document, some notation is used to describe what is required of implemen
 	4.2.9 [`DUMP`](#429-dumpunchanged)  
 	4.2.10 [`OUTPUT`](#4210-outputstring)  
 
-	4.3.1 [`+`](#431-stringnumber-coerce)  
-	4.3.2 [`-`](#432--number-number)  
-	4.3.3 [`*`](#433-stringnumber-coerce)  
-	4.3.4 [`/`](#434-number-number)  
-	4.3.5 [`%`](#435-number-number)  
-	4.3.6 [`^`](#436-number-number)  
-	4.3.7 [`<`](#437-stringnumberboolean-coerce)  
-	4.3.8 [`>`](#438-stringnumberboolean-coerce)  
+	4.3.1 [`+`](#431-unchanged-coerce)
+	4.3.2 [`-`](#432--unchanged-number)
+	4.3.3 [`*`](#433-unchanged-coerce)
+	4.3.4 [`/`](#434-unchanged-number)
+	4.3.5 [`%`](#435-unchanged-number)
+	4.3.6 [`^`](#436-unchanged-number)
+	4.3.7 [`<`](#437-unchanged-coerce)
+	4.3.8 [`>`](#438-unchanged-coerce)
 	4.3.9 [`?`](#439-unchanged-unchanged)  
 	4.3.10 [`|`](#4310-unchanged-unevaluated)  
 	4.3.11 [`&`](#4311-unchanged-unevaluated)  
@@ -152,6 +152,17 @@ Implementations are _only_ required to support the following characters within s
 - Whitespace (see [Whitespace](#whitespace) for details)
 - ASCII characters `0x21` (`!`) through `0x7e` (`~`)
 
+That is, the following is the list of allowed characters:
+```text
+	[tab] [newline] [carriage return] [space] 
+	  ! " # $ % & ' ( ) * + , - . /
+	0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+	@ A B C D E F G H I J K L M N O
+	P Q R S T U V W X Y Z [ \ ] ^ _
+	` a b c d e f g h i j k l m n o
+	p q r s t u v w x y z { | } ~
+```
+
 ### 2.2.1 Contexts
 - **numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
 - **string**: In string contexts, the string itself is returned.
@@ -199,6 +210,8 @@ Every function in Knight has a predetermined arity---there are no varidict funct
 Unless otherwise noted, all functions will _evaluate_ their arguments beforehand. This means that `+ a b` should fetch the value of `a`, the value of `b`, and then add them together, and should _not_ attempt to add a literal identifier to another literal identifier (which is undefined behaviour.)
 
 All arguments _must_ be evaluated in order (from the first argument to the last)---functions such as `;` rely on this.
+
+Note that any operators which would return a number outside of the implementation-supported number range, the return value is undefined. (i.e. integer overflow is an undefined operation.)
 
 ### 4.0.1 Contexts
 Some functions impose certain contexts on arguments passed to them. (See the `Conversion` section of the basic types for exact semantics.) The following are the contexts used within this document:
@@ -331,30 +344,116 @@ bar
 ```
 
 ## 4.3 Binary (Arity 2)
-### 4.3.1 `+(string|number, coerce)`
-### 4.3.2 `-(number, number)`
-### 4.3.3 `*(string|number, coerce)`
-### 4.3.4 `/(number, number)`
-### 4.3.5 `%(number, number)`
-### 4.3.6 `^(number, number)`
-(`^` is undefined for negative exponents (even though it could be defined...))
+### 4.3.1 `+(unchanged, coerce)`
+The return value of this function depends on its first argument's type:
+- `Number`: The second argument is coerced to a number, and added to the first.
+- `String`: The second argument is coerced to a string, and appended to the first.
+- All other types: The return value is undefined.
 
-### 4.3.7 `<(string|number|boolean, coerce)`
-### 4.3.8 `>(string|number|boolean, coerce)`
+For example, `+ "2a" 3` will return `"2a3"`, whereas `+ 3 "2a"` will return `5`.
+
+### 4.3.2 `-(unchanged, number)`
+If the first argument is a number, the second will be coerced to a number and subtracted from the first.
+
+If the first argument is not a number, the return value of this function is undefined.
+
+For example, `- 3 "2a"` will return `1`.
+
+### 4.3.3 `*(unchanged, coerce)`
+The return value of this function depends on its first argument's type:
+- `Number`: The second argument is coerced to a number, and multiplied by the first.
+- `String`: The second argument is coerced to a number, and then the first is repeated that many times. If the second argument is negative, the return value is undefined.
+- All other types: The return value is undefined.
+
+For example, `* "2a" 3` will return `"2a2a2a"`, whereas `* 3 "2a"` will return `6`.
+
+### 4.3.4 `/(unchanged, number)`
+If the first argument is a number, the second will be coerced to a number and divided from the first. The result, if it isn't a whole number, should be rounded towards zero.
+
+If the first argument is not a number, the return value of this function is undefined.
+If the second argument is zero, the return value is undefined.
+
+For example, `/ 7 3` will return `2`, and `/ 5 "-3"` will return `-1`.
+
+### 4.3.5 `%(unchanged, number)`
+If the first argument is a number, the second will be coerced to a number and then the remainder of `<arg1> / <arg2>` is returned. Note that this means that, for all `a`, `a = (a/b)*b + a%b`.
+
+If the first argument is not a number, the return value of this function is undefined.
+If the second argument is not a positive number, the return value is undefined.
+
+For example, `% 7 3` will return `1`, and `% 7 "-5"` will return `-2`.
+
+### 4.3.6 `^(unchanged, number)`
+If the first argument is a number, the second will be coerced to a number and the resulting exponentiation will be returned. Note that for an exponent of `0`, the return value should always be `1`.
+
+If the first argument is not a number, the return value of this function is undefined.
+If the second argument is negative, the return value is undefined. (This is in contrast to "normal" math, where you can, eg, raise `-1` to a negative power).
+
+### 4.3.7 `<(unchanged, coerce)`
+The return value of this function depends on its first argument's type:
+- `Number`: Whether or not the first argument is numerically smaller than the second, which is coerced to a number, is returned.
+- `String`: Whether or not the first argument is lexicographically smaller than the second, which is coerced to a number, is returned. See below for more details.
+- `Boolean`: Whether the first argument is false and the second argument is, when coerced to a boolean, is true is returned.
+- All other types: The return value is undefined.
+
+Lexicographical comparisons should find the first non-equivalent character in each string and compare them based on their ASCII value (eg in `abcd` and `abde`, `c` and `d` would be compared), returning `TRUE` if the first argument's character is smaller. If both strings have equivalent characters, then this function shall return `TRUE` only if the first string has a smaller size than the second.
+
+The following is a list of valid string characters, where `[tab]` is smaller than everything (other than another tab), and `~` is larger than everything (other than another `~`).
+```text
+	[tab] [newline] [carriage return] [space] 
+	  ! " # $ % & ' ( ) * + , - . /
+	0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+	@ A B C D E F G H I J K L M N O
+	P Q R S T U V W X Y Z [ \ ] ^ _
+	` a b c d e f g h i j k l m n o
+	p q r s t u v w x y z { | } ~
+```
+
+### 4.3.8 `>(unchanged, coerce)`
+This is exactly the same as [4.3.7](#437-unchanged-coerce), except for the operands reversed, ie `> a b` should return the same mas `< b a` (barring the fact that `a` should be evaluated before `b`).
+
 ### 4.3.9 `?(unchanged, unchanged)`
+Unlike nearly every other function in Knight, this one does not automatically coerce its arguments to any type---Instead, it checks to see if arguments are of the same type _and_ value. For example, `1` is not equivalent to `"1"`, nor is it equivalent to `TRUE`.
+
+This function is valid for the types `Number`, `String`, `Boolean`, and `Null`. Notably, if either argument is a `BLOCK`'s return value, the return value is undefined.
+
 ### 4.3.10 `|(unchanged, unevaluated)`
+If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
+
+This function acts similarly to `||` in most programming languages, where it only evaluates the second variable if the first is falsey.
+
+For example, `| "2" (QUIT 1)` shall return the value `"2"`, whilst `| FALSE 4` shall return `4`.
+
 ### 4.3.11 `&(unchanged, unevaluated)`
+If the first argument, after being coerced to a boolean, is `TRUE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
+
+This function acts similarly to `&&` in most programming languages, where it only evaluates the second variable if the first is truthy.
+
+For example, `& 0 (QUIT 1)` shall return the value `0`, whilst `& TRUE ""` shall return `""`.
+
 ### 4.3.12 `;(unchanged, unchanged)`
+This function simply returns its second argument. It's entire purpose is to act as a "sequence" function, where the first argument's value can be safely ignored.
+
 ### 4.3.13 `=(unevaluated, unchanged)`
-Note: The first argument must be an identifier. Some implementations may convert the first argument to a string if it's not an identifier (in which case it's a `string` context), but that's not required.
+Unless the first argument is a [Variable](#3-variables), this function is undefined.
+
+This function assigns the variable identified by the first argument (which shall not be evaluated) to the second argument's value, after which it should return the second argument's value. That is, it performs the "assignment" operation for strings.
+
 ### 4.3.14 `WHILE(unevaluated, unevaluated)`
+This function will evaluate its second argument as long as its first evaluates to a truthy value. The return value shall be `NULL`.
+
+Note that, unlike most programming languages, knight does not have a builtin way to "`continue`" or "`break`" from a loop.
 (returns null)
 
 ## 4.4 Ternary (Arity 3)
 ### 4.4.1 `IF(boolean, unevaluated, unevaluated)`
+This function will evaluate and return the second argument if the first argument is truthy. If the first argument is falsey, the third argument is evaluated and returned.
+
+
 ### 4.4.2 `GET(string, number, number)`
 
 ## 4.5 Quaternary (Arity 4)
 ### 4.5.1 `SUBSTITUTE(string, number, number, string)`
 
 # 5 Extensions
+All functions starting with `X` are explicitly reserved. (More details to come.)
