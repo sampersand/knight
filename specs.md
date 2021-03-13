@@ -4,7 +4,6 @@ Knight is meant to be easily implementable in virtually every language imaginabl
 ## Notation
 In this document, some notation is used to describe what is required of implementations:
 - The words **required**/**must**/**shall** indicates directions implementations if they want to be valid.
-- The word **optional**/**may** indicates directions that probably should be implemented, but aren't required
 - The word **undefined** is used to indicate that behaviour is undefined: Programs that contain undefined behaviour are invalid, and the interpreter does not have to provide any guarantees. (However, if possible, implementations should gracefully exit.)
 
 # Table of Contents
@@ -221,7 +220,6 @@ Some functions impose certain contexts on arguments passed to them. (See the `Co
 - `coerced`: The argument must be evaluated, and then converted to the type of the first argument. (This only appears in binary functions).
 - `unchanged`: The argument must be evaluated, and is passed unchanged.
 - `unevaluated`: The argument must not be evaluated at all.
-If multiple contexts are possible, they're separated with `|`s.
 
 ## 4.1 Nullary (Arity 0)
 
@@ -442,7 +440,7 @@ This function assigns the variable identified by the first argument (which shall
 ### 4.3.14 `WHILE(unevaluated, unevaluated)`
 This function will evaluate its second argument as long as its first evaluates to a truthy value. The return value shall be `NULL`.
 
-Note that, unlike most programming languages, knight does not have a builtin way to "`continue`" or "`break`" from a loop.
+Note that, unlike most programming languages, Knight does not have a builtin way to "`continue`" or "`break`" from a loop.
 (returns null)
 
 ## 4.4 Ternary (Arity 3)
