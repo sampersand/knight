@@ -1,38 +1,41 @@
-macro_rules! die {
-	($($tt:tt)*) => {{
-		eprintln!($($tt)*);
-		std::process::exit(1);
-	}};
-}
-pub mod value;
-pub mod ast;
-pub mod function;
-pub mod env;
+use knight::RuntimeError;
+use clap::{App, Arg, ArgMatches};
 
-use ast::Ast;
-use value::Value;
-use function::Function;
+fn run(matches: ArgMatches) -> Result<(), RuntimeError> {
+	if let Some(expr) = matches.value_of("expr") {
+		knight::run_str(&expr)?;
+	} else {
+		let filename = matches.value_of("file").unwrap();
+		knight::run_str(std::fs::read_to_string(filename)?)?;
+	}
 
-fn usage(prog: &str) -> ! {
-	die!("usage: {} [-e 'program'] [-f file]", prog);
+	Ok(())
 }
 
 fn main() {
-	let mut args = std::env::args();
-	let prog = args.next().unwrap();
+	let matches =
+		App::new("knight")
+			.version(clap::crate_version!())
+			.author(clap::crate_authors!())
+			.about("The Knight programming language")
+			.usage("knight (-e 'expr' | -f file)")
+			.arg(Arg::with_name("expr")
+				.help("the expression to execute")
+				.takes_value(true)
+				.conflicts_with("file")
+				.short("e")
+				.long("expr"))
+			.arg(Arg::with_name("file")
+				.help("the expression to read and execute")
+				.takes_value(true)
+				.conflicts_with("expr")
+				.short("f")
+				.long("file"))
+		.get_matches();
+		// .get_matches_from(vec![ "knight", "-e", "D + 9 '1a"]);
 
-
-	let cmd = args.next().unwrap_or_else(|| usage(&prog));
-	let arg = args.next().unwrap_or_else(|| usage(&prog));
-
-	let input =
-		match cmd.as_str() {
-			"-e" => arg,
-			"-f" => std::fs::read_to_string(&arg).expect("Can't read file!"),
-			_ => usage(&prog)
-		};
-
-	env::initialize();
-
-	input.parse::<Ast>().unwrap().run();
+	if let Err(err) = run(matches) {
+		eprintln!("error: {}", err);
+		std::process::exit(1);
+	}
 }
