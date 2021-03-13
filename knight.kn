@@ -444,11 +444,6 @@
 
 ; OUTPUT "Enter a file to execute: \"
 ; = file PROMPT
-# ; = file GET file 0 - LENGTH file 1
-# ; IF !` ++ "test '" file "' && echo 1"
-# 	; OUTPUT ++ "unknown file '" file "'"
-# 	: QUIT 1
-# 	: NULL
 ; = stream ` + "cat " file
 ; = ast CALL next_ast
 : CALL run_ast
