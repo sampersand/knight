@@ -20,7 +20,7 @@ inline size_t kn_string_length(const struct kn_string_t *string) {
 }
 
 
-const struct kn_string_t *kn_string_tail(const struct kn_string_t *string, size_t start) {
+struct kn_string_t *kn_string_tail(struct kn_string_t *string, size_t start) {
 	return kn_string_emplace(&string->str[start], string->length - start);
 	// assert(0 <= (ssize_t) start);
 	// struct kn_string_t *result;
@@ -48,6 +48,10 @@ struct kn_string_page_t {
 static struct kn_string_page_t **pages, *currentpage, *lastpage;
 
 static struct kn_string_t *create_string(const char *str, size_t length) {
+	assert(strlen(str) == length);
+
+	if (!length)
+		return &KN_STRING_EMPTY;
 /*
 	if (pages == 0) {
 		pages = xmalloc(sizeof(struct kn_string_page_t [NPAGES]));
@@ -83,7 +87,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 	return string;
 }
 
-const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
+struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	struct kn_string_t *string, **cacheline;
 
 	// sanity check for inputs.
@@ -109,13 +113,13 @@ const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	return string;
 }
 
-const struct kn_string_t *kn_string_new(const char *str) {
+struct kn_string_t *kn_string_new(const char *str) {
 	assert(str != NULL);
 
 	return kn_string_emplace(str, strlen(str));
 }
 
-void kn_string_free(const struct kn_string_t *string) {
+void kn_string_free(struct kn_string_t *string) {
 	assert(string != NULL);
 
 	struct kn_string_t *unconst = (struct kn_string_t *) string;
@@ -126,7 +130,7 @@ void kn_string_free(const struct kn_string_t *string) {
 	}
 }
 
-const struct kn_string_t *kn_string_clone(const struct kn_string_t *string) {
+struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
 	assert(string != NULL);
 
 	if (string->refcount >= 0)

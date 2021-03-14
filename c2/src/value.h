@@ -31,16 +31,17 @@ bool kn_value_is_boolean(kn_value_t);
 bool kn_value_is_string(kn_value_t);
 bool kn_value_is_null(kn_value_t);
 bool kn_value_is_variable(kn_value_t);
-bool kn_value_eql(kn_value_t, kn_value_t);
+bool kn_value_is_ast(kn_value_t);
 
 kn_number_t kn_value_as_number(kn_value_t);
 kn_boolean_t kn_value_as_boolean(kn_value_t);
-const struct kn_string_t *kn_value_as_string(kn_value_t);
+struct kn_string_t *kn_value_as_string(kn_value_t);
 struct kn_variable_t *kn_value_as_variable(kn_value_t);
+struct kn_ast_t *kn_value_as_ast(kn_value_t);
 
 kn_number_t kn_value_to_number(kn_value_t);
 kn_boolean_t kn_value_to_boolean(kn_value_t);
-const struct kn_string_t *kn_value_to_string(kn_value_t);
+struct kn_string_t *kn_value_to_string(kn_value_t);
 
 void kn_value_dump(kn_value_t);
 
