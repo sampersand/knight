@@ -6,7 +6,7 @@
 #include <assert.h>
 
 
-#define MAXLENGTH 10
+#define MAXLENGTH 64
 #define CACHESIZE 65536
 
 static struct kn_string_t * STRINGCACHE[MAXLENGTH][CACHESIZE];
@@ -22,19 +22,19 @@ size_t kn_string_length(const struct kn_string_t *string) {
 
 const struct kn_string_t *kn_string_tail(const struct kn_string_t *string, size_t start) {
 	return kn_string_emplace(&string->str[start], string->length - start);
-	assert(0 <= (ssize_t) start);
-	struct kn_string_t *result;
+	// assert(0 <= (ssize_t) start);
+	// struct kn_string_t *result;
 
-	result = xmalloc(sizeof(struct kn_string_t));
+	// result = xmalloc(sizeof(struct kn_string_t));
 
-	result->length = string->length - start;
-	assert(0 <= (ssize_t) result->length);
-	result->refcount = string->refcount;
-	result->str = &string->str[start];
-	kn_string_clone(string);
-	// DEBUG("allocated: %s\n", result->str);
+	// result->length = string->length - start;
+	// assert(0 <= (ssize_t) result->length);
+	// result->refcount = string->refcount;
+	// result->str = &string->str[start];
+	// kn_string_clone(string);
+	// // DEBUG("allocated: %s\n", result->str);
 
-	return result;
+	// return result;
 }
 
 static struct kn_string_t *create_string(const char *str, size_t length) {
@@ -46,26 +46,10 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 	string->refcount = xmalloc(sizeof(unsigned));
 	string->str = str;
 
-	// DEBUG("allocated: %s\n", string->str);
+	DEBUG("allocated: %s\n", string->str);
 
 	return string;
 }
-
-static struct kn_string_t **get_string(const char *str, size_t length) {
-	assert(str != NULL);
-
-	// This is the MurmurHash.
-	unsigned long hash = 525201411107845655;
-
-	while (*str != '\0') {
-		hash ^= *str++;
-		hash *= 0x5bd1e9955bd1e995;
-		hash ^= hash >> 47;
-	}
-
-	return &STRINGCACHE[length][hash & (CACHESIZE - 1)];
-}
-
 
 const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	struct kn_string_t *string, **cacheline;
@@ -77,12 +61,15 @@ const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	if (length >= MAXLENGTH)
 		return create_string(str, length);
 
-	cacheline = get_string(str, length);
+	cacheline = &STRINGCACHE[length][kn_hash(str) & (CACHESIZE - 1)];
 
-	if (*cacheline != NULL && strcmp((string = *cacheline)->str, str) == 0)
-		return kn_string_clone(string);
-	else
+	if (*cacheline == NULL || strcmp((string = *cacheline)->str, str))
 		return *cacheline = create_string(str, length);
+
+	assert(string->refcount != NULL);
+	++*string->refcount;
+
+	return string;
 }
 
 const struct kn_string_t *kn_string_new(const char *str) {

@@ -12,6 +12,8 @@
 void die(const char *msg, ...) __attribute__((noreturn,cold));
 
 
+unsigned long kn_hash(const char *);
+
 #define DEBUG printf
 
 #ifdef RECKLESS

@@ -49,22 +49,6 @@ void kn_env_free() {
 	}
 }
 
-static struct kn_env_bucket_t *get_bucket(const char *identifier) {
-	assert(identifier != NULL);
-
-	// This is the MurmurHash.
-	unsigned long hash = 525201411107845655;
-
-	while (*identifier != '\0') {
-		hash ^= *identifier++;
-		hash *= 0x5bd1e9955bd1e995;
-		hash ^= hash >> 47;
-	}
-
-	return &BUCKETS[hash & (NBUCKETS - 1)];
-}
-
-
 static struct kn_env_pair_t *get_pair(
 	const struct kn_env_bucket_t *bucket,
 	const char *identifier
@@ -86,7 +70,7 @@ const char *kn_env_name_for(kn_value_t *value) {
 }
 
 kn_value_t *kn_env_fetch(const char *identifier, _Bool owned) {
-	struct kn_env_bucket_t *bucket = get_bucket(identifier);
+	struct kn_env_bucket_t *bucket = &BUCKETS[kn_hash(identifier) & (NBUCKETS - 1)];
 	struct kn_env_pair_t *pair = get_pair(bucket, identifier);
 
 	if (pair != NULL) {
