@@ -6,7 +6,7 @@ edition = "2018"
 description = "The Knight programming language, in Rust"
 
 [features]
-default = ["reckless"]
+default = []
 fatal-errors = []
 reckless = ["fatal-errors"]
 embedded = [] # remove functions that need to access the file system.
