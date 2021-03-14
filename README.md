@@ -44,11 +44,11 @@ Note that these are simply benchmarks of _my_ implementations of Knight, and not
 | C          |   7.01s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
 | C#         |  13.75s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
 | C++        |  27.26s | `c++/knight`       | The virtual functions are a bottleneck |
-| Rust       |  30.01s | `rust/target/release/knight` | Built with `cargo build --release`. |
-| JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | The default stack size was too small, so we had to bump it up. |
+| Rust       |  28.99s | `rust/target/release/knight` | Built with `cargo build --release` and the `reckless` flag. |
+| JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | Default stack's too small, so we had to bump it up. |
 | PHP        |  64.73s | `php/knight.php`   | |
-| Python     | 236.01s | `python/main.py`   | Default stack's too small, so `setrecursionlimit(100000)` was needed. |
 | Ruby       | 110.04s | `ruby/knight.rb`   | Default stack's too small, so `RUBY_THREAD_VM_STACK_SIZE=10000000` was needed. |
+| Python     | 236.01s | `python/main.py`   | Default stack's too small, so `setrecursionlimit(100000)` was needed. |
 | Perl       | 436.55s | `perl/bin/knight.pl` | |
 
 
