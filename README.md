@@ -32,20 +32,25 @@ The following is the list of all languages that's supported. All in-progress imp
 | Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
 
 ## Time Comparisons
-The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I used the command
+The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I performed the following command 5 times, averaging out the time it took.
 ```sh
   time <implementation> -f knight.kn <<<$'knight.kn\nexamples/fizzbuzz.kn'`
 ```
-
 
 Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
 
 |  Language  |  Time   | `<implementation>` | Notes |
 | ---------- |--------:|--------------------|-------|
-| C          | 19.10s  | `c/knight`         | Compiled using `make optimized`; See [c/Makefile](c/Makefile) for details. |
-| C++        | 166.76s | `c++/knight`       | The virtual functions are a bottleneck |
+| C          |   9.66s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
+| C#         |  18.51s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
+| C++        |  26.85s | `c++/knight`       | The virtual functions are a bottleneck |
+| Rust       |  30.01s | `rust/target/release/knight` | Built with `cargo build --release`. |
 | JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | The default stack size was too small, so we had to bump it up. |
 | PHP        |  64.73s | `php/knight.php`   | |
+| Python     | 236.01s | `python/main.py`   | Default stack's too small, so `setrecursionlimit(100000)` was needed. |
+| Ruby       | 110.04s | `ruby/knight.rb`   | Default stack's too small, so `RUBY_THREAD_VM_STACK_SIZE=10000000` was needed. |
+| Perl       | 436.55s | `perl/bin/knight.pl` | |
+
 
 
 # Examples
