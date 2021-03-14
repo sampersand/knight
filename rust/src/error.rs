@@ -1,9 +1,17 @@
 use std::io;
 use std::fmt::{self, Display, Formatter};
 
+#[derive(Debug)]
+#[cfg(not(feature = "fatal-errors"))]
+pub struct ParseError(ParseErrorKind);
+
+#[derive(Debug)]
+#[cfg(feature = "fatal-errors")]
+pub struct ParseError(std::convert::Infallible);
+
 /// The error type used to indicate an error whilst parsing Knight source code.
 #[derive(Debug)]
-pub enum ParseError {
+pub enum ParseErrorKind {
 	/// Indicates the entire stream was simply whitespace and comments
 	NothingToParse,
 	/// Indicates that an invalid character was encountered.
@@ -29,9 +37,57 @@ pub enum ParseError {
 	}
 }
 
+impl From<ParseErrorKind> for ParseError {
+	#[cfg_attr(feature = "fatal-errors", inline)]
+	fn from(kind: ParseErrorKind) -> Self {
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			Self(kind)
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			let _ = kind;
+			if cfg!(feature = "reckless") {
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				unreachable!();
+			}
+		}
+	}
+}
+
+impl From<ParseError> for ParseErrorKind {
+	#[cfg_attr(feature = "fatal-errors", inline)]
+	fn from(err: ParseError) -> Self {
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			err.0
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			let _ = err;
+			if cfg!(feature = "reckless") {
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				unreachable!();
+			}
+		}
+	}
+}
+
+#[derive(Debug)]
+#[cfg(not(feature = "fatal-errors"))]
+pub struct RuntimeError(RuntimeErrorKind);
+
+#[derive(Debug)]
+#[cfg(feature = "fatal-errors")]
+pub struct RuntimeError(std::convert::Infallible);
+
 /// An error occurred whilst executing a knight program.
 #[derive(Debug)]
-pub enum RuntimeError {
+pub enum RuntimeErrorKind {
 	/// A division (or modulus) by zero was attempted.
 	DivisionByZero {
 		/// Whether or not its a modulus error.
@@ -55,28 +111,106 @@ pub enum RuntimeError {
 	Io(io::Error)
 }
 
+impl From<RuntimeErrorKind> for RuntimeError {
+	#[cfg_attr(feature = "fatal-errors", inline)]
+	fn from(kind: RuntimeErrorKind) -> RuntimeError {
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			Self(kind)
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			let _ = kind;
+			if cfg!(feature = "reckless") {
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				unreachable!();
+			}
+		}
+	}
+}
+
+impl From<RuntimeError> for RuntimeErrorKind {
+	#[cfg_attr(feature = "fatal-errors", inline)]
+	fn from(err: RuntimeError) -> RuntimeErrorKind {
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			err.0
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			let _ = err;
+			if cfg!(feature = "reckless") {
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				unreachable!();
+			}
+		}
+	}
+}
+
 impl From<ParseError> for RuntimeError {
-	#[inline]
+	#[cfg_attr(not(feature = "fatal-errors"), inline)]
 	fn from(err: ParseError) -> Self {
-		Self::Parse(err)
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			Self(RuntimeErrorKind::Parse(err))
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			if cfg!(feature = "reckless") {
+				let _ = err;
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				panic!("parse error encountered: {}", err);
+			}
+		}
 	}
 }
 
 impl From<io::Error> for RuntimeError {
-	#[inline]
+	#[cfg_attr(not(feature = "fatal-errors"), inline)]
 	fn from(err: io::Error) -> Self {
-		Self::Io(err)
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			Self(RuntimeErrorKind::Io(err))
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			if cfg!(feature = "reckless") {
+				let _ = err;
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				panic!("io error encountered: {}", err);
+			}
+		}
 	}
 }
 
 impl Display for ParseError {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		match self {
-			Self::NothingToParse => write!(f, "a token was expected."),
-			Self::UnknownTokenStart { chr, lineno } => write!(f, "line {}: unknown token start {:?}.", lineno, chr),
-			Self::UnterminatedQuote { linestart } => write!(f, "line {}: unterminated quote encountered.", linestart),
-			Self::MissingFunctionArgument { func, number, lineno }
-				=> write!(f, "line {}: missing argument {} for function {:?}.", lineno, number, func)
+		#[cfg(feature = "fatal-errors")]
+		{
+			let _ = f;
+			unsafe { unreachable_unchecked!(); }
+		}
+
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			match self.0 {
+				ParseErrorKind::NothingToParse =>
+					write!(f, "a token was expected."),
+				ParseErrorKind::UnknownTokenStart { chr, lineno } =>
+					write!(f, "line {}: unknown token start {:?}.", lineno, chr),
+				ParseErrorKind::UnterminatedQuote { linestart } =>
+					write!(f, "line {}: unterminated quote encountered.", linestart),
+				ParseErrorKind::MissingFunctionArgument { func, number, lineno } =>
+					write!(f, "line {}: missing argument {} for function {:?}.", lineno, number, func)
+			}
 		}
 	}
 }
@@ -85,23 +219,40 @@ impl std::error::Error for ParseError {}
 
 impl Display for RuntimeError {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		match self {
-			Self::DivisionByZero { modulo: false } => write!(f, "invalid divide by zero."),
-			Self::DivisionByZero { modulo: true } => write!(f, "invalid modulo by zero."),
-			Self::UnknownIdentifier { identifier } => write!(f, "identifier {:?} is undefined.", identifier),
-			Self::InvalidOperand { func, operand } => write!(f, "invalid operand kind {:?} for function {:?}.", operand, func),
-			Self::Parse(err) => Display::fmt(err, f),
-			Self::Io(err) => write!(f, "i/o error: {}", err)
+		#[cfg(feature = "fatal-errors")]
+		{
+			let _ = f;
+			unsafe { unreachable_unchecked!(); }
+		}
+
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			match &self.0 {
+				RuntimeErrorKind::DivisionByZero { modulo: false } => write!(f, "invalid divide by zero."),
+				RuntimeErrorKind::DivisionByZero { modulo: true } => write!(f, "invalid modulo by zero."),
+				RuntimeErrorKind::UnknownIdentifier { identifier } => write!(f, "identifier {:?} is undefined.", identifier),
+				RuntimeErrorKind::InvalidOperand { func, operand } => write!(f, "invalid operand kind {:?} for function {:?}.", operand, func),
+				RuntimeErrorKind::Parse(err) => Display::fmt(&err, f),
+				RuntimeErrorKind::Io(err) => write!(f, "i/o error: {}", err)
+			}
 		}
 	}
 }
 
 impl std::error::Error for RuntimeError {
 	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			Self::Parse(err) => Some(err),
-			Self::Io(err) => Some(err),
-			_ => None
+		#[cfg(feature = "fatal-errors")]
+		{
+			unsafe { unreachable_unchecked!(); }
+		}
+
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			match &self.0 {
+				RuntimeErrorKind::Parse(err) => Some(err),
+				RuntimeErrorKind::Io(err) => Some(err),
+				_ => None
+			}
 		}
 	}
 }

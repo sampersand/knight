@@ -1,4 +1,4 @@
-use crate::{Value, RuntimeError};
+use crate::{Value, RuntimeError, error::RuntimeErrorKind};
 use std::collections::HashMap;
 use once_cell::unsync::OnceCell;
 use std::cell::RefCell;
@@ -10,7 +10,7 @@ pub fn get(ident: &str) -> Result<Value, RuntimeError> {
 	unsafe { &ENVIRONMENT }
 		.get()
 		.and_then(|env| env.borrow().get(ident).cloned())
-		.ok_or_else(|| RuntimeError::UnknownIdentifier { identifier: ident.to_owned() })
+		.ok_or_else(|| RuntimeErrorKind::UnknownIdentifier { identifier: ident.to_owned() }.into())
 }
 
 #[allow(unsafe_code)]

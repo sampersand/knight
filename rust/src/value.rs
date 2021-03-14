@@ -183,7 +183,7 @@ impl Value {
 					.map(From::from)
 					.map(Self::String),
 
-			_ => Err(RuntimeError::InvalidOperand { func: '+', operand: self.typename() })
+			_ => runtime_error!(InvalidOperand { func: '+', operand: self.typename() })
 		}
 	}
 
@@ -194,7 +194,7 @@ impl Value {
 					.map(|rhs| lhs - rhs)
 					.map(Self::Number),
 
-			_ => Err(RuntimeError::InvalidOperand { func: '-', operand: self.typename() })
+			_ => runtime_error!(InvalidOperand { func: '-', operand: self.typename() })
 		}
 	}
 
@@ -211,7 +211,7 @@ impl Value {
 					.map(From::from)
 					.map(Self::String),
 
-			_ => Err(RuntimeError::InvalidOperand { func: '*', operand: self.typename() })
+			_ => runtime_error!(InvalidOperand { func: '*', operand: self.typename() })
 		}
 	}
 
@@ -220,13 +220,13 @@ impl Value {
 			if let Self::Number(lhs) =self {
 				lhs
 			} else {
-				return Err(RuntimeError::InvalidOperand { func: '/', operand: self.typename() });
+				return runtime_error!(InvalidOperand { func: '/', operand: self.typename() });
 			};
 
 		let rhs = rhs.to_number()?;
 
 		if rhs == 0 {
-			Err(RuntimeError::DivisionByZero { modulo: false })
+			runtime_error!(DivisionByZero { modulo: false })
 		} else {
 			Ok(Self::Number(lhs / rhs))
 		}
@@ -237,13 +237,13 @@ impl Value {
 			if let Self::Number(lhs) =self {
 				lhs
 			} else {
-				return Err(RuntimeError::InvalidOperand { func: '%', operand: self.typename() });
+				return runtime_error!(InvalidOperand { func: '%', operand: self.typename() });
 			};
 
 		let rhs = rhs.to_number()?;
 
 		if rhs == 0 {
-			Err(RuntimeError::DivisionByZero { modulo: true })
+			runtime_error!(DivisionByZero { modulo: true })
 		} else {
 			Ok(Self::Number(lhs % rhs))
 		}
@@ -254,7 +254,7 @@ impl Value {
 			if let Self::Number(lhs) = self {
 				*lhs
 			} else {
-				return Err(RuntimeError::InvalidOperand { func: '^', operand: self.typename() });
+				return runtime_error!(InvalidOperand { func: '^', operand: self.typename() });
 			};
 
 		let exponent = Number::try_from(rhs)?;
@@ -284,7 +284,7 @@ impl Value {
 			Self::Number(lhs) => rhs.to_number().map(|rhs| *lhs < rhs),
 			Self::Boolean(lhs) => rhs.to_boolean().map(|rhs| !lhs && rhs),
 			Self::String(lhs) => rhs.to_rcstr().map(|rhs| lhs.as_str() < rhs.as_str()),
-			_ => Err(RuntimeError::InvalidOperand { func: '<', operand: self.typename() })
+			_ => runtime_error!(InvalidOperand { func: '<', operand: self.typename() })
 		}
 	}
 
@@ -293,7 +293,7 @@ impl Value {
 			Self::Number(lhs) => rhs.to_number().map(|rhs| *lhs > rhs),
 			Self::Boolean(lhs) => rhs.to_boolean().map(|rhs| *lhs && !rhs),
 			Self::String(lhs) => rhs.to_rcstr().map(|rhs| lhs.as_str() > rhs.as_str()),
-			_ => Err(RuntimeError::InvalidOperand { func: '>', operand: self.typename() })
+			_ => runtime_error!(InvalidOperand { func: '>', operand: self.typename() })
 		}
 	}
 

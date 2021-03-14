@@ -1,4 +1,4 @@
-use crate::{Value, Number, Function, ParseError};
+use crate::{Value, Number, Function, ParseError, error::ParseErrorKind};
 use std::iter::Peekable;
 
 #[derive(Debug, Clone)]
@@ -99,7 +99,7 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 		}
 	}
 
-	Err(ParseError::UnterminatedQuote { linestart })
+	parse_error!(UnterminatedQuote { linestart })
 }
 
 fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
@@ -113,11 +113,11 @@ fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Re
 	}
 
 	for number in 0..func.arity() {
-		match Value::parse_inner(stream) {
+		match Value::parse_inner(stream).map_err(From::from) {
 			Ok(value) => args.push(value),
-			Err(ParseError::NothingToParse) =>
-				return Err(ParseError::MissingFunctionArgument { func: func.name(), number, lineno }),
-			Err(other) => return Err(other)
+			Err(ParseErrorKind::NothingToParse) =>
+				return parse_error!(MissingFunctionArgument { func: func.name(), number, lineno }),
+			Err(other) => return Err(other.into())
 		}
 	}
 
@@ -135,7 +135,7 @@ impl Value {
 
 	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Self, ParseError> {
 		loop {
-			let chr = *stream.iter.peek().ok_or(ParseError::NothingToParse)?;
+			let chr = *stream.iter.peek().ok_or_else(|| ParseError::from(ParseErrorKind::NothingToParse))?;
 
 			match chr {
 				// note that this is ascii whitespace, as non-ascii characters are invalid.
@@ -184,7 +184,7 @@ impl Value {
 					if let Some(func) = Function::fetch(chr) {
 						return function(func, stream);
 					} else {
-						return Err(ParseError::UnknownTokenStart { chr, lineno: stream.lineno });
+						return parse_error!(UnknownTokenStart { chr, lineno: stream.lineno });
 					}
 			}
 		}
