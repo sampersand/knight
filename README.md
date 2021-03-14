@@ -12,6 +12,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
 | [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
 | [C++](c++) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |
+| [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
 | [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
@@ -25,7 +26,6 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Ruby](../ruby/ruby) | X |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) | X |   | X | X | Simple implementation without comments. It intentionally captures all UB, but eventually will have an efficient implementation. |
 | Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
-| [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
 | SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
