@@ -1,7 +1,7 @@
 #include <stdio.h>  /* vfprintf, fprintf */
 #include <stdarg.h> /* va_list, va_start, va_end */
 #include <stdlib.h> /* exit, malloc, realloc */
-
+#include <assert.h>
 #include "shared.h" /* prototypes, size_t */
 
 void die(const char *fmt, ...) {
@@ -17,6 +17,8 @@ void die(const char *fmt, ...) {
 }
 
 void *xmalloc(size_t size) {
+	assert(0 <= (ssize_t)size);
+
 	void *ptr = malloc(size);
 
 	if (ptr == NULL)
@@ -26,6 +28,8 @@ void *xmalloc(size_t size) {
 }
 
 void *xrealloc(void *ptr, size_t size) {
+	assert(0 <= (ssize_t)size);
+
 	ptr = realloc(ptr, size);
 
 	if (ptr == NULL)

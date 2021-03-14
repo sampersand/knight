@@ -147,7 +147,7 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 
 	kn_value_t ran = kn_value_run(value);
 	kn_number_t ret = kn_value_to_number(ran);
-	printf(__FILE__ " %d\n", __LINE__);
+	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
@@ -170,7 +170,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 
 	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
-	printf(__FILE__ " %d\n", __LINE__);
+	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 } 
@@ -225,7 +225,7 @@ const struct kn_string_t *kn_value_to_string(kn_value_t value) {
 
 	kn_value_t ran = kn_value_run(value);
 	const struct kn_string_t *ret = kn_value_to_string(ran);
-	printf(__FILE__ " %d\n", __LINE__);
+	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
@@ -343,7 +343,7 @@ void kn_value_free(kn_value_t value) {
 	if (KN_VALUE_IS_LITERAL(value) || kn_value_is_identifier(value))
 		return;
 
-	printf("free: [%p]\n", (void *) KN_UNMASK(value));
+	// printf("free: [%p]\n", (void *) KN_UNMASK(value));
 
 	if (KN_TAG(value) == KN_TAG_STRING) {
 		kn_string_free((struct kn_string_t *) KN_UNMASK(value));
@@ -360,7 +360,7 @@ void kn_value_free(kn_value_t value) {
 		return;
 
 	for (unsigned i = 0; i < ARITY(ast); ++i) {
-		printf(__FILE__ " %d\n", __LINE__);
+		// printf(__FILE__ " %d\n", __LINE__);
 		kn_value_free(ast->args[i]);
 	}
 

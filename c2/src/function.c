@@ -16,7 +16,6 @@ void kn_function_initialize(void) {
 	srand(time(NULL));
 }
 
-// this is a workaround and i only use one argument.
 #define DECLARE_FUNCTION(_func, _arity, _name) \
 	static kn_value_t fn_##_func##_function(const kn_value_t *); \
 	struct kn_function_t kn_fn_##_func = (struct kn_function_t) { \
@@ -79,7 +78,7 @@ DECLARE_FUNCTION(call, 1, 'C') {
 	kn_value_t arg0 = kn_value_run(args[0]);
 	kn_value_t ret = kn_value_run(arg0);
 
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(arg0);
 	return ret;
 }
@@ -159,9 +158,9 @@ DECLARE_FUNCTION(output, 1, 'O') {
 	// this is because we might need to replace the penult character
 	// with a `\0` if it's a backslash to prevent the printing of a
 	// newline. however, we replace it on the next line, so it's ok.
-	char *penult = (char *) &string->str[string->length - 1];
+	char *penult;
 
-	if (string->length != 0 && *penult == '\\') {
+	if (string->length != 0 && *(penult = (char *) &string->str[string->length - 1]) == '\\') {
 		*penult = '\0'; // replace the trailing `\`
 		printf("%s", string->str);
 		*penult = '\\'; // and then restore it.
@@ -177,11 +176,10 @@ static kn_value_t kn_fn_add_string(
 	const struct kn_string_t *lhs,
 	const struct kn_string_t *rhs
 ) {
-	if (lhs->length == 0)
-		return kn_value_new_string(rhs);
-	if (rhs->length == 0)
-		return kn_value_new_string(lhs);
+	if (lhs->length == 0) return kn_value_new_string(rhs);
+	if (rhs->length == 0) return kn_value_new_string(lhs);
 
+	DEBUG(">[%zd %zd %zd]\n", lhs->length, rhs->length, lhs->length + rhs->length);
 	size_t length = lhs->length + rhs->length;
 	char *str = xmalloc(length + 1);
 
@@ -197,9 +195,23 @@ DECLARE_FUNCTION(add, 2, '+') {
 
 	// If lhs is a string, convert both to a string and concat
 	if (kn_value_is_string(lhs)) {
-		return kn_fn_add_string(
+		static int x = 0;
+		for (int i = 0; i < x; ++i) printf("-");
+		++x;
+		printf("==start==\n");
+		kn_value_dump(lhs);
+		printf("\n");
+		kn_value_dump(args[1]);
+		printf("\n");
+
+		kn_value_t ret = kn_fn_add_string(
 			kn_value_as_string(lhs),
 			kn_value_to_string(args[1]));
+
+		--x;
+		for (int i = 0; i < x; ++i) printf("-");
+		printf("==end==\n");
+		return ret;
 	}
 
 	assert_reckless(kn_value_is_number(lhs));
@@ -329,9 +341,9 @@ DECLARE_FUNCTION(eql, 2, '?') {
 
 	bool eql = kn_value_eql(lhs, rhs);
 
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(lhs);
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(rhs);
 
 	return kn_value_new_boolean(eql);
@@ -384,7 +396,7 @@ DECLARE_FUNCTION(and, 2, '&') {
 	if (!kn_value_to_boolean(ret))
 		return ret;
 
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ret);
 	return kn_value_run(args[1]);
 }
@@ -396,7 +408,7 @@ DECLARE_FUNCTION(or, 2, '|') {
 	if (kn_value_to_boolean(ret))
 		return ret;
 
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ret);
 	return kn_value_run(args[1]);
 }
@@ -404,7 +416,7 @@ DECLARE_FUNCTION(or, 2, '|') {
 DECLARE_FUNCTION(then, 2, ';') {
 #ifndef DYAMIC_THEN_ARGC
 	kn_value_t val = kn_value_run(args[0]);
-	printf(__FILE__ " %d(%p)\n", __LINE__, val & ~0b111);
+	// printf(__FILE__ " %d(%p)\n", __LINE__, val & ~0b111);
 	kn_value_free(val);
 
 	return kn_value_run(args[1]);
@@ -415,7 +427,7 @@ DECLARE_FUNCTION(then, 2, ';') {
 	goto inner;
 
 	do {
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 		kn_value_free(ret);
 	inner:
 		ret = kn_value_run(args[i++]);
@@ -442,7 +454,7 @@ DECLARE_FUNCTION(assign, 2, '=') {
 	}
 
 	if (*ptr != KN_UNDEFINED) {
-	printf(__FILE__ " %d\n", __LINE__);
+	// DEBUG(__FILE__ " %d\n", __LINE__);
 		kn_value_free(*ptr);}
 	*ptr = kn_value_clone(ret);
 

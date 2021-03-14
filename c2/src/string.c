@@ -4,12 +4,12 @@
 #include <string.h>
 #include <assert.h>
 
-const struct kn_string_t *kn_string_tail(
-	const struct kn_string_t *string,
-	size_t start
-) {
+const struct kn_string_t *
+kn_string_tail(const struct kn_string_t *string, size_t start) {
+	assert(0 <= (ssize_t) start);
 	struct kn_string_t *result;
 
+	printf("allocated\n");
 	result = xmalloc(sizeof(struct kn_string_t));
 
 	result->length = string->length - start;
@@ -23,9 +23,11 @@ const struct kn_string_t *kn_string_tail(
 const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	struct kn_string_t *string;
 
+	assert(0 <= (ssize_t) length);
 	assert(str != NULL);
 
 	string = xmalloc(sizeof(struct kn_string_t));
+	printf("allocated\n");
 
 	string->length = length;
 	string->refcount = xmalloc(sizeof(unsigned));
@@ -46,8 +48,8 @@ void kn_string_free(const struct kn_string_t *string) {
 	struct kn_string_t *unconst = (struct kn_string_t *) string;
 
 	if (string->refcount != NULL && !--*unconst->refcount) {
-		free((void *) unconst->str);
-		free(unconst);
+		// free((void *) unconst->str);
+		// free(unconst);
 	}
 }
 

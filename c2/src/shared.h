@@ -12,6 +12,8 @@
 void die(const char *msg, ...) __attribute__((noreturn,cold));
 
 
+#define DEBUG printf
+
 #ifdef RECKLESS
 #define assert_reckless(value) 
 #else
