@@ -1,5 +1,5 @@
-#ifndef KN_SHARED_H
-#define KN_SHARED_H
+#ifndef SHARED_H
+#define SHARED_H
 
 #include <stdlib.h> /* size_t */
 
@@ -10,16 +10,6 @@
  * Since this aborts the program, it's marked both `noreturn` and `cold`.
  */
 void die(const char *msg, ...) __attribute__((noreturn,cold));
-
-
-#ifdef RECKLESS
-#define assert_reckless(value) 
-#else
-#define assert_reckless(value) \
-	do { \
-		if (!(value)) die("expr failed: %s", #value); \
-	} while(0)
-#endif
 
 /*
  * Allocates `size_t` bytes of memory and returns a pointer to it.
@@ -38,4 +28,4 @@ void *xmalloc(size_t size) __attribute__((malloc));
  */
 void *xrealloc(void *ptr, size_t size);
 
-#endif /* KN_SHARED_H */
+#endif /* SHARED_H */

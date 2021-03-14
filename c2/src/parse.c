@@ -9,6 +9,7 @@
 #include "shared.h"
 #include "function.h"
 #include "ast.h"
+#include "env.h"
 
 static int isparen(char c) {
 	return c == ':'
@@ -117,7 +118,11 @@ kn_value_t kn_parse(register const char **stream) {
 		['S']  = &&function_set,
 		['T']  = &&literal_true,
 		['U']  = &&invalid,
+#ifdef KN_EXT_VALUE
+		['V']  = &&function_value,
+#else
 		['V']  = &&invalid,
+#endif /* KN_EXT_VALUE */
 		['W']  = &&function_while,
 		['X']  = &&invalid,
 		['Y']  = &&invalid,
@@ -133,7 +138,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['|']  = &&function_or,
 		['}']  = &&whitespace,
 		['~']  = &&invalid,
-		[0x7f ... 0xff] = &&invalid,
+		[0x7f ... 0xff] = &&invalid
 	};
 #endif /* COMPUTED_GOTOS */
 
@@ -144,11 +149,11 @@ kn_value_t kn_parse(register const char **stream) {
 	struct kn_function_t *function;
 
 start:
-
+	c = PEEK();
 #ifdef COMPUTED_GOTOS
-	goto *LABELS[(size_t) (c = PEEK())];
+	goto *LABELS[(size_t) c];
 #else
-	switch (c = PEEK()) {
+	switch (c) {
 #endif /* COMPUTED_GOTOS */
 
 
@@ -157,6 +162,7 @@ CASES1('#')
 	while ((c = ADVANCE_PEEK()) != '\n')
 		if (c == '\0')
 			goto expected_token;
+
 	// fallthrough, because we're currently a whitespace character (`\n`)
 
 LABEL(whitespace)
@@ -185,7 +191,8 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 
 	while (isident(ADVANCE_PEEK()));
 
-	return kn_value_new_identifier(kn_string_emplace(start, *stream - start));
+	return kn_value_new_identifier(
+		kn_env_fetch(strndup(start, *stream - start), true));
 }
 
 LABEL(string)
@@ -203,7 +210,7 @@ CASES2('\'', '\"')
 
 	return kn_value_new_string(
 		length
-		? kn_string_emplace(start, length)
+		? kn_string_emplace(strndup(start, length), length)
 		: &KN_STRING_EMPTY);
 }
 
@@ -250,6 +257,10 @@ WORD_FUNC(quit, 'Q');
 WORD_FUNC(random, 'R');
 WORD_FUNC(set, 'S');
 WORD_FUNC(while, 'W');
+
+#ifdef KN_EXT_VALUE
+WORD_FUNC(value, 'V');
+#endif
 
 parse_kw_function:
 	while (isupper(ADVANCE_PEEK()));

@@ -5,8 +5,8 @@
 #include "shared.h" /* xmalloc, xrealloc */
 
 struct kn_env_pair_t {
-	char *name;
 	kn_value_t value;
+	const char *name;
 };
 
 struct kn_env_bucket_t {
@@ -38,8 +38,9 @@ void kn_env_free() {
 		bucket = &BUCKETS[i];
 
 		for (size_t len = 0; len < bucket->length; ++len) {
-			free(bucket->pairs[len].name);
-			kn_value_free(bucket->pairs[len].value);
+			free((char *) bucket->pairs[len].name);
+			if (bucket->pairs[len].value != KN_UNDEFINED)
+				kn_value_free(bucket->pairs[len].value);
 		}
 
 		free(bucket->pairs);
@@ -60,7 +61,7 @@ static struct kn_env_bucket_t *get_bucket(const char *identifier) {
 		hash ^= hash >> 47;
 	}
 
-	return &BUCKETS[hash & 0xff];
+	return &BUCKETS[hash & (NBUCKETS - 1)];
 }
 
 
@@ -69,32 +70,30 @@ static struct kn_env_pair_t *get_pair(
 	const char *identifier
 ) {
 	for (size_t i = 0; i < bucket->length; ++i) {
-		if (strcmp(bucket->pairs[i].name, identifier) == 0)
+		if (strcmp(bucket->pairs[i].name, identifier) == 0) {
 			return &bucket->pairs[i];
+		}
 	}
+
 
 	return NULL;
 }
 
-kn_value_t kn_env_get(const char *identifier) {
-	struct kn_env_bucket_t *bucket = get_bucket(identifier);
-	struct kn_env_pair_t *pair = get_pair(bucket, identifier);
 
-	if (pair == NULL)
-		die("unknown identifier '%s'", identifier);
 
-	return pair->value;
+const char *kn_env_name_for(kn_value_t *value) {
+	return ((struct kn_env_pair_t *) value)->name;
 }
 
-void kn_env_set(const char *identifier, kn_value_t value) {
+kn_value_t *kn_env_fetch(const char *identifier, _Bool owned) {
 	struct kn_env_bucket_t *bucket = get_bucket(identifier);
 	struct kn_env_pair_t *pair = get_pair(bucket, identifier);
 
 	if (pair != NULL) {
-		kn_value_free(pair->value);
-		pair->value = value;
+		if (owned)
+			free((char *) identifier);
 
-		return;
+		return &pair->value;
 	}
 
 	if (bucket->length == bucket->capacity) {
@@ -107,8 +106,11 @@ void kn_env_set(const char *identifier, kn_value_t value) {
 		);
 	}
 
-	bucket->pairs[bucket->length++] = (struct kn_env_pair_t) {
-		.name = strdup(identifier),
-		.value = value
+	// note we retain ownership of the ident.
+	bucket->pairs[bucket->length] = (struct kn_env_pair_t) {
+		.name = owned ? identifier : strdup(identifier),
+		.value = KN_UNDEFINED
 	};
+
+	return &bucket->pairs[bucket->length++].value;
 }

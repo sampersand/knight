@@ -20,6 +20,7 @@ kn_value_t kn_run(const char *stream) {
 		die("unable to parse stream");
 
 	kn_value_t ret = kn_value_run(value);
+	printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(value);
 
 	return ret;
