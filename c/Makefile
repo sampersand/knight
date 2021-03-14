@@ -9,7 +9,7 @@ override CFLAGS += -F$(SRCDIR)
 ifdef DEBUG
 override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -O3 -DNDEBUG -c -flto -march=native
+CEXEFLAGS += -O3 -DNDEBUG -flto -march=native
 endif
 
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
