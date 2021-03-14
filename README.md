@@ -41,7 +41,7 @@ Note that these are simply benchmarks of _my_ implementations of Knight, and not
 
 |  Language  |  Time   | `<implementation>` | Notes |
 | ---------- |--------:|--------------------|-------|
-| C          |   9.66s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
+| C          |   7.01s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
 | C#         |  18.51s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
 | C++        |  26.85s | `c++/knight`       | The virtual functions are a bottleneck |
 | Rust       |  30.01s | `rust/target/release/knight` | Built with `cargo build --release`. |
