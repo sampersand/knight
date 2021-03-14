@@ -7,9 +7,8 @@ namespace Knight
 		public Boolean(bool data) : base(data) {}
 
 		public static Boolean Parse(Stream stream) {
-			if (!stream.StartsWith('T', 'F')) {
+			if (!stream.StartsWith('T', 'F'))
 				return null;
-			}
 
 			var ret = new Boolean(stream.Take() == 'T');
 			stream.StripKeyword();
