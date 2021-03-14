@@ -9,13 +9,13 @@
 #define MAXLENGTH 64
 #define CACHESIZE 65536
 
-static struct kn_string_t * STRINGCACHE[MAXLENGTH][CACHESIZE];
+static struct kn_string_t *STRINGCACHE[MAXLENGTH][CACHESIZE];
 
-const char *kn_string_deref(const struct kn_string_t *string) {
+inline const char *kn_string_deref(const struct kn_string_t *string) {
 	return string->str;
 }
 
-size_t kn_string_length(const struct kn_string_t *string) {
+inline size_t kn_string_length(const struct kn_string_t *string) {
 	return string->length;
 }
 
@@ -46,7 +46,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 	string->refcount = xmalloc(sizeof(unsigned));
 	string->str = str;
 
-	DEBUG("allocated: %s\n", string->str);
+	// DEBUG("allocated: %s\n", string->str);
 
 	return string;
 }
@@ -54,13 +54,17 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	struct kn_string_t *string, **cacheline;
 
+	// sanity check for inputs.
 	assert(0 <= (ssize_t) length);
 	assert(str != NULL);
+	assert(strlen(str) == length);
 
-	// if it's too big just dont cache it (as it's unlikely to be referenced again)
+	// if it's too big just dont cache it
+	// (as it's unlikely to be referenced again)
 	if (length >= MAXLENGTH)
 		return create_string(str, length);
 
+	
 	cacheline = &STRINGCACHE[length][kn_hash(str) & (CACHESIZE - 1)];
 
 	if (*cacheline == NULL || strcmp((string = *cacheline)->str, str))
