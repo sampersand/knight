@@ -6,14 +6,26 @@ edition = "2018"
 description = "The Knight programming language, in Rust"
 
 [features]
-default = []
+default = ["optimized-value"]
+
+# All errors are fatal (ie cause the system to panic propagated upward)
 fatal-errors = []
+
+# Assume errors will _never_ happen. This can lead to undefined behaviour if they do!
 reckless = ["fatal-errors"]
-embedded = [] # remove functions that need to access the file system.
+
+# Remove functions that need to access the file system.
+embedded = []
+
+# Enables the use of optimized values
+# This requires fatal errors, as `Value` cannot guarantee that an `i64` passed to it is an i63.
+optimized-value = ["fatal-errors"]
 
 [dependencies]
 rand = "0.8.0"
+cfg-if = "1.0.0"
 once_cell = "1.7.2"
 lazy_static = "1.4"
+static_assertions = "1.1"
 parking_lot = "0.11"
 clap = "2.33"

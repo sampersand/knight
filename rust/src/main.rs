@@ -31,8 +31,8 @@ fn main() {
 				.conflicts_with("expr")
 				.short("f")
 				.long("file"))
-		.get_matches();
-		// .get_matches_from(vec![ "knight", "-e", "D + 9 '1a"]);
+		// .get_matches();
+		.get_matches_from(vec![ "knight", "-f", "../knight.kn"]);
 
 	if let Err(err) = run(matches) {
 		eprintln!("error: {}", err);

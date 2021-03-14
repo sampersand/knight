@@ -3,6 +3,7 @@ use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
 use parking_lot::Mutex;
+use std::convert::{TryFrom, TryInto};
 
 type FuncPtr = fn(&[Value]) -> Result<Value, RuntimeError>;
 
@@ -111,7 +112,7 @@ declare_functions! {
 
 		io::stdin().read_line(&mut buf)?;
 
-		Ok(buf.into())
+		Ok(buf.try_into()?)
 	}
 
 	fn 'R'() {
@@ -135,13 +136,12 @@ declare_functions! {
 
 	#[cfg(not(feature = "embedded"))]
 	fn '`' (cmd) {
-		process::Command::new("sh")
+		Value::try_from(process::Command::new("sh")
 			.arg("-c")
 			.arg(&*cmd.to_rcstr()?)
 			.output()
-			.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())
+			.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())?)
 			.map_err(From::from)
-			.map(Value::from)
 	}
 
 	#[cfg(not(feature = "embedded"))]
@@ -249,20 +249,9 @@ declare_functions! {
 	}
 
 	fn '=' (arg, rhs) {
-		let rhsval;
+		let rhsval = rhs.run()?;
 
-		if let Value::Variable(ref ident) = arg {
-			rhsval = rhs.run()?;
-
-			crate::env::insert(ident, rhsval.clone());
-		} else {
-			let ident = arg.to_rcstr()?;
-			rhsval = rhs.run()?;
-
-			crate::env::insert(&ident, rhsval.clone());
-		}
-
-		Ok(rhsval)
+		arg.try_assign(rhsval.clone()).and(Ok(rhsval))
 	}
 
 	fn 'W' (lhs, rhs) {
@@ -270,7 +259,7 @@ declare_functions! {
 			rhs.run()?;
 		}
 
-		Ok(Value::Null)
+		Ok(Value::default())
 	}
 
 	// arity three
@@ -284,15 +273,14 @@ declare_functions! {
 	}
 
 	fn 'G' (string, start, length) {
-		Ok(Value::String(
-			string
+		string
 				.to_rcstr()?
 				.chars()
 				.skip(start.to_number()? as usize)
 				.take(length.to_number()? as usize)
 				.collect::<String>()
-				.into()
-		))
+				.try_into()
+				.map_err(From::from)
 	}
 
 	// arity four
@@ -306,7 +294,7 @@ declare_functions! {
 		x.push_str(&repl.to_rcstr()?);
 		x.extend(s.chars().skip(stop));
 
-		Ok(Value::String(x.into()))
+		Ok(x.try_into()?)
 	}
 
 }

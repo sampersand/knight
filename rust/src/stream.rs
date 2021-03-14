@@ -1,5 +1,6 @@
 use crate::{Value, Number, Function, ParseError, error::ParseErrorKind};
 use std::iter::Peekable;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 struct Stream<I: Iterator<Item=char>> {
@@ -67,7 +68,7 @@ fn number(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 		num = -num;
 	}
 
-	Value::Number(num)
+	Value::from(num)
 }
 
 fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
@@ -82,7 +83,7 @@ fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 		}
 	}
 
-	Value::Variable(ident)
+	Value::new_variable(ident)
 }
 
 fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
@@ -93,13 +94,13 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 
 	while let Some(chr) = stream.next() {
 		if chr == quote {
-			return Ok(Value::String(string.into()));
+			return Value::try_from(string).map_err(|err| parse_error!(BadSourceyte { lineno: linestart, err }));
 		} else {
 			string.push(chr);
 		}
 	}
 
-	parse_error!(UnterminatedQuote { linestart })
+	Err(parse_error!(UnterminatedQuote { linestart }))
 }
 
 fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
@@ -116,12 +117,12 @@ fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Re
 		match Value::parse_inner(stream).map_err(From::from) {
 			Ok(value) => args.push(value),
 			Err(ParseErrorKind::NothingToParse) =>
-				return parse_error!(MissingFunctionArgument { func: func.name(), number, lineno }),
+				return Err(parse_error!(MissingFunctionArgument { func: func.name(), number, lineno })),
 			Err(other) => return Err(other.into())
 		}
 	}
 
-	Ok(Value::Function(func, args.into_boxed_slice().into()))
+	Ok(Value::new_function(func, args.into_boxed_slice()))
 }
 
 impl Value {
@@ -162,7 +163,7 @@ impl Value {
 						}
 					}
 
-					return Ok(Value::Boolean(chr == 'T'))
+					return Ok(Value::from(chr == 'T'))
 				},
 
 				'N' => {
@@ -174,7 +175,7 @@ impl Value {
 						}
 					}
 
-					return Ok(Value::Null)
+					return Ok(Value::default())
 				},
 				
 				// strings start with a single or double quote (and not `` ` ``).
@@ -184,7 +185,7 @@ impl Value {
 					if let Some(func) = Function::fetch(chr) {
 						return function(func, stream);
 					} else {
-						return parse_error!(UnknownTokenStart { chr, lineno: stream.lineno });
+						return Err(parse_error!(UnknownTokenStart { chr, lineno: stream.lineno }));
 					}
 			}
 		}

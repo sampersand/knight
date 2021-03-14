@@ -1,4 +1,5 @@
 use std::io;
+use crate::rcstr::InvalidString;
 use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
@@ -34,7 +35,9 @@ pub enum ParseErrorKind {
 		number: usize,
 		/// The line number the function started on.
 		lineno: usize
-	}
+	},
+
+	BadSourceyte { err: InvalidString, lineno: usize },
 }
 
 impl From<ParseErrorKind> for ParseError {
@@ -105,8 +108,12 @@ pub enum RuntimeErrorKind {
 		/// The type of the operand.
 		operand: &'static str
 	},
+
+	InvalidString(InvalidString),
+
 	/// An error occurred whilst parsing (i.e. `EVAL` failed.)
 	Parse(ParseError),
+
 	/// An i/o error occurred (i.e. `` ` `` or `PROMPT` failed).
 	Io(io::Error)
 }
@@ -146,6 +153,26 @@ impl From<RuntimeError> for RuntimeErrorKind {
 				unsafe { unreachable_unchecked!(); }
 			} else {
 				unreachable!();
+			}
+		}
+	}
+}
+
+impl From<InvalidString> for RuntimeError {
+	#[cfg_attr(not(feature = "fatal-errors"), inline)]
+	fn from(err: InvalidString) -> Self {
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			Self(RuntimeErrorKind::InvalidString(err))
+		}
+
+		#[cfg(feature = "fatal-errors")]
+		{
+			if cfg!(feature = "reckless") {
+				let _ = err;
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				panic!("invalid string: {}", err);
 			}
 		}
 	}
@@ -209,14 +236,30 @@ impl Display for ParseError {
 				ParseErrorKind::UnterminatedQuote { linestart } =>
 					write!(f, "line {}: unterminated quote encountered.", linestart),
 				ParseErrorKind::MissingFunctionArgument { func, number, lineno } =>
-					write!(f, "line {}: missing argument {} for function {:?}.", lineno, number, func)
+					write!(f, "line {}: missing argument {} for function {:?}.", lineno, number, func),
+				ParseErrorKind::BadSourceyte { ref err, lineno } => write!(f, "line {}: {}", lineno, err)
 			}
 		}
 	}
 }
 
-impl std::error::Error for ParseError {}
 
+impl std::error::Error for ParseError {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		#[cfg(feature = "fatal-errors")]
+		{
+			unsafe { unreachable_unchecked!(); }
+		}
+
+		#[cfg(not(feature = "fatal-errors"))]
+		{
+			match &self.0 {
+				ParseErrorKind::BadSourceyte { err, .. } => Some(err),
+				_ => None
+			}
+		}
+	}
+}
 impl Display for RuntimeError {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
 		#[cfg(feature = "fatal-errors")]
@@ -233,7 +276,8 @@ impl Display for RuntimeError {
 				RuntimeErrorKind::UnknownIdentifier { identifier } => write!(f, "identifier {:?} is undefined.", identifier),
 				RuntimeErrorKind::InvalidOperand { func, operand } => write!(f, "invalid operand kind {:?} for function {:?}.", operand, func),
 				RuntimeErrorKind::Parse(err) => Display::fmt(&err, f),
-				RuntimeErrorKind::Io(err) => write!(f, "i/o error: {}", err)
+				RuntimeErrorKind::Io(err) => write!(f, "i/o error: {}", err),
+				RuntimeErrorKind::InvalidString(err) => write!(f, "invalid string: {}", err)
 			}
 		}
 	}
@@ -251,6 +295,7 @@ impl std::error::Error for RuntimeError {
 			match &self.0 {
 				RuntimeErrorKind::Parse(err) => Some(err),
 				RuntimeErrorKind::Io(err) => Some(err),
+				RuntimeErrorKind::InvalidString(err) => Some(err),
 				_ => None
 			}
 		}

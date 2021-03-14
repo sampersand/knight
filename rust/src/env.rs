@@ -5,6 +5,16 @@ use std::cell::RefCell;
 
 static mut ENVIRONMENT: OnceCell<RefCell<HashMap<&'static str, Value>>> = OnceCell::new();
 
+pub struct Variable {
+
+}
+
+impl Variable {
+	pub fn identifier(&self) -> &str {
+		todo!()
+	}
+}
+
 #[allow(unsafe_code)]
 pub fn get(ident: &str) -> Result<Value, RuntimeError> {
 	unsafe { &ENVIRONMENT }
