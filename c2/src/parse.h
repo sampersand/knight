@@ -3,6 +3,6 @@
 
 #include "value.h"
 
-kn_value_t kn_parse(const char **);
+kn_value_t kn_parse(const char **stream);
 
 #endif

@@ -6,7 +6,7 @@
 #include "value.h"
 #include "shared.h"
 
-char *read_file(const char *filename) {
+static char *read_file(const char *filename) {
 	FILE *file = fopen(filename, "r");
 
 	if (file == NULL) {
@@ -62,7 +62,7 @@ int main(int argc, const char *argv[]) {
 		goto usage;
 	}
 
-	kn_init();
+	kn_init(0);
 	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(kn_run(string));
 	kn_free();

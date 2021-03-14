@@ -142,11 +142,11 @@ kn_value_t kn_parse(register const char **stream) {
 	};
 #endif /* COMPUTED_GOTOS */
 
-	assert(stream != NULL);
-	assert(*stream != NULL);
-
 	char c;
 	struct kn_function_t *function;
+
+	assert(stream != NULL);
+	assert(*stream != NULL);
 
 start:
 	c = PEEK();
@@ -191,7 +191,7 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 
 	while (isident(ADVANCE_PEEK()));
 
-	return kn_value_new_identifier(
+	return kn_value_new_variable(
 		kn_env_fetch(strndup(start, *stream - start), true));
 }
 

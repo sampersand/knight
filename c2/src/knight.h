@@ -3,8 +3,8 @@
 
 #include "value.h"
 
-void kn_init(void);
+void kn_init(size_t capacity);
 void kn_free(void);
-kn_value_t kn_run(const char *);
+kn_value_t kn_run(const char *stream);
 
 #endif

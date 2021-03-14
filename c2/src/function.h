@@ -10,7 +10,7 @@ struct kn_function_t {
 };
 
 
-void kn_function_initialize(void);
+void kn_function_init(void);
 
 /* ARITY ZERO */
 #ifndef KN_EMBEDDED

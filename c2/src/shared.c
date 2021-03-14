@@ -17,10 +17,12 @@ void die(const char *fmt, ...) {
 }
 
 unsigned long kn_hash(const char *str) {
+	unsigned long hash;
+	
 	assert(str != NULL);
 
 	// This is the MurmurHash.
-	unsigned long hash = 525201411107845655;
+	hash = 525201411107845655;
 
 	while (*str != '\0') {
 		hash ^= *str++;
@@ -32,7 +34,7 @@ unsigned long kn_hash(const char *str) {
 }
 
 void *xmalloc(size_t size) {
-	assert(0 <= (ssize_t)size);
+	assert(0 <= (ssize_t) size);
 
 	void *ptr = malloc(size);
 
@@ -43,7 +45,7 @@ void *xmalloc(size_t size) {
 }
 
 void *xrealloc(void *ptr, size_t size) {
-	assert(0 <= (ssize_t)size);
+	assert(0 <= (ssize_t) size);
 
 	ptr = realloc(ptr, size);
 

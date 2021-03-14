@@ -12,7 +12,7 @@
 #include "value.h"
 #include "env.h"
 
-void kn_function_initialize(void) {
+void kn_function_init(void) {
 	srand(time(NULL));
 }
 
@@ -432,13 +432,13 @@ DECLARE_FUNCTION(assign, 2, '=') {
 	kn_value_t *ptr;
 
 	// if it's an identifier, special-case it where we don't evaluate it.
-	if (kn_value_is_identifier(args[0])) {
-		ptr = kn_value_as_identifier(args[0]);
+	if (kn_value_is_variable(args[0])) {
+		ptr = kn_value_as_variable(args[0]);
 		ret = kn_value_run(args[1]);
 	} else {
 		// otherwise, evaluate the expression, convert to a string,
-		// and then use that as the identifier.
-		ptr = kn_env_fetch(kn_string_deref(kn_value_to_string(args[0])), false);
+		// and then use that as the variable.
+		ptr = &kn_env_fetch(kn_string_deref(kn_value_to_string(args[0])), false)->value;
 
 		ret = kn_value_run(args[1]);
 	}

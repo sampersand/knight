@@ -37,13 +37,45 @@ const struct kn_string_t *kn_string_tail(const struct kn_string_t *string, size_
 	// return result;
 }
 
+#define PAGESIZE 8096
+#define NPAGES 4096
+
+struct kn_string_page_t {
+	struct kn_string_t *start, *next, *last;
+};
+
+
+static struct kn_string_page_t **pages, *currentpage, *lastpage;
+
 static struct kn_string_t *create_string(const char *str, size_t length) {
+/*
+	if (pages == 0) {
+		pages = xmalloc(sizeof(struct kn_string_page_t [NPAGES]));
+		for (int i = 0; i < NPAGES; ++i) {
+			printf("i: <%d> %zu\n\n", i, sizeof(struct kn_string_t) * (PAGESIZE + 1));
+			// exit(0);
+			pages[i]->start = pages[i]->next = xmalloc(sizeof(struct kn_string_t) * PAGESIZE);
+			printf("2: <%d>\n\n", i);
+			pages[i]->last = &pages[i]->start[NPAGES];
+		}
+		currentpage = pages[0];
+		lastpage = pages[NPAGES];
+	}
+*/
+
 	struct kn_string_t *string;
 
-	string = xmalloc(sizeof(struct kn_string_t));
+	if (currentpage == lastpage)
+		string = xmalloc(sizeof(struct kn_string_t));
+	else {
+		string = currentpage->next;
+		if (++currentpage->next == currentpage->last) 
+			currentpage++;
+	}
+
 
 	string->length = length;
-	string->refcount = xmalloc(sizeof(unsigned));
+	string->refcount = 1;
 	string->str = str;
 
 	// DEBUG("allocated: %s\n", string->str);
@@ -67,11 +99,12 @@ const struct kn_string_t *kn_string_emplace(const char *str, size_t length) {
 	
 	cacheline = &STRINGCACHE[length][kn_hash(str) & (CACHESIZE - 1)];
 
-	if (*cacheline == NULL || strcmp((string = *cacheline)->str, str))
+	// NOTE `0` and note `NULL` because `NULL` != `0`.
+	if (*cacheline == 0 || strcmp((string = *cacheline)->str, str))
 		return *cacheline = create_string(str, length);
 
-	assert(string->refcount != NULL);
-	++*string->refcount;
+	assert(string->refcount >= 0);
+	++string->refcount;
 
 	return string;
 }
@@ -87,7 +120,7 @@ void kn_string_free(const struct kn_string_t *string) {
 
 	struct kn_string_t *unconst = (struct kn_string_t *) string;
 
-	if (string->refcount != NULL && !--*unconst->refcount) {
+	if (string->refcount >= 0 && !--unconst->refcount) {
 		// free((void *) unconst->str);
 		// free(unconst);
 	}
@@ -96,8 +129,8 @@ void kn_string_free(const struct kn_string_t *string) {
 const struct kn_string_t *kn_string_clone(const struct kn_string_t *string) {
 	assert(string != NULL);
 
-	if (string->refcount != NULL)
-		++*((struct kn_string_t *) string)->refcount;
+	if (string->refcount >= 0)
+		++((struct kn_string_t *) string)->refcount;
 
 	return string;
 }
