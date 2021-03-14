@@ -16,14 +16,14 @@ void kn_function_initialize(void) {
 	srand(time(NULL));
 }
 
-#define DECLARE_FUNCTION(_func, _arity, _name) \
-	static kn_value_t fn_##_func##_function(const kn_value_t *); \
-	struct kn_function_t kn_fn_##_func = (struct kn_function_t) { \
-		.ptr = fn_##_func##_function, \
-		.arity = _arity, \
-		.name = _name \
+#define DECLARE_FUNCTION(func_, arity_, name_) \
+	static kn_value_t fn_##func_##_function(const kn_value_t *); \
+	struct kn_function_t kn_fn_##func_ = (struct kn_function_t) { \
+		.ptr = fn_##func_##_function, \
+		.arity = arity_, \
+		.name = name_ \
 	}; \
-	static kn_value_t fn_##_func##_function(const kn_value_t *args)
+	static kn_value_t fn_##func_##_function(const kn_value_t *args)
 
 #ifndef KN_EMBEDDED
 DECLARE_FUNCTION(prompt, 0, 'P') {
@@ -36,11 +36,10 @@ DECLARE_FUNCTION(prompt, 0, 'P') {
 	// try to read a line from stdin.
 	if ((slen = getline(&line, &cap, stdin)) == -1) {
 		// if we're at eof, return an emtpy string. otherwise, abort.
-		if (feof(stdin)) {
-			return kn_value_new_string(&KN_STRING_EMPTY);
-		} else {
+		if (feof(stdin))
+			return kn_value_new_string(KN_STRING_EMPTY);
+		else
 			perror("unable to read line");
-		}
 	}
 
 	size_t len = (size_t) slen;
@@ -62,12 +61,12 @@ DECLARE_FUNCTION(rand, 0, 'R') {
 
 #ifdef KN_EXT_VALUE
 DECLARE_FUNCTION(value, 1, 'V') {
-	return kn_value_clone(*kn_env_fetch(kn_value_to_string(args[0])->str, false));
+	return kn_value_clone(*kn_env_fetch(kn_string_deref(kn_value_to_string(args[0])), false));
 }
 #endif
 
 DECLARE_FUNCTION(eval, 1, 'E') {
-	return kn_run(kn_value_to_string(args[0])->str);
+	return kn_run(kn_string_deref(kn_value_to_string(args[0])));
 }
 
 DECLARE_FUNCTION(block, 1, 'B') {
@@ -87,10 +86,10 @@ DECLARE_FUNCTION(call, 1, 'C') {
 DECLARE_FUNCTION(system, 1, '`') {
 	const struct kn_string_t *command = kn_value_to_string(args[0]);
 
-	FILE *stream = popen(command->str, "r");
+	FILE *stream = popen(kn_string_deref(command), "r");
 
 	if (stream == NULL)
-		die("unable to execute command '%s'.", command->str);
+		die("unable to execute command '%s'.", kn_string_deref(command));
 
 	size_t cap = 2048;
 	size_t len = 0;
@@ -137,7 +136,7 @@ DECLARE_FUNCTION(not, 1, '!') {
 }
 
 DECLARE_FUNCTION(length, 1 ,'L') {
-	kn_number_t length = (kn_number_t) kn_value_to_string(args[0])->length;
+	kn_number_t length = (kn_number_t) kn_string_length(kn_value_to_string(args[0]));
 
 	return kn_value_new_number(length);
 }
@@ -153,6 +152,8 @@ DECLARE_FUNCTION(dump, 1 ,'D') {
 #ifndef KN_EMBEDDED
 DECLARE_FUNCTION(output, 1, 'O') {
 	const struct kn_string_t *string = kn_value_to_string(args[0]);
+	const char *str = kn_string_deref(string);
+	size_t length = kn_string_length(string);
 
 	// right here we're casting away the const.
 	// this is because we might need to replace the penult character
@@ -160,12 +161,12 @@ DECLARE_FUNCTION(output, 1, 'O') {
 	// newline. however, we replace it on the next line, so it's ok.
 	char *penult;
 
-	if (string->length != 0 && *(penult = (char *) &string->str[string->length - 1]) == '\\') {
+	if (length != 0 && *(penult = (char *) &str[length - 1]) == '\\') {
 		*penult = '\0'; // replace the trailing `\`
-		printf("%s", string->str);
+		printf("%s", str);
 		*penult = '\\'; // and then restore it.
 	} else {
-		printf("%s\n", string->str);
+		printf("%s\n", str);
 	}
 
 	return KN_NULL;
@@ -176,15 +177,17 @@ static kn_value_t kn_fn_add_string(
 	const struct kn_string_t *lhs,
 	const struct kn_string_t *rhs
 ) {
-	if (lhs->length == 0) return kn_value_new_string(rhs);
-	if (rhs->length == 0) return kn_value_new_string(lhs);
+	size_t lhslength = kn_string_length(lhs);
+	size_t rhslength = kn_string_length(rhs);
 
-	DEBUG(">[%zd %zd %zd]\n", lhs->length, rhs->length, lhs->length + rhs->length);
-	size_t length = lhs->length + rhs->length;
+	if (lhslength == 0) return kn_value_new_string(rhs);
+	if (rhslength == 0) return kn_value_new_string(lhs);
+
+	size_t length = lhslength + rhslength;
 	char *str = xmalloc(length + 1);
 
-	memcpy(str, lhs->str, lhs->length);
-	memcpy(str + lhs->length, rhs->str, rhs->length);
+	memcpy(str, kn_string_deref(lhs), lhslength);
+	memcpy(str + lhslength, kn_string_deref(rhs), rhslength);
 	str[length] = '\0';
 
 	return kn_value_new_string(kn_string_emplace(str, length));
@@ -195,23 +198,9 @@ DECLARE_FUNCTION(add, 2, '+') {
 
 	// If lhs is a string, convert both to a string and concat
 	if (kn_value_is_string(lhs)) {
-		static int x = 0;
-		for (int i = 0; i < x; ++i) printf("-");
-		++x;
-		printf("==start==\n");
-		kn_value_dump(lhs);
-		printf("\n");
-		kn_value_dump(args[1]);
-		printf("\n");
-
-		kn_value_t ret = kn_fn_add_string(
+		return kn_fn_add_string(
 			kn_value_as_string(lhs),
 			kn_value_to_string(args[1]));
-
-		--x;
-		for (int i = 0; i < x; ++i) printf("-");
-		printf("==end==\n");
-		return ret;
 	}
 
 	assert_reckless(kn_value_is_number(lhs));
@@ -235,19 +224,20 @@ DECLARE_FUNCTION(sub, 2, '-') {
 static kn_value_t kn_fn_mul_string(const struct kn_string_t *lhs, size_t amnt) {
 	// die("<todo: verify mul string>");
 	// if we have an empty string, return early.
-	if (lhs->length == 0 || amnt == 1)
+	if (kn_string_length(lhs) == 0 || amnt == 1)
 		// TODO: do we clone this or not.
 		return kn_value_new_string(kn_string_clone(lhs));
 
 	if (amnt == 0)
-		return kn_value_new_string(&KN_STRING_EMPTY);
+		return kn_value_new_string(KN_STRING_EMPTY);
 
-	size_t length = lhs->length * amnt;
+	size_t lhslength = kn_string_length(lhs);
+	size_t length = lhslength * amnt;
 	char *str = xmalloc(length + 1);
 	char *ptr = str;
 
-	for (; amnt != 0; --amnt, ptr += lhs->length)
-		memcpy(ptr, lhs->str, lhs->length);
+	for (; amnt != 0; --amnt, ptr += lhslength)
+		memcpy(ptr, kn_string_deref(lhs), lhslength);
 
 	*ptr = '\0';
 
@@ -357,7 +347,7 @@ DECLARE_FUNCTION(lth, 2, '<') {
 		const struct kn_string_t *lstr = kn_value_as_string(lhs);
 		const struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
-		less =/* lstr->length < rstr->length ||*/ strcmp(lstr->str, rstr->str) < 0;
+		less =/* lstr->length < rstr->length ||*/ strcmp(kn_string_deref(lstr), kn_string_deref(rstr)) < 0;
 	} else if (kn_value_is_number(lhs)) {
 		less = kn_value_as_number(lhs) < kn_value_to_number(args[1]);
 	} else {
@@ -377,7 +367,7 @@ DECLARE_FUNCTION(gth, 2, '>') {
 		const struct kn_string_t *lstr = kn_value_as_string(lhs);
 		const struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
-		more =/* lstr->length > rstr->length ||*/ strcmp(lstr->str, rstr->str) > 0;
+		more =/* lstr->length > rstr->length ||*/ strcmp(kn_string_deref(lstr), kn_string_deref(rstr)) > 0;
 	} else if (kn_value_is_number(lhs)) {
 		more = kn_value_as_number(lhs) > kn_value_to_number(args[1]);
 	} else {
@@ -416,7 +406,7 @@ DECLARE_FUNCTION(or, 2, '|') {
 DECLARE_FUNCTION(then, 2, ';') {
 #ifndef DYAMIC_THEN_ARGC
 	kn_value_t val = kn_value_run(args[0]);
-	// printf(__FILE__ " %d(%p)\n", __LINE__, val & ~0b111);
+	// DEBUG(__FILE__ " %d(%p)\n", __LINE__, val & ~0b111);
 	kn_value_free(val);
 
 	return kn_value_run(args[1]);
@@ -448,7 +438,7 @@ DECLARE_FUNCTION(assign, 2, '=') {
 	} else {
 		// otherwise, evaluate the expression, convert to a string,
 		// and then use that as the identifier.
-		ptr = kn_env_fetch(kn_value_to_string(args[0])->str, false);
+		ptr = kn_env_fetch(kn_string_deref(kn_value_to_string(args[0])), false);
 
 		ret = kn_value_run(args[1]);
 	}
@@ -479,21 +469,21 @@ DECLARE_FUNCTION(if, 3, 'I') {
 
 DECLARE_FUNCTION(get, 3, 'G') {
 	const struct kn_string_t *string;
-	intptr_t start, amnt;
+	size_t start, amnt;
 
 	string = kn_value_to_string(args[0]);
-	start = (intptr_t) kn_value_to_number(args[1]);
-	amnt = (intptr_t) kn_value_to_number(args[2]);
+	start = (size_t) kn_value_to_number(args[1]);
+	amnt = (size_t) kn_value_to_number(args[2]);
 
-	if (string->length <= start)
-		return kn_value_new_string(&KN_STRING_EMPTY);
+	if (kn_string_length(string) <= start)
+		return kn_value_new_string(KN_STRING_EMPTY);
 
-	if (string->length <= amnt + start)
+	if (kn_string_length(string) <= amnt + start)
 		return kn_value_new_string(kn_string_tail(string, start));
 
 	char *substr = xmalloc(amnt + 1);
 
-	memcpy(substr, string->str, amnt);
+	memcpy(substr, kn_string_deref(string), amnt);
 	substr[amnt] = '\0';
 
 	return kn_value_new_string(kn_string_emplace(substr, amnt));
@@ -509,11 +499,11 @@ DECLARE_FUNCTION(set, 4, 'S') {
 	amnt = (size_t) kn_value_to_number(args[2]);
 	substr = kn_value_to_string(args[3]);
 
-	size_t string_length = (size_t) string->length;
-	size_t substr_length = (size_t) substr->length;
+	size_t string_length = kn_string_length(string);
+	size_t substr_length = kn_string_length(substr);
 
-	if (start == 0 && substr_length == 0)
-		return kn_value_new_string(kn_string_tail(string, amnt));
+	// if (start == 0 && substr_length == 0)
+		// return kn_value_new_string(kn_string_tail(string, amnt));
 
 	// if it's out of bounds, die.
 	if (string_length < start)
@@ -524,15 +514,15 @@ DECLARE_FUNCTION(set, 4, 'S') {
 
 	size_t length = string_length - amnt + substr_length;
 	char *str = xmalloc(length + 1);
+	str[length] = '\0';
+
 	char *ptr = str;
 
-	memcpy(ptr, string->str, start);
+	memcpy(ptr, kn_string_deref(string), start);
 	ptr += start;
-	memcpy(ptr, substr->str, substr_length);
+	memcpy(ptr, kn_string_deref(substr), substr_length);
 	ptr += substr_length;
-	memcpy(ptr, string->str + start + amnt, string_length - amnt);
-	ptr += string_length - amnt;
-	*ptr = '\0';
+	memcpy(ptr, kn_string_deref(string) + start + amnt, string_length - amnt);
 
 	return kn_value_new_string(kn_string_emplace(str, length));
 }

@@ -211,7 +211,7 @@ CASES2('\'', '\"')
 	return kn_value_new_string(
 		length
 		? kn_string_emplace(strndup(start, length), length)
-		: &KN_STRING_EMPTY);
+		: KN_STRING_EMPTY);
 }
 
 LABEL(literal_true)

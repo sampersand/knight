@@ -110,7 +110,7 @@ inline kn_value_t kn_value_new_ast(const struct kn_ast_t *ast) {
 
 static kn_number_t string_to_number(const struct kn_string_t *value) {
 	kn_number_t ret = 0;
-	const char *ptr = value->str;
+	const char *ptr = kn_string_deref(value);
 
 	// strip leading whitespace.
 	while (isspace(*ptr))
@@ -166,7 +166,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 		return 1;
 
 	if (kn_value_is_string(value))
-		return *kn_value_as_string(value)->str;
+		return *kn_string_deref(kn_value_as_string(value));
 
 	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
@@ -252,7 +252,7 @@ void kn_value_dump(kn_value_t value) {
 
 	switch (KN_TAG(value)) {
 	case KN_TAG_STRING:
-		printf("String(%s)", kn_value_as_string(value)->str);
+		printf("String(%s)", kn_string_deref(kn_value_as_string(value)));
 		return;
 	case KN_TAG_IDENT:
 		printf("Identifier(%s)", kn_env_name_for(KN_VALUE_AS_IDENT(value)));
@@ -284,7 +284,8 @@ bool kn_value_eql(kn_value_t lhs, kn_value_t rhs) {
 	if (kn_value_is_string(lhs) && kn_value_is_string(rhs)) {
 		const struct kn_string_t *lstr = kn_value_as_string(lhs);
 		const struct kn_string_t *rstr = kn_value_as_string(rhs);
-		return lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
+		return kn_string_length(lstr) == kn_string_length(rstr) &&
+			!strcmp(kn_string_deref(lstr), kn_string_deref(rstr));
 	}
 
 	assert(lhs <= 4
