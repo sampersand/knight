@@ -11,7 +11,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
 | [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
-| [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
+| [C++](c++) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
 | [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
@@ -66,11 +66,11 @@ Here's some examples of the syntax to give you a feel for it:
 ; WHILE (| (< guess secret) (> guess secret)) # while guess != s:
   ; = guess (+ 0 (PROMPT '> '))               #   guess = int(prompt('> '))
   ; = nguess (+ nguess 1)                     #   nguess += 1
-    OUTPUT (                                  #   print(
+  : OUTPUT (                                  #   print(
      IF (< guess secret) 'too low'            #     if guess < secret: 'too low'
      IF (> guess secret) 'too high'           #     if guess > secret: 'too high'
                          'correct')           #     else: 'correct')
-OUTPUT (+ 'tries: ' nguess)                   # print('tries: ' + n)
+: OUTPUT (+ 'tries: ' nguess)                 # print('tries: ' + n)
 ```
 
 ## Fibonacci
