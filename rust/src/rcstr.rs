@@ -161,10 +161,13 @@ impl RcStr {
 		}
 	}
 
+	// TODO
 	pub unsafe fn from_raw(raw: *const u8) -> Self {
+		let _ = raw;
 		todo!()
 	}
 
+	// TODO
 	pub fn into_raw(self) -> *const u8 {
 		todo!()
 	}

@@ -1,10 +1,7 @@
-crate struct Foo {
-	
-}
 use crate::{RcStr, env::Variable, RuntimeError, rcstr::InvalidString};
 use static_assertions::{const_assert_eq, const_assert};
 use std::fmt::{self, Debug, Formatter};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 
 pub struct Value(u64);
 
@@ -197,7 +194,8 @@ impl TryFrom<&Value> for bool {
 		} else if let Some(string) = value.as_string() {
 			Ok(!string.as_ref().is_empty())
 		} else {
-			value.run()?.try_into().map_err(From::from)
+			// value.run()?.try_into().map_err(From::from)
+			todo!()
 		}
 	}
 }
@@ -205,25 +203,18 @@ impl TryFrom<&Value> for bool {
 impl Value {
 	pub fn run(&self) -> Result<Self, RuntimeError> {
 		if self.is_literal() {
-			return self;
-		}
+			Ok(Self(self.0))
+		} else if let Some(string) = self.as_string() {
+			Ok(string.clone().into())
+		} else if let Some(variable) = self.as_variable() {
+			variable.fetch()
+		} else {
+			assert!(self.is_function());
 
-		todo!()
+			todo!();
+		}
 	}
 }
-// impl TryFrom<&Value> for bool {
-// 	type Error = RuntimeError;
-
-// 	fn try_from(value: &Value) -> Result<Self, Self::Error> {
-// 		match &value.0 {
-// 			Inner::Null => Ok(false),
-// 			Inner::Boolean(boolean) => Ok(*boolean),
-// 			Inner::Number(number) => Ok(*number != 0),
-// 			Inner::String(string) => Ok(!string.is_empty()),
-// 			_ => value.run().and_then(|value| TryFrom::try_from(&value))
-// 		}
-// 	}
-// }
 
 // impl TryFrom<&Value> for RcStr {
 // 	type Error = RuntimeError;

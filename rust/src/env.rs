@@ -13,6 +13,14 @@ impl Variable {
 	pub fn identifier(&self) -> &str {
 		todo!()
 	}
+
+	pub fn fetch(&self) -> Result<Value, RuntimeError> {
+		todo!()
+	}
+
+	pub fn assign(&self, new: Value) {
+		todo!();
+	}
 }
 
 #[allow(unsafe_code)]

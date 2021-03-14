@@ -6,7 +6,7 @@ edition = "2018"
 description = "The Knight programming language, in Rust"
 
 [features]
-default = ["optimized-value"]
+default = []
 
 # All errors are fatal (ie cause the system to panic propagated upward)
 fatal-errors = []

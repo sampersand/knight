@@ -43,18 +43,12 @@ pub enum ParseErrorKind {
 impl From<ParseErrorKind> for ParseError {
 	#[cfg_attr(feature = "fatal-errors", inline)]
 	fn from(kind: ParseErrorKind) -> Self {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			Self(kind)
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			let _ = kind;
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "fatal-errors")] {
+				let _ = kind;
 				unsafe { unreachable_unchecked!(); }
 			} else {
-				unreachable!();
+				Self(kind)
 			}
 		}
 	}
@@ -63,18 +57,12 @@ impl From<ParseErrorKind> for ParseError {
 impl From<ParseError> for ParseErrorKind {
 	#[cfg_attr(feature = "fatal-errors", inline)]
 	fn from(err: ParseError) -> Self {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			err.0
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			let _ = err;
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "fatal-errors")] {
+				let _ = err;
 				unsafe { unreachable_unchecked!(); }
 			} else {
-				unreachable!();
+				err.0
 			}
 		}
 	}
@@ -121,18 +109,12 @@ pub enum RuntimeErrorKind {
 impl From<RuntimeErrorKind> for RuntimeError {
 	#[cfg_attr(feature = "fatal-errors", inline)]
 	fn from(kind: RuntimeErrorKind) -> RuntimeError {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			Self(kind)
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			let _ = kind;
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "fatal-errors")] {
+				let _ = kind;
 				unsafe { unreachable_unchecked!(); }
 			} else {
-				unreachable!();
+				Self(kind)
 			}
 		}
 	}
@@ -141,18 +123,12 @@ impl From<RuntimeErrorKind> for RuntimeError {
 impl From<RuntimeError> for RuntimeErrorKind {
 	#[cfg_attr(feature = "fatal-errors", inline)]
 	fn from(err: RuntimeError) -> RuntimeErrorKind {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			err.0
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			let _ = err;
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "fatal-errors")] {
+				let _ = err;
 				unsafe { unreachable_unchecked!(); }
 			} else {
-				unreachable!();
+				err.0
 			}
 		}
 	}
@@ -161,18 +137,14 @@ impl From<RuntimeError> for RuntimeErrorKind {
 impl From<InvalidString> for RuntimeError {
 	#[cfg_attr(not(feature = "fatal-errors"), inline)]
 	fn from(err: InvalidString) -> Self {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			Self(RuntimeErrorKind::InvalidString(err))
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "reckless")] {
 				let _ = err;
 				unsafe { unreachable_unchecked!(); }
-			} else {
+			} else if #[cfg(feature = "fatal-errors")] {
 				panic!("invalid string: {}", err);
+			} else {
+				Self(RuntimeErrorKind::InvalidString(err))
 			}
 		}
 	}
@@ -181,18 +153,14 @@ impl From<InvalidString> for RuntimeError {
 impl From<ParseError> for RuntimeError {
 	#[cfg_attr(not(feature = "fatal-errors"), inline)]
 	fn from(err: ParseError) -> Self {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			Self(RuntimeErrorKind::Parse(err))
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "reckless")] {
 				let _ = err;
 				unsafe { unreachable_unchecked!(); }
-			} else {
+			} else if #[cfg(feature = "fatal-errors")] {
 				panic!("parse error encountered: {}", err);
+			} else {
+				Self(RuntimeErrorKind::Parse(err))
 			}
 		}
 	}
@@ -201,18 +169,14 @@ impl From<ParseError> for RuntimeError {
 impl From<io::Error> for RuntimeError {
 	#[cfg_attr(not(feature = "fatal-errors"), inline)]
 	fn from(err: io::Error) -> Self {
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			Self(RuntimeErrorKind::Io(err))
-		}
-
-		#[cfg(feature = "fatal-errors")]
-		{
-			if cfg!(feature = "reckless") {
+		cfg_if! {
+			if #[cfg(feature = "reckless")] {
 				let _ = err;
 				unsafe { unreachable_unchecked!(); }
-			} else {
+			} else if #[cfg(feature = "fatal-errors")] {
 				panic!("io error encountered: {}", err);
+			} else {
+				Self(RuntimeErrorKind::Io(err))
 			}
 		}
 	}
@@ -220,24 +184,21 @@ impl From<io::Error> for RuntimeError {
 
 impl Display for ParseError {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		#[cfg(feature = "fatal-errors")]
-		{
-			let _ = f;
-			unsafe { unreachable_unchecked!(); }
-		}
-
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			match self.0 {
-				ParseErrorKind::NothingToParse =>
-					write!(f, "a token was expected."),
-				ParseErrorKind::UnknownTokenStart { chr, lineno } =>
-					write!(f, "line {}: unknown token start {:?}.", lineno, chr),
-				ParseErrorKind::UnterminatedQuote { linestart } =>
-					write!(f, "line {}: unterminated quote encountered.", linestart),
-				ParseErrorKind::MissingFunctionArgument { func, number, lineno } =>
-					write!(f, "line {}: missing argument {} for function {:?}.", lineno, number, func),
-				ParseErrorKind::BadSourceyte { ref err, lineno } => write!(f, "line {}: {}", lineno, err)
+		cfg_if! {
+			if #[cfg(feature = "fatal-errors")] {
+				let _ = f;
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				match self.0 {
+					ParseErrorKind::NothingToParse => write!(f, "a token was expected."),
+					ParseErrorKind::UnknownTokenStart { chr, lineno } =>
+						write!(f, "line {}: unknown token start {:?}.", lineno, chr),
+					ParseErrorKind::UnterminatedQuote { linestart } =>
+						write!(f, "line {}: unterminated quote encountered.", linestart),
+					ParseErrorKind::MissingFunctionArgument { func, number, lineno } =>
+						write!(f, "line {}: missing argument {} for function {:?}.", lineno, number, func),
+					ParseErrorKind::BadSourceyte { ref err, lineno } => write!(f, "line {}: {}", lineno, err)
+				}
 			}
 		}
 	}
@@ -246,16 +207,15 @@ impl Display for ParseError {
 
 impl std::error::Error for ParseError {
 	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		#[cfg(feature = "fatal-errors")]
-		{
-			unsafe { unreachable_unchecked!(); }
-		}
-
-		#[cfg(not(feature = "fatal-errors"))]
-		{
-			match &self.0 {
-				ParseErrorKind::BadSourceyte { err, .. } => Some(err),
-				_ => None
+		cfg_if! {
+			if #[cfg(feature = "fatal-errors")] {
+				unsafe { unreachable_unchecked!(); }
+			} else {
+				if let ParseErrorKind::BadSourceyte { ref err, .. } = self {
+					Some(err)
+				} else {
+					None
+				}
 			}
 		}
 	}
