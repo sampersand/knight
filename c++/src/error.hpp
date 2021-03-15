@@ -1,4 +1,5 @@
 #include <string>
+#include <stdexcept>
 
 namespace kn {
 	// the base class for all errors within Knight.
