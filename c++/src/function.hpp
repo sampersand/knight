@@ -2,11 +2,10 @@
 
 #include "value.hpp"
 #include <vector>
-#include <memory>
 
 namespace kn {
 	// The argument type that functions must accept.
-	using args_t = std::vector<SharedValue >;
+	using args_t = std::vector<SharedValue>;
 
 	// The pointer type that all functions must fulfill.
 	using funcptr_t = SharedValue(*)(args_t const&);

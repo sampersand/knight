@@ -3,6 +3,7 @@
 #include "error.hpp"
 #include <string>
 #include <string_view>
+#include <memory>
 
 namespace kn {
 	// The type used by numbers within Knight.
