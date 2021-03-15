@@ -22,7 +22,6 @@ void kn_function_init(void) {
 	}; \
 	static kn_value_t fn_##func_##_function(const kn_value_t *args)
 
-#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(prompt, 0, 'P') {
 	(void) args;
 
@@ -49,7 +48,6 @@ DECLARE_FUNCTION(prompt, 0, 'P') {
 
 	return kn_value_new_string(kn_string_new(ret, len));
 }
-#endif /* KN_EMBEDDED */
 
 
 DECLARE_FUNCTION(rand, 0, 'R') {
@@ -93,7 +91,6 @@ DECLARE_FUNCTION(call, 1, 'C') {
 	return ret;
 }
 
-#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(system, 1, '`') {
 	struct kn_string_t *command;
 	FILE *stream;
@@ -133,13 +130,10 @@ DECLARE_FUNCTION(system, 1, '`') {
 
 	return kn_value_new_string(kn_string_new(result, len));
 }
-#endif /* KN_EMBEDDED */
 
-#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(quit, 1, 'Q') {
 	exit((int) kn_value_to_number(args[0]));
 }
-#endif /* KN_EMBEDDED */
 
 DECLARE_FUNCTION(not, 1, '!') {
 	return kn_value_new_boolean(!kn_value_to_boolean(args[0]));
@@ -154,15 +148,12 @@ DECLARE_FUNCTION(length, 1 ,'L') {
 	return kn_value_new_number((kn_number_t) length);
 }
 
-#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(dump, 1 ,'D') {
 	kn_value_t ret = kn_value_run(args[0]);
 	kn_value_dump(ret);
 	return ret;
 }
-#endif /* KN_EMBEDDED */
 
-#ifndef KN_EMBEDDED
 DECLARE_FUNCTION(output, 1, 'O') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
 
@@ -186,7 +177,6 @@ DECLARE_FUNCTION(output, 1, 'O') {
 
 	return KN_NULL;
 }
-#endif /* KN_EMBEDDED */
 
 static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	// note that all length-zero strings are always interned, so no need
