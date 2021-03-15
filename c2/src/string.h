@@ -19,16 +19,12 @@ struct kn_string_t {
 	const char *str;
 };
 
-static struct kn_string_t KN_STRING_EMPTY = (struct kn_string_t) { 0, 0, "" };
+static struct kn_string_t KN_STRING_EMPTY = (struct kn_string_t) { 0, -1, "" };
 
 
-// these are deprecated.
-size_t kn_string_length(const struct kn_string_t *);
-const char *kn_string_deref(const struct kn_string_t *);
-
+void kn_string_init(void);
 struct kn_string_t *kn_string_tail(struct kn_string_t *, size_t);
-struct kn_string_t *kn_string_new(const char *);
-struct kn_string_t *kn_string_emplace(const char *, size_t);
+struct kn_string_t *kn_string_new(const char *, size_t);
 
 void kn_string_free(struct kn_string_t *);
 struct kn_string_t *kn_string_clone(struct kn_string_t *);

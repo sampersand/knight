@@ -9,7 +9,8 @@
 #endif
 
 void kn_init(size_t capacity) {
-	kn_env_init(capacity || DEFAULT_CAPACITY);
+	kn_env_init(capacity ? capacity : DEFAULT_CAPACITY);
+	kn_string_init();
 	kn_function_init();
 }
 
@@ -18,14 +19,12 @@ void kn_free() {
 }
 
 kn_value_t kn_run(const char *stream) {
-	kn_value_t parsed, ret;
-
-	parsed = kn_parse(&stream);
+	kn_value_t parsed = kn_parse(&stream);
 
 	if (parsed == KN_UNDEFINED)
 		die("unable to parse stream");
 
-	ret = kn_value_run(parsed);
+	kn_value_t ret = kn_value_run(parsed);
 	kn_value_free(parsed);
 
 	return ret;

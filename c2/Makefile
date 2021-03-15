@@ -3,7 +3,7 @@ OBJDIR ?= obj
 EXE ?= knight
 
 CC = gcc 
-CFLAGS = -Wall -Wextra -Wpedantic -flto -march=native -Wno-gnu-flexible-array-initializer
+CFLAGS = -Wall -Wextra -Wpedantic -flto -march=native
 CFLAGS += $(CER)
 override CFLAGS += -F$(SRCDIR)
 

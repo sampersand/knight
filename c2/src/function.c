@@ -48,7 +48,7 @@ DECLARE_FUNCTION(prompt, 0, 'P') {
 	memcpy(ret, line, len);
 	ret[len] = '\0';
 
-	return kn_value_new_string(kn_string_new(ret));
+	return kn_value_new_string(kn_string_new(ret, len));
 }
 #endif /* KN_EMBEDDED */
 
@@ -132,7 +132,7 @@ DECLARE_FUNCTION(system, 1, '`') {
 	if (pclose(stream) == -1)
 		die("unable to close command stream.");
 
-	return kn_value_new_string(kn_string_emplace(result, len));
+	return kn_value_new_string(kn_string_new(result, len));
 }
 #endif /* KN_EMBEDDED */
 
@@ -167,24 +167,21 @@ DECLARE_FUNCTION(dump, 1 ,'D') {
 DECLARE_FUNCTION(output, 1, 'O') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
 
-	if (!string->length)
-		goto print_newline;
-
 	// right here we're casting away the const.
 	// this is because we might need to replace the penult character
 	// with a `\0` if it's a backslash to prevent the printing of a
 	// newline. however, we replace it later, so it's ok. (assuming the
 	// input string doesn't have a `\\` in it, but no interned strings do.)
-	char *penult = (char *) &string->str[string->length - 1];
-	if (*penult == '\\') {
+	char *penult;
+
+	if (!string->length)
+		puts("");
+	else if ('\\' == *(penult = (char *) &string->str[string->length - 1])) {
 		*penult = '\0'; // replace the trailing `\`...
-		puts(string->str);
+		printf("%s", string->str);
 		*penult = '\\'; // ...and then restore it.
-	} else {
+	} else
 		puts(string->str);
-print_newline:
-		puts("\n");
-	}
 
 	kn_string_free(string);
 
@@ -212,7 +209,7 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	kn_string_free(lhs);
 	kn_string_free(rhs);
 
-	return kn_value_new_string(kn_string_emplace(str, length));
+	return kn_value_new_string(kn_string_new(str, length));
 }
 
 DECLARE_FUNCTION(add, 2, '+') {
@@ -255,7 +252,7 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t amnt) {
 
 	str[length] = '\0';
 
-	return kn_value_new_string(kn_string_emplace(str, length));
+	return kn_value_new_string(kn_string_new(str, length));
 }
 
 DECLARE_FUNCTION(mul, 2, '*') {
@@ -316,8 +313,9 @@ DECLARE_FUNCTION(pow, 2, '^') {
 	else if (exponent == 1) result = base;
 	else if (exponent == 0) result = 1;
 	else if (exponent < 0) result = 0; // already handled `base == -1`
-	else for (result = 1; exponent > 0; --exponent)
-		result *= base;
+	else
+		for (result = 1; exponent > 0; --exponent)
+			result *= base;
 
 	return kn_value_new_number(result);
 }
@@ -342,6 +340,7 @@ DECLARE_FUNCTION(eql, 2, '?') {
 	eql = lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
 
 free_and_return:
+
 	kn_value_free(lhs);
 	kn_value_free(rhs);
 
@@ -391,7 +390,7 @@ DECLARE_FUNCTION(gth, 2, '>') {
 		more = !kn_value_to_boolean(args[1]) && lhs == KN_TRUE;
 	}
 
-	return kn_value_new_boolean(less);
+	return kn_value_new_boolean(more);
 }
 
 DECLARE_FUNCTION(and, 2, '&') {
@@ -401,7 +400,6 @@ DECLARE_FUNCTION(and, 2, '&') {
 	if (!kn_value_to_boolean(lhs))
 		return lhs;
 
-	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(lhs);
 	return kn_value_run(args[1]);
 }
@@ -413,16 +411,13 @@ DECLARE_FUNCTION(or, 2, '|') {
 	if (kn_value_to_boolean(lhs))
 		return lhs;
 
-	// DEBUG(__FILE__ " %d\n", __LINE__);
 	kn_value_free(lhs);
 	return kn_value_run(args[1]);
 }
 
 DECLARE_FUNCTION(then, 2, ';') {
 #ifndef DYAMIC_THEN_ARGC
-	kn_value_t val = kn_value_run(args[0]);
-	// DEBUG(__FILE__ " %d(%p)\n", __LINE__, val & ~0b111);
-	kn_value_free(val);
+	kn_value_free(kn_value_run(args[0]));
 
 	return kn_value_run(args[1]);
 #else
@@ -467,6 +462,7 @@ DECLARE_FUNCTION(assign, 2, '=') {
 	return ret;
 #else
 	kn_value_t *value = &kn_value_as_variable(args[0])->value;
+	// printf("%s\n", kn_value_as_variable(args[0])->name);
 
 	if (*value != KN_UNDEFINED)
 		kn_value_free(*value);
@@ -480,43 +476,37 @@ DECLARE_FUNCTION(assign, 2, '=') {
 
 DECLARE_FUNCTION(while, 2, 'W') {
 	while (kn_value_to_boolean(args[0]))
-		(void) kn_value_run(args[1]);
+		kn_value_free(kn_value_run(args[1]));
 
 	return KN_NULL;
 }
 
-
 DECLARE_FUNCTION(if, 3, 'I') {
-	kn_value_t torun = args[1 + !kn_value_to_boolean(args[0])];
-
-	return kn_value_run(torun);
+	return kn_value_run(args[1 + !kn_value_to_boolean(args[0])]);
 }
 
 
 DECLARE_FUNCTION(get, 3, 'G') {
-	const struct kn_string_t *string;
-	size_t start, amnt;
+	struct kn_string_t *string = kn_value_to_string(args[0]);
+	size_t start = (size_t) kn_value_to_number(args[1]);
+	size_t amnt = (size_t) kn_value_to_number(args[2]);
 
-	string = kn_value_to_string(args[0]);
-	start = (size_t) kn_value_to_number(args[1]);
-	amnt = (size_t) kn_value_to_number(args[2]);
-
-	if (kn_string_length(string) <= start)
+	if (string->length <= start)
 		return kn_value_new_string(&KN_STRING_EMPTY);
 
-	if (kn_string_length(string) <= amnt + start)
+	if (string->length <= amnt + start)
 		return kn_value_new_string(kn_string_tail(string, start));
 
 	char *substr = xmalloc(amnt + 1);
 
-	memcpy(substr, kn_string_deref(string), amnt);
+	memcpy(substr, string->str, amnt);
 	substr[amnt] = '\0';
 
-	return kn_value_new_string(kn_string_emplace(substr, amnt));
+	return kn_value_new_string(kn_string_new(substr, amnt));
 }
 
 DECLARE_FUNCTION(set, 4, 'S') {
-	const struct kn_string_t *string, *substr;
+	struct kn_string_t *string, *substr;
 	size_t start, amnt;
 
 
@@ -525,8 +515,8 @@ DECLARE_FUNCTION(set, 4, 'S') {
 	amnt = (size_t) kn_value_to_number(args[2]);
 	substr = kn_value_to_string(args[3]);
 
-	size_t string_length = kn_string_length(string);
-	size_t substr_length = kn_string_length(substr);
+	size_t string_length = string->length;
+	size_t substr_length = substr->length;
 
 	// if (start == 0 && substr_length == 0)
 		// return kn_value_new_string(kn_string_tail(string, amnt));
@@ -544,11 +534,11 @@ DECLARE_FUNCTION(set, 4, 'S') {
 
 	char *ptr = str;
 
-	memcpy(ptr, kn_string_deref(string), start);
+	memcpy(ptr, string->str, start);
 	ptr += start;
-	memcpy(ptr, kn_string_deref(substr), substr_length);
+	memcpy(ptr, substr->str, substr_length);
 	ptr += substr_length;
-	memcpy(ptr, kn_string_deref(string) + start + amnt, string_length - amnt);
+	memcpy(ptr, string->str + start + amnt, string_length - amnt);
 
-	return kn_value_new_string(kn_string_emplace(str, length));
+	return kn_value_new_string(kn_string_new(str, length));
 }

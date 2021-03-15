@@ -167,6 +167,7 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 	if (kn_value_is_string(value))
 		return string_to_number(kn_value_as_string(value));
 
+	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	kn_number_t ret = kn_value_to_number(ran);
 	// printf(__FILE__ " %d\n", __LINE__);
@@ -190,6 +191,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 	if (kn_value_is_string(value))
 		return kn_value_as_string(value)->length != 0;
 
+	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
 	// printf(__FILE__ " %d\n", __LINE__);
@@ -232,11 +234,11 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 
 struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	static struct kn_string_t BUILTIN_STRINGS[5] = {
-		{ .length = 5, .refcount = 0, .str = "false" },
-		{ .length = 1, .refcount = 0, .str = "0" },
-		{ .length = 4, .refcount = 0, .str = "null" },
-		{ .length = 4, .refcount = 0, .str = "true" },
-		{ .length = 1, .refcount = 0, .str = "1" },
+		{ .length = 5, .refcount = -1, .str = "false" },
+		{ .length = 1, .refcount = -1, .str = "0" },
+		{ .length = 4, .refcount = -1, .str = "null" },
+		{ .length = 1, .refcount = -1, .str = "1" },
+		{ .length = 4, .refcount = -1, .str = "true" },
 	};
 
 	assert(value != KN_UNDEFINED);
@@ -250,6 +252,7 @@ struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	if (kn_value_is_string(value))
 		return kn_string_clone(kn_value_as_string(value));
 
+	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	struct kn_string_t *ret = kn_value_to_string(ran);
 	// printf(__FILE__ " %d\n", __LINE__);
@@ -279,7 +282,7 @@ void kn_value_dump(kn_value_t value) {
 
 	switch (KN_TAG(value)) {
 	case KN_TAG_STRING:
-		printf("String(%s)", kn_string_deref(kn_value_as_string(value)));
+		printf("String(%s)", kn_value_as_string(value)->str);
 		return;
 	case KN_TAG_VARIABLE:
 		printf("Identifier(%s)", kn_value_as_variable(value)->name);

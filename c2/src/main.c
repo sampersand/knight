@@ -42,6 +42,7 @@ static char *read_file(const char *filename) {
 }
 
 int main(int argc, const char *argv[]) {
+	goto a;
 	// note: to keep it cross-platform, i opted not to use optparse.
 	if (argc != 3)
 		goto usage;
@@ -61,6 +62,8 @@ int main(int argc, const char *argv[]) {
 	default:
 		goto usage;
 	}
+	a:
+	string = read_file("../knight.kn");
 
 	kn_init(0);
 	// printf(__FILE__ " %d\n", __LINE__);

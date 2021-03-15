@@ -208,10 +208,12 @@ CASES2('\'', '\"')
 
 	size_t length = *stream - start - 1;
 
-	return kn_value_new_string(
-		length
-		? kn_string_emplace(strndup(start, length), length)
-		: KN_STRING_EMPTY);
+	if (!length)
+		return kn_value_new_string(&KN_STRING_EMPTY);
+
+	char *str = strndup(start, length);
+
+	return kn_value_new_string(kn_string_new(str, length));
 }
 
 LABEL(literal_true)
