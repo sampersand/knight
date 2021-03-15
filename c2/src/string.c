@@ -152,8 +152,8 @@ void kn_string_free(struct kn_string_t *string) {
 #ifndef KN_ARENA_ALLOCATE
 		if (!string->refcount) {
 			*get_cache_slot(string->str, string->length) = 0;
-			free(string);
 			free((char *) string->str);
+			free(string);
 		}
 #endif
 
