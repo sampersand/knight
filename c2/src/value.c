@@ -9,6 +9,7 @@
 #include <string.h>
 
 /*
+ * note all pointers are 16+-bit-aligned.
  * 0...00000 - FALSE
  * X...X0001 - 63-bit signed integer
  * 0...00010 - NULL

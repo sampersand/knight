@@ -43,7 +43,7 @@ Note that these are simply benchmarks of _my_ implementations of Knight, and not
 | ---------- |--------:|--------------------|-------|
 | C          |   7.01s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
 | C#         |  13.75s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
-| C++        |  27.26s | `c++/knight`       | The virtual functions are a bottleneck |
+| C++        |  25.09s | `c++/knight`       | The hashmap is the bottleneck; todo: pick a better hashmap implementation. |
 | Rust       |  28.99s | `rust/target/release/knight` | Built with `cargo build --release` and the `reckless` flag. |
 | JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | Default stack's too small, so we had to bump it up. |
 | PHP        |  64.73s | `php/knight.php`   | |
