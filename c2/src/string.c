@@ -103,7 +103,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 	return string;
 }
 
-static struct kn_string_t *get_cache_slot(const char *str, size_t length) {
+static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	return &string_cache[length][kn_hash(str) & (CACHESIZE - 1)];
 }
 
@@ -148,6 +148,7 @@ void kn_string_free(struct kn_string_t *string) {
 
 	if (0 < string->refcount) {
 		--string->refcount;
+
 #ifndef KN_ARENA_ALLOCATE
 		if (!string->refcount) {
 			*get_cache_slot(string->str, string->length) = 0;
@@ -155,6 +156,7 @@ void kn_string_free(struct kn_string_t *string) {
 			free((char *) string->str);
 		}
 #endif
+
 	}
 }
 

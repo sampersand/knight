@@ -1,9 +1,6 @@
-#include <string.h>  /* memcpy, strlen, strcmp, strndup, strcat */
-#include <assert.h>  /* assert */
-#include <stdlib.h>  /* rand, exit */
-#include <stdbool.h> /* true, false */
-#include <stdio.h>   /* getline, stdin, feof, perror, FILE, fread, ferror,
-                      * popen, pclose, printf */
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
 #include <time.h>
 
 #include "shared.h"
@@ -30,23 +27,25 @@ DECLARE_FUNCTION(prompt, 0, 'P') {
 	(void) args;
 
 	size_t cap = 0;
-	ssize_t slen;
+	ssize_t len;
 	char *line = NULL;
 
 	// try to read a line from stdin.
-	if ((slen = getline(&line, &cap, stdin)) == -1) {
-		// if we're at eof, return an emtpy string. otherwise, abort.
-		if (feof(stdin))
+	if ((len = getline(&line, &cap, stdin)) == -1) {
+		// if we're at eof, return an empty string. otherwise, abort.
+		free(line);
+
+		if (feof(stdin)) {
 			return kn_value_new_string(&KN_STRING_EMPTY);
-		else
+		} else {
 			perror("unable to read line");
+		}
 	}
 
-	size_t len = (size_t) slen;
+	assert(0 <= len);
 
-	char *ret = xmalloc(len + 1);
-	memcpy(ret, line, len);
-	ret[len] = '\0';
+	char *ret = strndup(line, len);
+	free(line);
 
 	return kn_value_new_string(kn_string_new(ret, len));
 }

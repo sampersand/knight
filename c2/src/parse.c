@@ -8,7 +8,6 @@
 #include "parse.h"
 #include "shared.h"
 #include "function.h"
-#include "ast.h"
 #include "env.h"
 
 static int isparen(char c) {

@@ -23,10 +23,10 @@ static struct kn_string_t KN_STRING_EMPTY = (struct kn_string_t) { 0, -1, "" };
 
 
 void kn_string_init(void);
-struct kn_string_t *kn_string_tail(struct kn_string_t *, size_t);
-struct kn_string_t *kn_string_new(const char *, size_t);
+struct kn_string_t *kn_string_tail(struct kn_string_t *string, size_t start);
+struct kn_string_t *kn_string_new(const char *start, size_t length);
 
-void kn_string_free(struct kn_string_t *);
-struct kn_string_t *kn_string_clone(struct kn_string_t *);
+void kn_string_free(struct kn_string_t *string);
+struct kn_string_t *kn_string_clone(struct kn_string_t *string);
 
 #endif

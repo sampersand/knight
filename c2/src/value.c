@@ -2,7 +2,6 @@
 #include "function.h"
 #include "shared.h"
 #include "env.h"
-#include "ast.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -104,7 +103,7 @@ kn_value_t kn_value_new_boolean(kn_boolean_t boolean) {
 	return ((uint64_t) boolean) << 2; // optimization yay
 }
 
-kn_value_t kn_value_new_string(const struct kn_string_t *string) {
+kn_value_t kn_value_new_string(struct kn_string_t *string) {
 	assert((uint64_t) string != KN_TAG_STRING);
 	assert(KN_TAG((uint64_t) string) == 0);
 	assert(string != NULL);
@@ -120,7 +119,7 @@ kn_value_t kn_value_new_variable(struct kn_variable_t *value) {
 	return ((uint64_t) value) | KN_TAG_VARIABLE;
 }
 
-kn_value_t kn_value_new_ast(const struct kn_ast_t *ast) {
+kn_value_t kn_value_new_ast(struct kn_ast_t *ast) {
 	assert((uint64_t) ast != KN_TAG_AST);
 	assert(KN_TAG((uint64_t) ast) == 0);
 	assert(ast != NULL);
