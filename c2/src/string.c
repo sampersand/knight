@@ -103,6 +103,10 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 	return string;
 }
 
+static struct kn_string_t *get_cache_slot(const char *str, size_t length) {
+	return &string_cache[length][kn_hash(str) & (CACHESIZE - 1)];
+}
+
 struct kn_string_t *kn_string_new(const char *str, size_t length) {
 	struct kn_string_t *string, **cacheline;
 
@@ -113,7 +117,7 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 
 	if (length == 0) {
 		free((char *) str);
-		return 
+		return &KN_STRING_EMPTY;
 	}
 
 	// if it's too big just dont cache it
@@ -121,14 +125,13 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 	if (MAXLENGTH <= length)
 		return create_string(str, length);
 
-	cacheline = &string_cache[length][kn_hash(str) & (CACHESIZE - 1)];
+	cacheline = get_cache_slot(str, length);
 
-	// NOTE `0` and note `NULL` because `NULL` != `0`.
+	// NOTE `0` and note `NULL` because `NULL` != `0` always.
 	if (*cacheline == 0 || strcmp((string = *cacheline)->str, str))
 		return *cacheline = create_string(str, length);
 
-	// printf("'%s'\n", string->str);
-	// free
+	free((char *) str);
 	assert(string->refcount >= 0);
 	++string->refcount;
 
@@ -136,15 +139,23 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 }
 
 struct kn_string_t *kn_string_tail(struct kn_string_t *string, size_t start) {
-	return kn_string_new(&string->str[start], string->length - start);
+	return kn_string_new(strdup(&string->str[start]), string->length - start);
 }
 
 void kn_string_free(struct kn_string_t *string) {
 	assert(string != NULL);
-	assert(string->refcount != 0);
+	// assert(string->refcount != 0);
 
-	if (0 < string->refcount)
+	if (0 < string->refcount) {
 		--string->refcount;
+#ifndef KN_ARENA_ALLOCATE
+		if (!string->refcount) {
+			*get_cache_slot(string->str, string->length) = 0;
+			free(string);
+			free((char *) string->str);
+		}
+#endif
+	}
 }
 
 struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
