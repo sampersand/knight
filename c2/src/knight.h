@@ -1,7 +1,13 @@
 #ifndef KN_KNIGHT_H
 #define KN_KNIGHT_H
 
-#include "value.h" /* kn_value_t */
+
+#ifndef KN_ENV_DEFAULT_CAPACITY
+#define KN_ENV_DEFAULT_CAPACITY 256
+#endif
+
+#include <stddef.h> /* size_t */
+#include "value.h"  /* kn_value_t */
 
 /*
  * Begins the Knight interpreter.
@@ -11,7 +17,7 @@
  * Note that if the capacity is zero, the default capacity (defined by 
  * `KN_ENV_DEFAULT_CAPACITY`, which can be overwritten).
  */
-void kn_init(size_t capacity);
+void kn_startup(size_t capacity);
 
 /*
  * Frees all memory related to the current running Knight process.
@@ -19,10 +25,10 @@ void kn_init(size_t capacity);
  * This invalidates _all_ pointers that Knight functions returned (including all
  * `kn_value_t`s).
  *
- * After this function is run, `kn_init` must be called again before calling any
- * other Knight functions.
+ * After this function is run, `kn_startup` must be called again before calling
+ * any other Knight functions.
  */
-void kn_free(void);
+void kn_shutdown(void);
 
 /*
  * Executes the given stream as knight code.

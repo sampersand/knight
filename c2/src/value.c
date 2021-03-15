@@ -219,8 +219,7 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 
 	do {
 		*--ptr = '0' + (num % 10);
-		num /= 10;
-	} while (num);
+	} while (num /= 10);
 
 	if (is_neg)
 		*--ptr = '-';
@@ -348,13 +347,12 @@ kn_value_t kn_value_clone(kn_value_t value) {
 
 void kn_value_free(kn_value_t value) {
 	assert(value != KN_UNDEFINED);
+	char tag = KN_TAG(value);
 
-	if (kn_value_is_literal(value) || KN_TAG(value) == KN_TAG_VARIABLE)
+	if (tag != KN_TAG_STRING && tag != KN_TAG_AST)
 		return;
 
-	// printf("free: [%p]\n", (void *) KN_UNMASK(value));
-
-	if (KN_TAG(value) == KN_TAG_STRING) {
+	if (tag == KN_TAG_STRING) {
 		kn_string_free(kn_value_as_string(value));
 		return;
 	}
@@ -364,10 +362,8 @@ void kn_value_free(kn_value_t value) {
 	if (--ast->refcount)
 		return;
 
-	for (unsigned i = 0; i < ARITY(ast); ++i) {
-		// printf(__FILE__ " %d\n", __LINE__);
+	for (unsigned i = 0; i < ARITY(ast); ++i)
 		kn_value_free(ast->args[i]);
-	}
 
 	free(ast);
 }

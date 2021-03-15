@@ -36,15 +36,15 @@ struct kn_variable_t {
  *
  * `capacity` may not be zero.
  */
-void kn_env_init(size_t capacity);
+void kn_env_startup(size_t capacity);
 
 /*
  * Frees all resources associated with the global Knight environment.
  *
- * This will invalidate all `kn_variable_t` pointers, and `kn_env_init` must be
- * called again before `kn_env_fetch` can be used.
+ * This will invalidate all `kn_variable_t` pointers, and `kn_env_startup` must
+ * be called again before `kn_env_fetch` can be used.
  */
-void kn_env_free(void);
+void kn_env_shutdown(void);
 
 /*
  * Fetches the variable associated with the given identifier.

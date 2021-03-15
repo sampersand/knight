@@ -9,17 +9,17 @@
 
 # include <sys/mman.h>
 # include <unistd.h>
-# ifndef NUM_PAGES
-#  define NUM_PAGES 4096
-# endif /* NUM_PAGES */
+# ifndef KN_NUM_PAGES
+#  define KN_NUM_PAGES (4096*4)
+# endif /* KN_NUM_PAGES */
 
 static struct kn_string_t *string_arena_start;
 static struct kn_string_t *string_arena_next;
 const struct kn_string_t *string_arena_end;
 
-#define ARENASIZE (NUM_PAGES * getpagesize())
+#define ARENASIZE (KN_NUM_PAGES * getpagesize())
 
-void kn_string_init() {
+void kn_string_startup() {
 	string_arena_next = string_arena_start = mmap(
 		NULL,
 		ARENASIZE,
@@ -33,6 +33,12 @@ void kn_string_init() {
 		perror("cant allocate memory");
 
 	string_arena_end = &string_arena_start[ARENASIZE];
+}
+
+
+void kn_string_shutdown() {
+	if (munmap(string_arena_start, ARENASIZE) == -1)
+		perror("cant unmap memory");
 }
 
 static void free_strings() {
@@ -72,7 +78,11 @@ static inline struct kn_string_t *allocate_string() {
 
 #else /* KN_ARENA_ALLOCATE */
 
-void kn_string_init() {
+void kn_string_startup() {
+	/* do nothing */
+}
+
+void kn_string_shutdown() {
 	/* do nothing */
 }
 
@@ -83,16 +93,14 @@ static inline struct kn_string_t *allocate_string() {
 #endif /* KN_ARENA_ALLOCATE */
 
 
-#define MAXLENGTH 64
-#define CACHESIZE 65536
+#define KN_CACHE_MAXLEN 32
+#define KN_CACHE_LINESIZE (1<<14)
 
-static struct kn_string_t *string_cache[MAXLENGTH][CACHESIZE];
+static struct kn_string_t *string_cache[KN_CACHE_MAXLEN][KN_CACHE_LINESIZE];
 
 static struct kn_string_t *create_string(const char *str, size_t length) {
 	assert(strlen(str) == length);
-
-	if (!length)
-		return &KN_STRING_EMPTY;
+	assert(length != 0); // should have already been checked before.
 
 	struct kn_string_t *string = allocate_string();
 
@@ -104,12 +112,12 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 }
 
 static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
-	return &string_cache[length][kn_hash(str) & (CACHESIZE - 1)];
+	assert(length != 0);
+
+	return &string_cache[length - 1][kn_hash(str) & (KN_CACHE_LINESIZE - 1)];
 }
 
 struct kn_string_t *kn_string_new(const char *str, size_t length) {
-	struct kn_string_t *string, **cacheline;
-
 	// sanity check for inputs.
 	assert(0 <= (ssize_t) length);
 	assert(str != NULL);
@@ -122,17 +130,18 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 
 	// if it's too big just dont cache it
 	// (as it's unlikely to be referenced again)
-	if (MAXLENGTH <= length)
+	if (KN_CACHE_MAXLEN < length)
 		return create_string(str, length);
 
-	cacheline = get_cache_slot(str, length);
+	struct kn_string_t **cacheline = get_cache_slot(str, length);
+	struct kn_string_t *string;
 
-	// NOTE `0` and note `NULL` because `NULL` != `0` always.
-	if (*cacheline == 0 || strcmp((string = *cacheline)->str, str))
+	if (*cacheline == NULL || strcmp((string = *cacheline)->str, str))
 		return *cacheline = create_string(str, length);
 
-	free((char *) str);
+	free((char *) str); // we don't need this string anymore, get rid of it.
 	assert(string->refcount >= 0);
+
 	++string->refcount;
 
 	return string;
@@ -151,11 +160,12 @@ void kn_string_free(struct kn_string_t *string) {
 
 #ifndef KN_ARENA_ALLOCATE
 		if (!string->refcount) {
-			*get_cache_slot(string->str, string->length) = 0;
+			if (string->length <= KN_CACHE_MAXLEN)
+				*get_cache_slot(string->str, string->length) = 0;
 			free((char *) string->str);
 			free(string);
 		}
-#endif
+#endif /* KN_ARENA_ALLOCATE */
 
 	}
 }
@@ -168,3 +178,9 @@ struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
 
 	return string;
 }
+
+#ifndef NDEBUG
+_Bool kn_string_is_interned(const struct kn_string_t* string) {
+	return string->refcount < 0;
+}
+#endif /* NDEBUG */
