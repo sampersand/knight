@@ -27,7 +27,8 @@ void kn_free(void);
 /*
  * Executes the given stream as knight code.
  *
- * Note that any errors that may be caused by the stream will 
+ * Note that any errors that may be caused during the execution of the code will
+ * simply abort the program (like all exceptions in Knight do).
  */
 kn_value_t kn_run(const char *stream);
 

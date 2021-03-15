@@ -1,6 +1,6 @@
 #include <string.h> /* strdup, strcmp */
 #include <assert.h> /* assert */
-#include "env.h"    /* size_t, bool, kn_variable_t */
+#include "env.h"    /* size_t, bool, kn_variable_t, kn_value_free */
 #include "shared.h" /* xmalloc, xrealloc, die */
 
 // Each bucket keeps track of its own individual capacity and length.

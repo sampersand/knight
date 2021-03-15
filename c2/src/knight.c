@@ -4,6 +4,7 @@
 #include "shared.h"
 #include "env.h"
 
+// The `ifndef` allows people to set the default capacity if they want.
 #ifndef KN_ENV_DEFAULT_CAPACITY
 #define KN_ENV_DEFAULT_CAPACITY 256
 #endif
