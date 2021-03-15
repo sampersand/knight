@@ -10,7 +10,7 @@ override CXXFLAGS += -F$(SRCDIR)
 ifdef DEBUG
 override CXXFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -O3 -DNDEBUG
+CEXEFLAGS += -O3 -DNDEBUG -flto -march=native
 endif
 
 # lower case because it's local to makefile.
