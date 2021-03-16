@@ -450,7 +450,7 @@ DECLARE_FUNCTION(or, 2, '|') {
 }
 
 DECLARE_FUNCTION(then, 2, ';') {
-#ifndef DYAMIC_THEN_ARGC
+#ifndef KN_DYNMAIC_ARGC
 	kn_value_free(kn_value_run(args[0]));
 
 	return kn_value_run(args[1]);
@@ -463,8 +463,8 @@ DECLARE_FUNCTION(then, 2, ';') {
 	do {
 		kn_value_free(ret);
 	inner:
-		ret = kn_value_run(args[i++]);
-	} while (args[i] != KN_UNDEFINED);
+		ret = kn_value_run(args[i]);
+	} while (args[++i] != KN_UNDEFINED);
 
 	return ret;
 #endif
@@ -510,7 +510,9 @@ DECLARE_FUNCTION(while, 2, 'W') {
 }
 
 DECLARE_FUNCTION(if, 3, 'I') {
-	return kn_value_run(args[1 + !kn_value_to_boolean(args[0])]);
+	bool idx = kn_value_to_boolean(args[0]);
+
+	return kn_value_run(args[1 + !idx]);
 }
 
 DECLARE_FUNCTION(get, 3, 'G') {

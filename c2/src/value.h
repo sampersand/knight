@@ -21,7 +21,7 @@ struct kn_ast_t {
 	struct kn_function_t *func;
 	unsigned refcount;
 
-#ifdef DYAMIC_THEN_ARGC
+#ifdef KN_DYNMAIC_ARGC
 	unsigned argc;
 #endif
 
@@ -32,9 +32,6 @@ struct kn_ast_t {
 #define KN_NULL 2
 #define KN_TRUE 4
 #define KN_UNDEFINED 8
-
-#define KN_VALUE_IS_LITERAL(x) ((x) <= 4 || kn_value_is_number(x))
-#define KN_VALUE_RUN(x) (KN_VALUE_IS_LITERAL(x) ? (x) : kn_value_run(x))
 
 kn_value_t kn_value_new_number(kn_number_t number);
 kn_value_t kn_value_new_boolean(kn_boolean_t boolean);

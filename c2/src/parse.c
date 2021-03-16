@@ -300,11 +300,11 @@ parse_function:
 	ast->func = function;
 	ast->refcount = 1;
 
-#ifdef DYAMIC_THEN_ARGC
+#ifdef KN_DYNMAIC_ARGC
 	if (function != &kn_fn_then && 0) {
 
 	ast->argc = arity;
-#endif /* DYAMIC_THEN_ARGC */
+#endif /* KN_DYNMAIC_ARGC */
 
 	for (size_t i = 0; i < arity; ++i) {
 		if ((ast->args[i] = kn_parse(stream)) == KN_UNDEFINED) {
@@ -313,7 +313,7 @@ parse_function:
 		}
 	}
 
-#ifdef DYAMIC_THEN_ARGC
+#ifdef KN_DYNMAIC_ARGC
 	goto parse_function_end;
 	}
 
@@ -343,12 +343,12 @@ parse_function:
 			continue;
 		}
 
-		if ((c=PEEK()) != function->name) {
-			ast->args[ast->argc++] = kn_parse(stream);
+		if (PEEK() != function->name) {
+			ast->args[ast->argc] = kn_parse(stream);
 
-			if (ast->args[ast->argc++] == KN_UNDEFINED || ast->argc < arity) {
-				die("unable to parse arg %d for function '%c' (%c)",
-					ast->argc - 1, function->name, c);
+			if (ast->args[ast->argc++] == KN_UNDEFINED) {
+				die("unable to parse arg %d for function '%c'",
+					ast->argc - 1, function->name);
 			}
 
 			break;
@@ -369,7 +369,7 @@ parse_function:
 	ast->args[ast->argc] = KN_UNDEFINED;
 
 parse_function_end:
-#endif /* DYAMIC_THEN_ARGC */
+#endif /* KN_DYNMAIC_ARGC */
 
 	return kn_value_new_ast(ast);
 }

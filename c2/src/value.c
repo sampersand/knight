@@ -27,12 +27,11 @@
 
 #define KN_TAG(x) ((x) & KN_MASK)
 #define KN_UNMASK(x) ((x) & ~KN_MASK)
-#define KN_VALUE_AS_NUMBER(x) ((kn_number_t) (((uint64_t) (x)) >> 1))
 
-#ifdef DYAMIC_THEN_ARGC
-#define ARITY(ast) ((ast)->argc)
+#ifdef KN_DYNMAIC_ARGC
+# define ARITY(ast) ((ast)->argc)
 #else
-#define ARITY(ast) ((ast)->func->arity)
+# define ARITY(ast) ((ast)->func->arity)
 #endif
 
 bool kn_value_is_number(kn_value_t value) {
@@ -347,12 +346,11 @@ kn_value_t kn_value_clone(kn_value_t value) {
 
 void kn_value_free(kn_value_t value) {
 	assert(value != KN_UNDEFINED);
-	char tag = KN_TAG(value);
 
-	if (tag != KN_TAG_STRING && tag != KN_TAG_AST)
+	if (kn_value_is_literal(value) || KN_TAG(value) == KN_TAG_VARIABLE)
 		return;
 
-	if (tag == KN_TAG_STRING) {
+	if (KN_TAG(value) == KN_TAG_STRING) {
 		kn_string_free(kn_value_as_string(value));
 		return;
 	}
