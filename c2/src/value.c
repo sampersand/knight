@@ -1,5 +1,6 @@
 #include "value.h"
 #include "function.h"
+#include <inttypes.h>
 #include "shared.h"
 #include "env.h"
 #include <stdlib.h>
@@ -274,7 +275,7 @@ void kn_value_dump(kn_value_t value) {
 	}
 
 	if (kn_value_is_number(value)) {
-		printf("Number(%lc)", kn_value_as_number(value));
+		printf("Number(%" PRId64 ")", kn_value_as_number(value));
 		return;
 	}
 

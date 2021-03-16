@@ -3,13 +3,13 @@ OBJDIR?=obj
 EXE?=knight
 
 CC=gcc
-CFLAGS+=-Wall -Wextra -Wpedantic
+CFLAGS+=-Wall -Wextra -Wpedantic 
 override CFLAGS+=-F$(SRCDIR)
 
 ifdef DEBUG
 override CFLAGS+=-g -fsanitize=address,undefined
 else
-CFLAGS+=-O3 -DNDEBUG -flto -march=native
+override CFLAGS+=-O3 -DNDEBUG -flto -march=native
 endif
 
 ifdef COMPUTED_GOTOS

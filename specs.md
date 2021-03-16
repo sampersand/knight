@@ -167,7 +167,11 @@ That is, the following is the list of allowed characters:
 ### 2.2.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
 
-- **numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
+- Tab (`0x09`, ie `\t`)
+- Newline (`0x0a`, ie `\n`)
+- Carriage return (`0x0d`, ie `\r`)
+- Space (`0x20`, ie a space---` `)
+- **numeric**: In numeric contexts, all leading whitespace (i.e. tabs (`0x09`), newlines (`0x0a`), carriage returns (`0x0d`), and spaces (`0x20`)) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
 - **string**: In string contexts, the string itself is returned.
 - **boolean**: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
 
@@ -430,7 +434,7 @@ Unlike nearly every other function in Knight, this one does not automatically co
 This function is valid for the types `Number`, `String`, `Boolean`, and `Null`. Notably, if either argument is a `BLOCK`'s return value, the return value is undefined.
 
 ### 4.3.10 `&(unchanged, unevaluated)`
-If the first argument, after being coerced to a boolean, is `TRUE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
+If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
 
 This function acts similarly to `&&` in most programming languages, where it only evaluates the second variable if the first is truthy.
 
@@ -438,7 +442,7 @@ For example, `& 0 (QUIT 1)` shall return the value `0`, whilst `& TRUE ""` shall
 
 
 ### 4.3.11 `|(unchanged, unevaluated)`
-If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
+If the first argument, after being coerced to a boolean, is `TRUE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
 
 This function acts similarly to `||` in most programming languages, where it only evaluates the second variable if the first is falsey.
 
