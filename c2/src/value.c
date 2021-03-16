@@ -274,7 +274,7 @@ void kn_value_dump(kn_value_t value) {
 	}
 
 	if (kn_value_is_number(value)) {
-		printf("Number(%lld)", kn_value_as_number(value));
+		printf("Number(%lc)", kn_value_as_number(value));
 		return;
 	}
 
