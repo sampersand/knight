@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <time.h>
@@ -15,7 +16,7 @@ void kn_function_startup(void) {
 
 #define DECLARE_FUNCTION(func_, arity_, name_) \
 	static kn_value_t fn_##func_##_function(const kn_value_t *); \
-	struct kn_function_t kn_fn_##func_ = (struct kn_function_t) { \
+	struct kn_function_t kn_fn_##func_ = { \
 		.ptr = fn_##func_##_function, \
 		.arity = arity_, \
 		.name = name_ \

@@ -1,5 +1,6 @@
 #include <string.h>  /* strdup, strcmp */
 #include <assert.h>  /* assert */
+#include <stdlib.h>  /* free */
 #include <stdbool.h> /* bool, true, false */
 #include "env.h"     /* prototypes, size_t, kn_variable_t, kn_value_free */
 #include "shared.h"  /* xmalloc, xrealloc, die */

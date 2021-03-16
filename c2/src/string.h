@@ -21,7 +21,7 @@ struct kn_string_t {
 	const char *str;
 };
 
-static struct kn_string_t KN_STRING_EMPTY = (struct kn_string_t) { 0, -1, "" };
+static struct kn_string_t KN_STRING_EMPTY = { 0, -1, "" };
 
 
 void kn_string_startup(void);
