@@ -53,7 +53,7 @@ DECLARE_FUNCTION(prompt, 0, 'P') {
 }
 
 
-DECLARE_FUNCTION(rand, 0, 'R') {
+DECLARE_FUNCTION(random, 0, 'R') {
 	(void) args;
 
 	return kn_value_new_number((kn_number_t) rand());
