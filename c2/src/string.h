@@ -27,6 +27,17 @@ enum kn_string_kind_t {
  */
 struct kn_string_t {
 	/*
+	 * Either the amount of references to this string _or_ what kind it is.
+	 * 
+	 * For strings that have a positive refcount, they're `malloc`'d, and should
+	 * be freed. For all other strings, their `kind` dictates what they are.
+	 */
+	union {
+		int refcount;
+		enum kn_string_kind_t kind;
+	};
+
+	/*
 	 * The actual data associated with this string.
 	 */
 	const char *str;
@@ -36,20 +47,6 @@ struct kn_string_t {
 	 * is used for optimization.
 	 */
 	size_t length;
-
-	/*
-	 * The amount of references to this string that exist.
-	 *
-	 * A `refcount` of `-1` implies that this struct doesn't own its data, and
-	 * should not `free` it. when finished.
-	 *
-	 * A `refcount` of _exaclty_ `-2` indicates that the value shouldn't be
-	 *
-	 */
-	union {
-		int refcount;
-		enum kn_string_kind_t kind;
-	};
 };
 
 /*

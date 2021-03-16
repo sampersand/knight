@@ -563,6 +563,7 @@ KN_FUNCTION_DECLARE(get, 3, 'G') {
 	substring = kn_string_new(substr, length);
 
 free_and_return:
+
 	kn_string_free(string);
 
 	return kn_value_new_string(substring);
