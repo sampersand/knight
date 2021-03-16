@@ -252,7 +252,7 @@ If stdin is closed, this function's behaviour is undefined.
 If the line that's read contains any characters that are not allowed to be in Knight strings (see [String](#String)), this function's behaviour is undefined.
 
 ### 4.1.5 `RANDOM()`
-This function must return a (pseudo) random number between 0 and, at a minimum, 2147483647 (`0x7fff_ffff`). Implementations are free to return a larger random number if they desire; however, all random numbers must be zero or positive.
+This function must return a (pseudo) random number between 0 and, at a minimum, 32767 (`0x7fff`). Implementations are free to return a larger random number if they desire; however, all random numbers must be zero or positive.
 
 Note that `RANDOM` _should_ return different numbers across subsequent calls and program executions (although this isn't strictly enforceable, by virtue of how random numbers work..). However, programs should use a somewhat unique seed for every program run (eg a simple `srand(time(NULL)))` is sufficient.)
 
@@ -474,7 +474,7 @@ If the starting index is larger than the length of the string, the behaviour is 
 If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
 To put it more concretely, unless the range `[start, start+length]` is entirely contained within the string, this function's return value is undefined. 
 
-For example, `GET "abcd" 1 2` would get the substring `"bc"`.
+For example, `GET "abcd" 1 2` would get the substring `"bc"`, and `GET "abcd" 2 0` would get `""`.
 
 ## 4.5 Quaternary (Arity 4)
 ### 4.5.1 `SUBSTITUTE(string, number, number, string)`
