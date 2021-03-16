@@ -46,6 +46,7 @@ In this document, some notation is used to describe what is required of implemen
 	4.3.6 [`^`](#436-unchanged-number)  
 	4.3.7 [`<`](#437-unchanged-coerce)  
 	4.3.8 [`>`](#438-unchanged-coerce)  
+
 	4.3.9 [`?`](#439-unchanged-unchanged)  
 	4.3.10 [`|`](#4310-unchanged-unevaluated)  
 	4.3.11 [`&`](#4311-unchanged-unevaluated)  
@@ -140,6 +141,7 @@ All implementations must be able to represent a minimum integral value of `-2147
 
 ### 2.1.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: In numeric contexts, the number itself is simply returned.
 - **string**: In string contexts, numbers are converted to their base-10 representation. Negative numbers shall have a `-` prepended to the beginning of the string. (e.g. `0` -> `"0"`, `123` -> `"123"`, `- 0 12` => `"-12"`)
 - **boolean**: In boolean contexts, nonzero numbers shall become `TRUE`, whereas zero shall become `FALSE`.
@@ -165,6 +167,7 @@ That is, the following is the list of allowed characters:
 
 ### 2.2.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
 - **string**: In string contexts, the string itself is returned.
 - **boolean**: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
@@ -175,6 +178,7 @@ The Boolean type has two variants: `TRUE` and `FALSE`. These two values are used
 
 ### 2.3.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: In numeric contexts, `TRUE` becomes `1` and `FALSE` becomes `0`.
 - **string**: In string contexts, `TRUE` becomes `"true"` and `FALSE` becomes `"false"`.
 - **boolean**: In boolean contexts, the boolean itself is simply returned.
@@ -185,6 +189,7 @@ The `NULL` type is used to indicate the absence of a value within Knight, and is
 
 ### 2.4.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: Null must become `0` in numeric contexts.
 - **string**: Null must become `"null"` in string contexts.
 - **boolean**: Null must become `FALSE` in boolean contexts.
@@ -218,6 +223,7 @@ Note that any operators which would return a number outside of the implementatio
 
 ### 4.0.1 Contexts
 Some functions impose certain contexts on arguments passed to them. (See the `Context` section of the basic types for exact semantics.) The following are the contexts used within this document:
+
 - `string`: The argument must be evaluated, and then converted to a [String](#String).
 - `boolean`: The argument must be evaluated, and then converted to a [Boolean](#Boolean).
 - `number`: The argument must be evaluated, and then converted to a [Number](#Number).
@@ -456,11 +462,25 @@ Note that, unlike most programming languages, Knight does not have a builtin way
 ### 4.4.1 `IF(boolean, unevaluated, unevaluated)`
 This function will evaluate and return the second argument if the first argument is truthy. If the first argument is falsey, the third argument is evaluated and returned.
 
-
 ### 4.4.2 `GET(string, number, number)`
+This function is used to get a substring of the first argument. The substring should start at the second argument and be the length of the third. Indexing starts at `0`---that is, `GET "abc" 0 1` should return the `"a"`.
+
+If either the starting point or the length are negative numbers, this function is undefined.
+If the starting index is larger than the length of the string, the behaviour is undefined.
+If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
+To put it more concretely, unless the range `[start, start+length]` is entirely contained within the string, this function's return value is undefined. 
+
+For example, `GET "abcd" 1 2` would get the substring `"bc"`.
 
 ## 4.5 Quaternary (Arity 4)
 ### 4.5.1 `SUBSTITUTE(string, number, number, string)`
+This function is used to substitute the range `[start, start+length]` (where `start` is the second argument and `length` is the third)  of the first argument with the last. Note that they do not have to be the same length---the string should grow or shrink accordingly. Indexing starts at `0`---that is, `SET "abc" 0 1 "2"` should return the `"2bc"`. Also note that this function should return a new string---the original one should not be modified.
+
+If either the starting point or the length are negative numbers, this function is undefined.
+If the starting index is larger than the length of the string, the behaviour is undefined.
+If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
+
+For example, `SET "abcd" 1 2 "3"` would return the string `"a3d"`.
 
 # 5 Extensions
 All functions starting with `X` are explicitly reserved for extensions. Note that because they're reserved for extensions, you aren't required to conform to the "first character must indicate what the function means" (More details to come.) 
