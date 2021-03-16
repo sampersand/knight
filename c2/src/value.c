@@ -170,7 +170,6 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	kn_number_t ret = kn_value_to_number(ran);
-	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
@@ -194,7 +193,6 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
-	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 } 
@@ -254,7 +252,6 @@ struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	struct kn_string_t *ret = kn_value_to_string(ran);
-	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
