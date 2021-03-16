@@ -32,10 +32,7 @@ The following is the list of all languages that's supported. All in-progress imp
 | Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
 
 ## Time Comparisons
-The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I performed the following command 5 times, averaging out the time it took.
-```sh
-  time <implementation> -f knight.kn <<<$'knight.kn\nexamples/fizzbuzz.kn'`
-```
+The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. You can test it yourself via the [timeit](timeit) script provided.
 
 Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
 

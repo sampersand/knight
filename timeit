@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# = 0 ]; then
+	echo "usage: $0 [executable] [executable arguments...]" >/dev/stderr
+	exit 1
+fi
+
+: "${KNIGHT_HOME:=$PWD}"
+
+for i in $(seq 0 5); do
+	command time "$@" -f "$KNIGHT_HOME/knight.kn" <<EOS >/dev/null || true #exit 1
+$KNIGHT_HOME/knight.kn
+$KNIGHT_HOME/examples/fizzbuzz.kn
+EOS
+done
