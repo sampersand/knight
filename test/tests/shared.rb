@@ -28,12 +28,14 @@ module Kn::Test::Shared
 		end
 	end
 
-	def execute(expr, chomp=true)
+	def execute(expr, raise_on_failure: true)
 		IO.pipe do |r, w|
-			system(*Array($executable_to_test), '-e', expr, out: w, err: :close) or raise InvalidExpression, expr
+			unless system(*Array($executable_to_test), '-e', expr, out: w, err: :close)
+				raise InvalidExpression, expr if raise_on_failure
+			end
 
 			w.close
-			r.read.tap { |x| x.chomp! if chomp }
+			r.read
 		end
 	end
 
@@ -45,8 +47,12 @@ module Kn::Test::Shared
 		yield
 	end
 
-	def dump(expr, *rest)
-		execute("D #{expr}", *rest)
+	def dump(expr)
+		execute("D #{expr}")
+	end
+
+	def check_ub?
+		$check_ub
 	end
 
 	def eval(expr)

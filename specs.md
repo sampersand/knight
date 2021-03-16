@@ -46,10 +46,9 @@ In this document, some notation is used to describe what is required of implemen
 	4.3.6 [`^`](#436-unchanged-number)  
 	4.3.7 [`<`](#437-unchanged-coerce)  
 	4.3.8 [`>`](#438-unchanged-coerce)  
-
 	4.3.9 [`?`](#439-unchanged-unchanged)  
-	4.3.10 [`|`](#4310-unchanged-unevaluated)  
-	4.3.11 [`&`](#4311-unchanged-unevaluated)  
+	4.3.10 [`&`](#4311-unchanged-unevaluated)  
+	4.3.11 [`|`](#4310-unchanged-unevaluated)  
 	4.3.12 [`;`](#4312-unchanged-unchanged)  
 	4.3.13 [`=`](#4313-unevaluated-unchanged)  
 	4.3.14 [`WHILE`](#4314-whileunevaluated-unevaluated)  
@@ -111,11 +110,11 @@ Each function has a predetermined arity---no variable argument functions are all
 
 The list of required functions are as follows. Implementations may define additional symbolic or keyword-based functions as desired. (For details on what individual functions mean, see `# Semantics`.)
 
-- Arity `0`: `PROMPT`, `RANDOM`, `TRUE`, `FALSE`, `NULL`.
-- Arity `1`: `BLOCK`, `EVAL`, `CALL`, `QUIT`, `LENGTH`, `DUMP`, `OUTPUT`, `` ` ``, `!`, `:`
-- Arity `2`: `WHILE`, `+`, `-`, `*`, `/`, `%`, `^`, `?`, `<`, `>`, `&`, `|`, `;`, `=`
+- Arity `0`: `TRUE`, `FALSE`, `NULL`, `PROMPT`, `RANDOM`
+- Arity `1`: `:`, `EVAL`, `BLOCK`, `CALL`, `` ` ``,`QUIT`,  `!`, `LENGTH`, `DUMP`, `OUTPUT`, 
+- Arity `2`: `+`, `-`, `*`, `/`, `%`, `^`, `<`, `>`, `?`, `&`, `|`, `;`, `=`, `WHILE`
 - Arity `3`: `IF`, `GET`
-- Arity `4`: `SET`
+- Arity `4`: `SUBSTITUTE`
 
 Short note on `TRUE`/`FALSE`/`NULL`: As they are functions that take no arguments, and should simply return a true, false, or null value, they can be instead interpreted as literals. That is, there's no functional difference between parsing `TRUE` as a function, and then executing that function and parsing `TRUE` as a boolean literal.
 
@@ -243,7 +242,7 @@ As discussed in the [Boolean](#Boolean) section, `FALSE` may either be interpret
 As discussed in the [Null](#Null) section, `NULL` may either be interpreted as a function of arity 0, or a literal value---they're equivalent. See the section for more details.
 
 ### 4.1.4 `PROMPT()`
-This must read a line from stdin until the `\n` character is encountered, of an EOF occurs, whatever happens first. If the line ended with `\r\n` or `\n`, those character must be stripped out as well, regardless of the operating system. The resulting string (with trailing `\r\n`/`\n`) must be returned.
+This must read a line from stdin until the `\n` character is encountered, of an EOF occurs, whatever happens first. If the line ended with `\r\n` or `\n`, those character must be stripped out as well, regardless of the operating system. The resulting string (without trailing `\r\n`/`\n`) must be returned.
 
 If stdin is closed, this function's behaviour is undefined.
 If the line that's read contains any characters that are not allowed to be in Knight strings (see [String](#String)), this function's behaviour is undefined.
@@ -310,7 +309,7 @@ Aborts the entire knight interpreter with the given status code.
 
 Implementations must accept exit codes between 0 to 127, although they can permit higher status codes if desired.
 
-It is undefined behaviour if the given status code is negative, or is above the highest possible status code.
+	It is undefined behaviour if the given status code is not supported by the implementation.
 
 ### 4.2.7 `!(boolean)`
 Returns the logical negation of its argument---truthy values become `FALSE`, and falsey values beocme `TRUE`.
@@ -430,19 +429,20 @@ Unlike nearly every other function in Knight, this one does not automatically co
 
 This function is valid for the types `Number`, `String`, `Boolean`, and `Null`. Notably, if either argument is a `BLOCK`'s return value, the return value is undefined.
 
-### 4.3.10 `|(unchanged, unevaluated)`
-If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
-
-This function acts similarly to `||` in most programming languages, where it only evaluates the second variable if the first is falsey.
-
-For example, `| "2" (QUIT 1)` shall return the value `"2"`, whilst `| FALSE 4` shall return `4`.
-
-### 4.3.11 `&(unchanged, unevaluated)`
+### 4.3.10 `&(unchanged, unevaluated)`
 If the first argument, after being coerced to a boolean, is `TRUE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
 
 This function acts similarly to `&&` in most programming languages, where it only evaluates the second variable if the first is truthy.
 
 For example, `& 0 (QUIT 1)` shall return the value `0`, whilst `& TRUE ""` shall return `""`.
+
+
+### 4.3.11 `|(unchanged, unevaluated)`
+If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
+
+This function acts similarly to `||` in most programming languages, where it only evaluates the second variable if the first is falsey.
+
+For example, `| "2" (QUIT 1)` shall return the value `"2"`, whilst `| FALSE 4` shall return `4`.
 
 ### 4.3.12 `;(unchanged, unchanged)`
 This function simply returns its second argument. It's entire purpose is to act as a "sequence" function, where the first argument's value can be safely ignored.
