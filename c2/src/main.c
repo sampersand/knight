@@ -60,7 +60,7 @@ int main(int argc, const char *argv[]) {
 		goto usage;
 	}
 
-	kn_startup(0);
+	kn_startup();
 	kn_value_free(kn_run(string));
 	kn_shutdown();
 

@@ -1,24 +1,14 @@
 #include "knight.h"   /* prototypes, kn_value_t, kn_value_run, kn_value_free
-                         KN_UNDEFINED, KN_ENV_DEFAULT_CAPACITY, size_t */
+                         KN_UNDEFINED, size_t */
 #include "function.h" /* kn_function_startup */
 #include "parse.h"    /* kn_parse */
 #include "shared.h"   /* die */
 #include "string.h"   /* kn_string_startup, kn_string_shutdown */
 #include "env.h"      /* kn_env_startup, kn_env_shutdown */
 
-void kn_startup(size_t capacity) {
-	static int is_function_initialized = 0;
-
-	kn_env_startup(capacity ? capacity : KN_ENV_DEFAULT_CAPACITY);
+void kn_startup() {
 	kn_string_startup();
-
-	// we only want to initialize functions once, regardless of how many
-	// times `kn_init` is called.
-	if (!is_function_initialized) {
-		is_function_initialized = 1;
-
-		kn_function_startup();
-	}
+	kn_function_startup();
 }
 
 void kn_shutdown() {

@@ -124,7 +124,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['P']  = &&function_prompt,
 		['Q']  = &&function_quit,
 		['R']  = &&function_random,
-		['S']  = &&function_set,
+		['S']  = &&function_substitute,
 		['T']  = &&literal_true,
 		['U']  = &&invalid,
 #ifdef KN_EXT_VALUE
@@ -152,7 +152,7 @@ kn_value_t kn_parse(register const char **stream) {
 #endif /* KN_COMPUTED_GOTOS */
 
 	char c;
-	struct kn_function_t *function;
+	const struct kn_function_t *function;
 
 	assert(stream != NULL);
 	assert(*stream != NULL);
@@ -279,7 +279,7 @@ WORD_FUNC(output, 'O');
 WORD_FUNC(prompt, 'P');
 WORD_FUNC(quit, 'Q');
 WORD_FUNC(random, 'R');
-WORD_FUNC(set, 'S');
+WORD_FUNC(substitute, 'S');
 WORD_FUNC(while, 'W');
 
 #ifdef KN_EXT_VALUE

@@ -92,11 +92,17 @@ static inline struct kn_string_t *allocate_string() {
 
 #endif /* KN_ARENA_ALLOCATE */
 
+#ifndef KN_STRING_CACHE_MAXLEN
+# define KN_STRING_CACHE_MAXLEN 32
+#endif /* KN_STRING_CACHE_MAXLEN */
 
-#define KN_CACHE_MAXLEN 32
-#define KN_CACHE_LINESIZE (1<<14)
+#ifndef KN_STRING_CACHE_LINESIZE
+# define KN_STRING_CACHE_LINESIZE (1<<14)
+#endif /* KN_STRING_CACHE_LINESIZE */
 
-static struct kn_string_t *string_cache[KN_CACHE_MAXLEN][KN_CACHE_LINESIZE];
+
+static struct kn_string_t *
+	string_cache[KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
 
 static struct kn_string_t *create_string(const char *str, size_t length) {
 	assert(strlen(str) == length);
@@ -114,7 +120,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	assert(length != 0);
 
-	return &string_cache[length - 1][kn_hash(str) & (KN_CACHE_LINESIZE - 1)];
+	return &string_cache[length - 1][kn_hash(str) & (KN_STRING_CACHE_LINESIZE - 1)];
 }
 
 struct kn_string_t *kn_string_new(const char *str, size_t length) {
@@ -130,7 +136,7 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 
 	// if it's too big just dont cache it
 	// (as it's unlikely to be referenced again)
-	if (KN_CACHE_MAXLEN < length)
+	if (KN_STRING_CACHE_MAXLEN < length)
 		return create_string(str, length);
 
 	struct kn_string_t **cacheline = get_cache_slot(str, length);
@@ -160,7 +166,7 @@ void kn_string_free(struct kn_string_t *string) {
 
 #ifndef KN_ARENA_ALLOCATE
 		if (!string->refcount) {
-			if (string->length <= KN_CACHE_MAXLEN)
+			if (string->length <= KN_STRING_CACHE_MAXLEN)
 				*get_cache_slot(string->str, string->length) = 0;
 			free((char *) string->str);
 			free(string);

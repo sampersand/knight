@@ -232,11 +232,11 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 
 struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	static struct kn_string_t BUILTIN_STRINGS[5] = {
-		{ .length = 5, .refcount = -1, .str = "false" },
-		{ .length = 1, .refcount = -1, .str = "0" },
-		{ .length = 4, .refcount = -1, .str = "null" },
-		{ .length = 1, .refcount = -1, .str = "1" },
-		{ .length = 4, .refcount = -1, .str = "true" },
+		{ .str = "false", .length = 5, .refcount = -1, },
+		{ .str = "0",     .length = 1, .refcount = -1, },
+		{ .str = "null",  .length = 4, .refcount = -1, },
+		{ .str = "1",     .length = 1, .refcount = -1, },
+		{ .str = "true",  .length = 4, .refcount = -1, },
 	};
 
 	assert(value != KN_UNDEFINED);
@@ -287,7 +287,12 @@ void kn_value_dump(kn_value_t value) {
 		return;
 	case KN_TAG_AST: {
 		struct kn_ast_t *ast = kn_value_as_ast(value);
+
+#ifdef NDEBUG
+		printf("Function(%p", (void *) ast->func->func);
+#else
 		printf("Function(%c", ast->func->name);
+#endif /* NDEBUG */
 
 		for (size_t i = 0; i < ARITY(ast); ++i) {
 			printf(", ");
@@ -326,7 +331,7 @@ kn_value_t kn_value_run(kn_value_t value) {
 	assert(KN_TAG(value) == KN_TAG_AST);
 	struct kn_ast_t *ast = kn_value_as_ast(value);
 
-	return (ast->func->ptr)(ast->args);
+	return (ast->func->func)(ast->args);
 }
 
 kn_value_t kn_value_clone(kn_value_t value) {

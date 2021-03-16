@@ -18,11 +18,11 @@ struct kn_variable_t;
  * Note that this struct itself is
  */
 struct kn_ast_t {
-	struct kn_function_t *func;
+	const struct kn_function_t *func;
 	unsigned refcount;
 
 #ifdef KN_DYNMAIC_ARGC
-	unsigned argc;
+	unsigned const argc;
 #endif
 
 	kn_value_t args[];
