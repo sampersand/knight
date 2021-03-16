@@ -4,23 +4,24 @@
 #include <stdlib.h>
 
 struct kn_string_t {
-	intptr_t length;
-	unsigned refcount;
-	char str[];
+	size_t length;
+	int refcount;
+	const char *str;
 };
 
-static struct kn_string_t KN_STRING_TRUE = { 4,0 , {"true"} };
-static struct kn_string_t KN_STRING_FALSE = { 5, 0, {"false"} };
-static struct kn_string_t KN_STRING_NULL = { 4, 0, {"null"} };
-static struct kn_string_t KN_STRING_EMPTY = { 0, 0, {""} };
-static struct kn_string_t KN_STRING_ZERO = { 1, 0, {"0"} };
-static struct kn_string_t KN_STRING_ONE = { 1, 0, {"1"} };
+static struct kn_string_t KN_STRING_EMPTY = (struct kn_string_t) { 0, -1, "" };
 
-const struct kn_string_t *kn_string_new(const char *);
-struct kn_string_t *kn_string_alloc(size_t);
-const struct kn_string_t *kn_string_emplace(const char *, size_t);
 
-void kn_string_free(const struct kn_string_t *);
-const struct kn_string_t *kn_string_clone(const struct kn_string_t *);
+void kn_string_startup(void);
+void kn_string_shutdown(void);
+struct kn_string_t *kn_string_tail(struct kn_string_t *string, size_t start);
+struct kn_string_t *kn_string_new(const char *start, size_t length);
+
+void kn_string_free(struct kn_string_t *string);
+struct kn_string_t *kn_string_clone(struct kn_string_t *string);
+
+#ifndef NDEBUG
+_Bool kn_string_is_interned(const struct kn_string_t* string);
+#endif /* NDEBUG */
 
 #endif

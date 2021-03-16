@@ -1,20 +1,21 @@
-SRCDIR?=src
-OBJDIR?=obj
-EXE?=knight
+SRCDIR ?= src
+OBJDIR ?= obj
+EXE ?= knight
 
-CC=gcc
-CFLAGS+=-Wall -Wextra -Wpedantic
-override CFLAGS+=-F$(SRCDIR)
+CC = gcc 
+CFLAGS = -Wall -Wextra -Wpedantic -flto -march=native
+CFLAGS += $(CER)
+override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
-override CFLAGS+=-g -fsanitize=address,undefined
+override CFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS+=-O3 -DNDEBUG -flto -march=native
+CEXEFLAGS += -O3 -DNDEBUG
 endif
 
-ifdef COMPUTED_GOTOS
-override CFLAGS+=-DKN_COMPUTED_GOTOS -Wno-gnu-label-as-value -Wno-gnu-designator
-endif
+# ifdef COMPUTED_GOTOS
+# override CFLAGS += -DCOMPUTED_GOTOS -Wno-gnu-label-as-value -Wgnu-designator
+# endif
 
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
 

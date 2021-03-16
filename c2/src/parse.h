@@ -1,8 +1,14 @@
-#ifndef PARSE_H
-#define PARSE_H
+#ifndef KN_PARSE_H
+#define KN_PARSE_H
 
-#include "value.h"
+#include "value.h" /* kn_value_t */
 
-kn_value_t kn_parse(const char **);
+/*
+ * Parses out a value from the given stream, updating the stream to reflect the
+ * new value.
+ *
+ * If no value can be parsed, `KN_UNDEFINED` will be returned.
+ */
+kn_value_t kn_parse(const char **stream);
 
-#endif
+#endif /* KN_PARSE_H */
