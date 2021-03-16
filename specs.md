@@ -47,8 +47,8 @@ In this document, some notation is used to describe what is required of implemen
 	4.3.7 [`<`](#437-unchanged-coerce)  
 	4.3.8 [`>`](#438-unchanged-coerce)  
 	4.3.9 [`?`](#439-unchanged-unchanged)  
-	4.3.10 [`|`](#4310-unchanged-unevaluated)  
-	4.3.11 [`&`](#4311-unchanged-unevaluated)  
+	4.3.10 [`&`](#4311-unchanged-unevaluated)  
+	4.3.11 [`|`](#4310-unchanged-unevaluated)  
 	4.3.12 [`;`](#4312-unchanged-unchanged)  
 	4.3.13 [`=`](#4313-unevaluated-unchanged)  
 	4.3.14 [`WHILE`](#4314-whileunevaluated-unevaluated)  
@@ -110,11 +110,11 @@ Each function has a predetermined arity---no variable argument functions are all
 
 The list of required functions are as follows. Implementations may define additional symbolic or keyword-based functions as desired. (For details on what individual functions mean, see `# Semantics`.)
 
-- Arity `0`: `PROMPT`, `RANDOM`, `TRUE`, `FALSE`, `NULL`.
-- Arity `1`: `BLOCK`, `EVAL`, `CALL`, `QUIT`, `LENGTH`, `DUMP`, `OUTPUT`, `` ` ``, `!`, `:`
-- Arity `2`: `WHILE`, `+`, `-`, `*`, `/`, `%`, `^`, `?`, `<`, `>`, `&`, `|`, `;`, `=`
+- Arity `0`: `TRUE`, `FALSE`, `NULL`, `PROMPT`, `RANDOM`
+- Arity `1`: `:`, `EVAL`, `BLOCK`, `CALL`, `` ` ``,`QUIT`,  `!`, `LENGTH`, `DUMP`, `OUTPUT`, 
+- Arity `2`: `+`, `-`, `*`, `/`, `%`, `^`, `<`, `>`, `?`, `&`, `|`, `;`, `=`, `WHILE`
 - Arity `3`: `IF`, `GET`
-- Arity `4`: `SET`
+- Arity `4`: `SUBSTITUTE`
 
 Short note on `TRUE`/`FALSE`/`NULL`: As they are functions that take no arguments, and should simply return a true, false, or null value, they can be instead interpreted as literals. That is, there's no functional difference between parsing `TRUE` as a function, and then executing that function and parsing `TRUE` as a boolean literal.
 
@@ -140,6 +140,7 @@ All implementations must be able to represent a minimum integral value of `-2147
 
 ### 2.1.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: In numeric contexts, the number itself is simply returned.
 - **string**: In string contexts, numbers are converted to their base-10 representation. Negative numbers shall have a `-` prepended to the beginning of the string. (e.g. `0` -> `"0"`, `123` -> `"123"`, `- 0 12` => `"-12"`)
 - **boolean**: In boolean contexts, nonzero numbers shall become `TRUE`, whereas zero shall become `FALSE`.
@@ -165,6 +166,7 @@ That is, the following is the list of allowed characters:
 
 ### 2.2.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: In numeric contexts, all leading whitespace (see [Whitespace](#whitespace) for details) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
 - **string**: In string contexts, the string itself is returned.
 - **boolean**: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
@@ -175,6 +177,7 @@ The Boolean type has two variants: `TRUE` and `FALSE`. These two values are used
 
 ### 2.3.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: In numeric contexts, `TRUE` becomes `1` and `FALSE` becomes `0`.
 - **string**: In string contexts, `TRUE` becomes `"true"` and `FALSE` becomes `"false"`.
 - **boolean**: In boolean contexts, the boolean itself is simply returned.
@@ -185,6 +188,7 @@ The `NULL` type is used to indicate the absence of a value within Knight, and is
 
 ### 2.4.1 Contexts
 (See [here](#401-contexts) for more details on contexts.)
+
 - **numeric**: Null must become `0` in numeric contexts.
 - **string**: Null must become `"null"` in string contexts.
 - **boolean**: Null must become `FALSE` in boolean contexts.
@@ -218,6 +222,7 @@ Note that any operators which would return a number outside of the implementatio
 
 ### 4.0.1 Contexts
 Some functions impose certain contexts on arguments passed to them. (See the `Context` section of the basic types for exact semantics.) The following are the contexts used within this document:
+
 - `string`: The argument must be evaluated, and then converted to a [String](#String).
 - `boolean`: The argument must be evaluated, and then converted to a [Boolean](#Boolean).
 - `number`: The argument must be evaluated, and then converted to a [Number](#Number).
@@ -237,7 +242,7 @@ As discussed in the [Boolean](#Boolean) section, `FALSE` may either be interpret
 As discussed in the [Null](#Null) section, `NULL` may either be interpreted as a function of arity 0, or a literal value---they're equivalent. See the section for more details.
 
 ### 4.1.4 `PROMPT()`
-This must read a line from stdin until the `\n` character is encountered, of an EOF occurs, whatever happens first. If the line ended with `\r\n` or `\n`, those character must be stripped out as well, regardless of the operating system. The resulting string (with trailing `\r\n`/`\n`) must be returned.
+This must read a line from stdin until the `\n` character is encountered, of an EOF occurs, whatever happens first. If the line ended with `\r\n` or `\n`, those character must be stripped out as well, regardless of the operating system. The resulting string (without trailing `\r\n`/`\n`) must be returned.
 
 If stdin is closed, this function's behaviour is undefined.
 If the line that's read contains any characters that are not allowed to be in Knight strings (see [String](#String)), this function's behaviour is undefined.
@@ -304,7 +309,7 @@ Aborts the entire knight interpreter with the given status code.
 
 Implementations must accept exit codes between 0 to 127, although they can permit higher status codes if desired.
 
-It is undefined behaviour if the given status code is negative, or is above the highest possible status code.
+	It is undefined behaviour if the given status code is not supported by the implementation.
 
 ### 4.2.7 `!(boolean)`
 Returns the logical negation of its argument---truthy values become `FALSE`, and falsey values beocme `TRUE`.
@@ -424,19 +429,20 @@ Unlike nearly every other function in Knight, this one does not automatically co
 
 This function is valid for the types `Number`, `String`, `Boolean`, and `Null`. Notably, if either argument is a `BLOCK`'s return value, the return value is undefined.
 
-### 4.3.10 `|(unchanged, unevaluated)`
-If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
-
-This function acts similarly to `||` in most programming languages, where it only evaluates the second variable if the first is falsey.
-
-For example, `| "2" (QUIT 1)` shall return the value `"2"`, whilst `| FALSE 4` shall return `4`.
-
-### 4.3.11 `&(unchanged, unevaluated)`
+### 4.3.10 `&(unchanged, unevaluated)`
 If the first argument, after being coerced to a boolean, is `TRUE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
 
 This function acts similarly to `&&` in most programming languages, where it only evaluates the second variable if the first is truthy.
 
 For example, `& 0 (QUIT 1)` shall return the value `0`, whilst `& TRUE ""` shall return `""`.
+
+
+### 4.3.11 `|(unchanged, unevaluated)`
+If the first argument, after being coerced to a boolean, is `FALSE`, then the "uncoerced" first argument is returned. Otherwise, the second argument is evaluated and returned.
+
+This function acts similarly to `||` in most programming languages, where it only evaluates the second variable if the first is falsey.
+
+For example, `| "2" (QUIT 1)` shall return the value `"2"`, whilst `| FALSE 4` shall return `4`.
 
 ### 4.3.12 `;(unchanged, unchanged)`
 This function simply returns its second argument. It's entire purpose is to act as a "sequence" function, where the first argument's value can be safely ignored.
@@ -456,11 +462,25 @@ Note that, unlike most programming languages, Knight does not have a builtin way
 ### 4.4.1 `IF(boolean, unevaluated, unevaluated)`
 This function will evaluate and return the second argument if the first argument is truthy. If the first argument is falsey, the third argument is evaluated and returned.
 
-
 ### 4.4.2 `GET(string, number, number)`
+This function is used to get a substring of the first argument. The substring should start at the second argument and be the length of the third. Indexing starts at `0`---that is, `GET "abc" 0 1` should return the `"a"`.
+
+If either the starting point or the length are negative numbers, this function is undefined.
+If the starting index is larger than the length of the string, the behaviour is undefined.
+If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
+To put it more concretely, unless the range `[start, start+length]` is entirely contained within the string, this function's return value is undefined. 
+
+For example, `GET "abcd" 1 2` would get the substring `"bc"`.
 
 ## 4.5 Quaternary (Arity 4)
 ### 4.5.1 `SUBSTITUTE(string, number, number, string)`
+This function is used to substitute the range `[start, start+length]` (where `start` is the second argument and `length` is the third)  of the first argument with the last. Note that they do not have to be the same length---the string should grow or shrink accordingly. Indexing starts at `0`---that is, `SET "abc" 0 1 "2"` should return the `"2bc"`. Also note that this function should return a new string---the original one should not be modified.
+
+If either the starting point or the length are negative numbers, this function is undefined.
+If the starting index is larger than the length of the string, the behaviour is undefined.
+If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
+
+For example, `SET "abcd" 1 2 "3"` would return the string `"a3d"`.
 
 # 5 Extensions
 All functions starting with `X` are explicitly reserved for extensions. Note that because they're reserved for extensions, you aren't required to conform to the "first character must indicate what the function means" (More details to come.) 

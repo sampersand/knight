@@ -2,10 +2,10 @@ require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
 
-describe 'Identifier' do
+describe 'Variable' do
 	include Kn::Test::Shared
 
-	def ident(x) Kn::Test::Identifier.new(x) end
+	def ident(x) Kn::Test::Variable.new(x) end
 
 	describe 'conversions' do
 		# Identifiers don't define conversions of their own.
@@ -19,8 +19,8 @@ describe 'Identifier' do
 			assert_equal ident('a'), eval('BLOCK a')
 			assert_equal ident('b'), eval('BLOCK b')
 			assert_equal ident('z'), eval('BLOCK z')
-			refute_kind_of Kn::Test::Identifier, eval('BLOCK 0') # digits are not identifiers
-			refute_kind_of Kn::Test::Identifier, eval('BLOCK R') # upper case letters are not identifiers.
+			refute_kind_of Kn::Test::Variable, eval('BLOCK 0') # digits are not identifiers
+			refute_kind_of Kn::Test::Variable, eval('BLOCK R') # upper case letters are not identifiers.
 		end
 
 		it 'can have numbers afterwards' do
@@ -58,7 +58,7 @@ describe 'Identifier' do
 			assert_equal ident('bar'), eval('; = foo BLOCK bar : foo')
 		end
 
-		it 'will fail on an unknown identifier' do
+		it 'will fail on an unknown Variable' do
 			assert_fails { eval('unknown') }
 		end
 	end

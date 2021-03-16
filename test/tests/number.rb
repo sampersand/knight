@@ -2,11 +2,11 @@ require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
 
-describe 'Number' do
+describe '2.1 Number' do
 	include Kn::Test::Shared
 
-	describe 'conversions' do
-		it 'is falsey when 0' do
+	describe 'Contexts' do
+		it '(boolean) is falsey when 0' do
 			assert_equal false, to_boolean('0')
 			assert_equal true, to_boolean('1')
 			assert_equal true, to_boolean('(- 0 1)')
@@ -14,7 +14,7 @@ describe 'Number' do
 			assert_equal true, to_boolean('100')
 		end
 
-		it 'converts to numbers normally' do
+		it '(numeric) converts to numbers normally' do
 			assert_equal 0, to_number('0')
 			assert_equal 1, to_number('1')
 			assert_equal -1, to_number('(- 0 1)')
@@ -22,7 +22,7 @@ describe 'Number' do
 			assert_equal 100, to_number('100')
 		end
 
-		it 'converts to strings normally' do
+		it '(string) converts to strings normally' do
 			assert_equal '0', to_string('0')
 			assert_equal '1', to_string('1')
 			assert_equal '-1', to_string('(- 0 1)')
@@ -31,7 +31,7 @@ describe 'Number' do
 		end
 	end
 
-	describe 'parsing' do
+	describe 'Parsing' do
 		it 'parses integer literals correctly' do
 			assert_equal 0, eval('0')
 			assert_equal 1234, eval('01234')
@@ -55,7 +55,7 @@ describe 'Number' do
 	end
 
 	describe 'operators' do
-		describe '+' do
+		describe '4.3.1 +' do
 			it 'works with integers' do
 				assert_equal 0, eval('+ 0 0')
 				assert_equal 3, eval('+ 1 2')
@@ -77,7 +77,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '-' do
+		describe '4.3.2 -' do
 			it 'works with integers' do
 				assert_equal 0, eval('- 0 0')
 				assert_equal -1, eval('- 1 2')
@@ -103,7 +103,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '*' do
+		describe '4.3.3 *' do
 			it 'works with integers' do
 				assert_equal 0, eval('* 0 0')
 				assert_equal 2, eval('* 1 2')
@@ -125,7 +125,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '/' do
+		describe '4.3.4 /' do
 			it 'divides nonzero numbers normally' do
 				assert_equal 1, eval('/ 1 1')
 				assert_equal 5, eval('/ 10 2')
@@ -160,7 +160,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '%' do
+		describe '4.3.5 %' do
 			# note that, as per the Knight spec, modulo where either number is negative is undefined.
 			it 'modulos positive numbers normally' do
 				assert_equal 0, eval('% 1 1')
@@ -184,7 +184,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '^' do
+		describe '4.3.6 ^' do
 			it 'raises positive numbers correctly' do
 				assert_equal 1, eval('^ 1 1')
 				assert_equal 1, eval('^ 1 100')
@@ -260,7 +260,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '?' do
+		describe '4.3.9 ?' do
 			it 'is only equal to itself' do
 				assert_equal true, eval('? 0 0')
 				assert_equal true, eval('? (- 0 0) 0')
@@ -284,7 +284,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '<' do
+		describe '4.3.7 <' do
 			it 'performs numeric comparison' do
 				assert_equal false, eval('< 1 1')
 				assert_equal false, eval('< 0 0')
@@ -314,7 +314,7 @@ describe 'Number' do
 			end
 		end
 
-		describe '>' do
+		describe '4.3.8 >' do
 			it 'performs numeric comparison' do
 				assert_equal false, eval('> 1 1')
 				assert_equal false, eval('> 0 0')

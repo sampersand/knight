@@ -2,23 +2,11 @@
 #define KN_STRING_H
 
 #include <stddef.h> /* size_t */
+#include <limits.h>
 
-/*
- * This enum is used to represent the kind of `kn_string_t`.
- *
- * These are special cases of the `refcount` of a string.
- */
-enum kn_string_kind_t {
-	/* The string is freed, and can be reclaimed */
-	KN_STRING_KIND_FREE = 0,
+/* The string is freed, and can be reclaimed */
 
-	/* The string is an internal string, such as `KN_STRING_EMPTY */
-	KN_STRING_KIND_INTERN = -1,
-
-	/* The string is not allocated, but it _should_ be duplicated if cloned. */
-	KN_STRING_KIND_STATIC = -2
-};
-
+#define KN_STRING_EMBEDDED_LENGTH ((sizeof(const char *) + sizeof(size_t)))
 /*
  * The string type in Knight.
  *
@@ -32,21 +20,24 @@ struct kn_string_t {
 	 * For strings that have a positive refcount, they're `malloc`'d, and should
 	 * be freed. For all other strings, their `kind` dictates what they are.
 	 */
+	int refcount;
+
 	union {
-		int refcount;
-		enum kn_string_kind_t kind;
+		char embedded[KN_STRING_EMBEDDED_LENGTH];
+
+		struct {
+			/*
+			 * The actual data associated with this string.
+			 */
+			char *allocated;
+
+			/*
+			 * The length of this string; This should e the same as 
+			 * `strlen(str)`, and is used for optimization.
+			 */
+			size_t length;
+		};
 	};
-
-	/*
-	 * The actual data associated with this string.
-	 */
-	const char *str;
-
-	/*
-	 * The length of this string; This should e the same as `strlen(str)`, and
-	 * is used for optimization.
-	 */
-	size_t length;
 };
 
 /*
@@ -61,7 +52,24 @@ extern struct kn_string_t KN_STRING_EMPTY;
  */
 void kn_string_startup(void);
 void kn_string_shutdown(void);
-struct kn_string_t *kn_string_new(const char *start, size_t length);
+
+
+
+#define KN_STRING_KIND_STATIC INT_MIN
+
+#define KN_STRING_NEW_STATIC() \
+	((struct kn_string_t) { .refcount = KN_STRING_KIND_STATIC })
+
+#define KN_STRING_NEW_EMBED(data) \
+	((struct kn_string_t) { \
+		.refcount = ~(sizeof(data) - 1), \
+		.embedded = data \
+	})
+
+size_t kn_string_length(const struct kn_string_t *string);
+char *kn_string_deref(struct kn_string_t *string);
+
+struct kn_string_t *kn_string_new(char *str, size_t length);
 
 void kn_string_free(struct kn_string_t *string);
 struct kn_string_t *kn_string_clone(struct kn_string_t *string);

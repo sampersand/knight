@@ -115,7 +115,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 
 	struct kn_string_t *string = allocate_string();
 
-	string->length = length;
+	*((size_t *) &string->length) = length;
 	string->refcount = 1;
 	string->str = str;
 

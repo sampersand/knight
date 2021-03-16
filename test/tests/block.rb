@@ -62,6 +62,7 @@ describe 'Block' do
 				assert_equal false, eval('CALL BLOCK FALSE')
 				assert_equal :null, eval('CALL BLOCK NULL')
 				assert_equal 1, eval('; = ident 1 : CALL BLOCK ident')
+				assert_equal 3, eval('CALL BLOCK + 1 2')
 			end
 		end
 =begin
