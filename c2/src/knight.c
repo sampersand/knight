@@ -7,6 +7,7 @@
 #include "env.h"      /* kn_env_startup, kn_env_shutdown */
 
 void kn_startup() {
+	kn_env_startup();
 	kn_string_startup();
 	kn_function_startup();
 }

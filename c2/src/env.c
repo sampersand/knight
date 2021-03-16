@@ -50,7 +50,6 @@ void kn_env_shutdown() {
 
 			if (bucket->variables[len].value != KN_UNDEFINED) {
 				// this cast is fine, since we own all variables.
-				free((char *) bucket->variables[len].name);
 				kn_value_free(bucket->variables[len].value);
 			}
 		}
@@ -119,5 +118,5 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 	variable->value = KN_UNDEFINED;
 	variable->name = identifier;
 
-	return &bucket->variables[bucket->length++];
+	return variable;
 }

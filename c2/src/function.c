@@ -11,7 +11,7 @@
 #include "env.h"      /* kn_env_fetch, kn_variable_t */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
 #include "string.h"   /* kn_string_t, kn_string_new, kn_string_free,
-                         kn_string_is_interned, KN_STRING_EMPTY */
+                         kn_string_clone_static, KN_STRING_EMPTY */
 #include "value.h"    /* kn_value_t, kn_number_t, KN_TRUE, KN_FALSE, KN_NULL,
                          KN_UNDEFINED, kn_value_new_number, kn_value_new_string,
                          kn_value_new_boolean, kn_value_clone, kn_value_free,
@@ -200,7 +200,7 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 	if (string->length == 0) {
 		putc('\n', stdout);
 	} else if ('\\' == *(penult = (char *) &string->str[string->length - 1])) {
-		assert(!kn_string_is_interned(string)); // verify its not interned.
+		assert(string->kind != KN_STRING_KIND_INTERN); // verify its not interned.
 
 		*penult = '\0'; // replace the trailing `\`, so it wont be printed
 		fputs(string->str, stdout);
@@ -223,13 +223,15 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	// return early if either 
 	if (lhs->length == 0) {
-		assert(kn_string_is_interned(lhs)); // empty string should be interned.
+		assert(lhs == &KN_STRING_EMPTY);
 
-		return kn_value_new_string(rhs);
+		return kn_value_new_string(kn_string_clone_static(rhs));
 	}
 
 	if (rhs->length == 0) {
-		assert(kn_string_is_interned(rhs)); // empty string should be interned.
+		// there's no coercion on the lhs, so it shouldn't be static.
+		assert(lhs->kind != KN_STRING_KIND_STATIC);
+		assert(rhs == &KN_STRING_EMPTY);
 
 		return kn_value_new_string(lhs);
 	}
@@ -282,15 +284,18 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 		if (lhs->length != 0) {
 			kn_string_free(lhs); 
 		} else { // otherwise, the string should e interned.
-			assert(kn_string_is_interned(lhs));
+			assert(lhs->kind == KN_STRING_KIND_INTERN);
 		}
 
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
 	// we don't have to clone it, as we were given the cloned copy.
-	if (times == 1)
+	if (times == 1) {
+		// there's no coercion on the lhs, so it shouldn't be static.
+		assert(lhs->kind != KN_STRING_KIND_STATIC);
 		return kn_value_new_string(lhs);
+	}
 
 	size_t length = lhs->length * times;
 	char *str = xmalloc(length + 1);

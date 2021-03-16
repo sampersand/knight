@@ -210,7 +210,9 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 	while (isident(ADVANCE_PEEK()));
 
 	char *identifier = strndup(start, *stream - start);
-	return kn_value_new_variable(kn_env_fetch(identifier, true));
+	struct kn_variable_t *variable = kn_env_fetch(identifier, true);
+	kn_value_t v = kn_value_new_variable(variable);
+	return v;
 }
 
 LABEL(string)

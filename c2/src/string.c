@@ -100,6 +100,11 @@ static inline struct kn_string_t *allocate_string() {
 # define KN_STRING_CACHE_LINESIZE (1<<14)
 #endif /* KN_STRING_CACHE_LINESIZE */
 
+struct kn_string_t KN_STRING_EMPTY = {
+	.str = "",
+	.length = 0,
+	.refcount = KN_STRING_KIND_INTERN
+};
 
 static struct kn_string_t *
 	string_cache[KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
@@ -120,7 +125,9 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	assert(length != 0);
 
-	return &string_cache[length - 1][kn_hash(str) & (KN_STRING_CACHE_LINESIZE - 1)];
+	unsigned long hash = kn_hash(str);
+
+	return &string_cache[length - 1][hash & (KN_STRING_CACHE_LINESIZE - 1)];
 }
 
 struct kn_string_t *kn_string_new(const char *str, size_t length) {
@@ -153,13 +160,8 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 	return string;
 }
 
-struct kn_string_t *kn_string_tail(struct kn_string_t *string, size_t start) {
-	return kn_string_new(strdup(&string->str[start]), string->length - start);
-}
-
 void kn_string_free(struct kn_string_t *string) {
 	assert(string != NULL);
-	// assert(string->refcount != 0);
 
 	if (0 < string->refcount) {
 		--string->refcount;
@@ -172,21 +174,30 @@ void kn_string_free(struct kn_string_t *string) {
 			free(string);
 		}
 #endif /* KN_ARENA_ALLOCATE */
-
+	} else {
+		assert(string->kind == KN_STRING_KIND_STATIC
+			|| string->kind == KN_STRING_KIND_INTERN
+			|| string->kind == KN_STRING_KIND_FREE);
 	}
 }
 
 struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
 	assert(string != NULL);
 
-	if (0 <= string->refcount)
+	if (string->kind == KN_STRING_KIND_STATIC)
+		return kn_string_new(strdup(string->str), string->length);
+
+	if (0 <= string->refcount) 
 		++string->refcount;
+	else
+		assert(string->kind == KN_STRING_KIND_INTERN);
 
 	return string;
 }
 
-#ifndef NDEBUG
-_Bool kn_string_is_interned(const struct kn_string_t* string) {
-	return string->refcount < 0;
+struct kn_string_t *kn_string_clone_static(struct kn_string_t *string) {
+	if (string->kind == KN_STRING_KIND_STATIC)
+		return kn_string_new(strdup(string->str), string->length);
+	else
+		return string;
 }
-#endif /* NDEBUG */

@@ -169,7 +169,6 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	kn_number_t ret = kn_value_to_number(ran);
-	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
@@ -193,18 +192,20 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
-	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 } 
 
 static struct kn_string_t *number_to_string(kn_number_t num) {
-	// note that `22` is the length of `LONG_MIN`, which is 21 characters
+	// note that `22` is the length of `-UINT64_MIN`, which is 21 characters
 	// long + the trailing `\0`.
 	static char buf[22];
+
 	// we explicitly note that refcount is `0`, as it's something that isnt
 	// allocated.
-	static struct kn_string_t number_string = { .refcount = 0 };
+	static struct kn_string_t number_string = {
+		.refcount = KN_STRING_KIND_STATIC
+	};
 
 	// should have been checked earlier.
 	assert(num != 0 && num != 1);
@@ -232,11 +233,11 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 
 struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	static struct kn_string_t BUILTIN_STRINGS[5] = {
-		{ .str = "false", .length = 5, .refcount = -1, },
-		{ .str = "0",     .length = 1, .refcount = -1, },
-		{ .str = "null",  .length = 4, .refcount = -1, },
-		{ .str = "1",     .length = 1, .refcount = -1, },
-		{ .str = "true",  .length = 4, .refcount = -1, },
+		{ .str = "false", .length = 5, .kind = KN_STRING_KIND_INTERN, },
+		{ .str = "0",     .length = 1, .kind = KN_STRING_KIND_INTERN, },
+		{ .str = "null",  .length = 4, .kind = KN_STRING_KIND_INTERN, },
+		{ .str = "1",     .length = 1, .kind = KN_STRING_KIND_INTERN, },
+		{ .str = "true",  .length = 4, .kind = KN_STRING_KIND_INTERN, },
 	};
 
 	assert(value != KN_UNDEFINED);
@@ -253,15 +254,15 @@ struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
 	struct kn_string_t *ret = kn_value_to_string(ran);
-	// printf(__FILE__ " %d\n", __LINE__);
 	kn_value_free(ran);
 	return ret;
 }
 
 void kn_value_dump(kn_value_t value) {
-	assert(value != KN_UNDEFINED);
-
 	switch (value) {
+	case KN_UNDEFINED:
+		printf("KN_UNDEFINED()");
+		return;
 	case KN_TRUE:
 		printf("Boolean(true)");
 		return;

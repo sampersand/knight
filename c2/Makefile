@@ -18,6 +18,8 @@ endif
 
 objects = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.c))
 
+.PHONY: all optimized clean
+
 all: $(EXE)
 
 optimized:
