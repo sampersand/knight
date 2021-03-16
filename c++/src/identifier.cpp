@@ -33,11 +33,10 @@ std::string Identifier::dump() const {
 }
 
 SharedValue Identifier::run() const {
-	if (ENVIRONMENT.count(name) == 0) {
-		throw Error("unknown identifier encountered: " + name);
-	}
-
-	return ENVIRONMENT[name];
+    if (auto it = ENVIRONMENT.find(name); it != ENVIRONMENT.end())
+        return it->second;
+    else
+        throw Error("unknown identifier encountered: " + name);
 }
 
 SharedValue Identifier::assign(SharedValue value) const {

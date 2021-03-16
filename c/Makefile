@@ -3,7 +3,7 @@ OBJDIR ?= obj
 EXE ?= knight
 
 CC = gcc 
-CFLAGS = -Wall -Wextra -Werror -Wpedantic
+CFLAGS = -Wall -Wextra -Werror -Wpedantic -O3 -DNDEBUG -flto -march=native
 override CFLAGS += -F$(SRCDIR)
 
 ifdef DEBUG
