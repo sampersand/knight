@@ -104,7 +104,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 
 	struct kn_string_t *string = allocate_string();
 
-	string->length = length;
+	*((size_t *) &string->length) = length;
 	string->refcount = 1;
 	string->str = str;
 
@@ -145,10 +145,6 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 	++string->refcount;
 
 	return string;
-}
-
-struct kn_string_t *kn_string_tail(struct kn_string_t *string, size_t start) {
-	return kn_string_new(strdup(&string->str[start]), string->length - start);
 }
 
 void kn_string_free(struct kn_string_t *string) {

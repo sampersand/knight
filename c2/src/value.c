@@ -225,7 +225,7 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 		*--ptr = '-';
 
 	number_string.str = ptr;
-	number_string.length = &buf[sizeof(buf) - 1] - ptr;
+	*((size_t *) &number_string.length) = &buf[sizeof(buf) - 1] - ptr;
 
 	return &number_string;
 }

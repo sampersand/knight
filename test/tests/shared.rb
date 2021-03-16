@@ -1,6 +1,6 @@
 module Kn
 	module Test
-		Identifier = Struct.new :ident
+		Variable = Struct.new :ident
 		Function = Struct.new :ast
 	end
 end
@@ -23,7 +23,7 @@ module Kn::Test::Shared
 		when /\ABoolean\((true|false)\)\z/ then $1 == 'true'
 		when /\ANumber\(((?:-(?!0\)))?\d+)\)\z/ then $1.to_i # `-0` is invalid.
 		when /\AFunction\((.*?)\)\z/m then Kn::Test::Function.new $1
-		when /\AIdentifier\(([_a-z][_a-z0-9]*)\)\z/ then Kn::Test::Identifier.new $1
+		when /\AIdentifier\(([_a-z][_a-z0-9]*)\)\z/ then Kn::Test::Variable.new $1
 		else fail "bad expression: #{expr.inspect}"
 		end
 	end
