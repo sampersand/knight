@@ -447,11 +447,25 @@ Note that, unlike most programming languages, Knight does not have a builtin way
 ### 4.4.1 `IF(boolean, unevaluated, unevaluated)`
 This function will evaluate and return the second argument if the first argument is truthy. If the first argument is falsey, the third argument is evaluated and returned.
 
-
 ### 4.4.2 `GET(string, number, number)`
+This function is used to get a substring of the first argument. The substring should start at the second argument and be the length of the third. Indexing starts at `0`---that is, `GET "abc" 0 1` should return the `"a"`.
+
+If either the starting point or the length are negative numbers, this function is undefined.
+If the starting index is larger than the length of the string, the behaviour is undefined.
+If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
+To put it more concretely, unless the range `[start, start+length]` is entirely contained within the string, this function's return value is undefined. 
+
+For example, `GET "abcd" 1 2` would get the substring `"bc"`.
 
 ## 4.5 Quaternary (Arity 4)
 ### 4.5.1 `SUBSTITUTE(string, number, number, string)`
+This function is used to substitute the range `[start, start+length]` (where `start` is the second argument and `length` is the third)  of the first argument with the last. Note that they do not have to be the same length---the string should grow or shrink accordingly. Indexing starts at `0`---that is, `SET "abc" 0 1 "2"` should return the `"2bc"`. Also note that this function should return a new string---the original one should not be modified.
+
+If either the starting point or the length are negative numbers, this function is undefined.
+If the starting index is larger than the length of the string, the behaviour is undefined.
+If the ending index (ie `start+length`) is larger than the length of the string, the behaviour is undefined.
+
+For example, `SET "abcd" 1 2 "3"` would return the string `"a3d"`.
 
 # 5 Extensions
 All functions starting with `X` are explicitly reserved. (More details to come.)
