@@ -100,16 +100,11 @@ static inline struct kn_string_t *allocate_string() {
 # define KN_STRING_CACHE_LINESIZE (1<<14)
 #endif /* KN_STRING_CACHE_LINESIZE */
 
-struct kn_string_t KN_STRING_EMPTY = {
-	.str = "",
-	.length = 0,
-	.refcount = KN_STRING_KIND_INTERN
-};
 
 static struct kn_string_t *
 	string_cache[KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
 
-static struct kn_string_t *create_string(const char *str, size_t length) {
+static struct kn_string_t *create_string(char *str, size_t length) {
 	assert(strlen(str) == length);
 	assert(length != 0); // should have already been checked before.
 
@@ -117,7 +112,7 @@ static struct kn_string_t *create_string(const char *str, size_t length) {
 
 	*((size_t *) &string->length) = length;
 	string->refcount = 1;
-	string->str = str;
+	string->allocated = str;
 
 	return string;
 }
@@ -130,7 +125,22 @@ static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	return &string_cache[length - 1][hash & (KN_STRING_CACHE_LINESIZE - 1)];
 }
 
-struct kn_string_t *kn_string_new(const char *str, size_t length) {
+struct kn_string_t KN_STRING_EMPTY = KN_STRING_NEW_EMBED("");
+
+static _Bool kn_string_is_embed(const struct kn_string_t *string) {
+	return string->refcount < 0;
+}
+
+size_t kn_string_length(const struct kn_string_t *string) {
+	return kn_string_is_embed(string) ? ~string->refcount : string->length;
+}
+
+char *kn_string_deref(struct kn_string_t *string) {
+	return kn_string_is_embed(string) ? string->embedded : string->allocated;
+}
+
+
+struct kn_string_t *kn_string_new(char *str, size_t length) {
 	// sanity check for inputs.
 	assert(0 <= (ssize_t) length);
 	assert(str != NULL);
@@ -149,7 +159,7 @@ struct kn_string_t *kn_string_new(const char *str, size_t length) {
 	struct kn_string_t **cacheline = get_cache_slot(str, length);
 	struct kn_string_t *string;
 
-	if (*cacheline == NULL || strcmp((string = *cacheline)->str, str))
+	if (*cacheline == NULL || strcmp((string = *cacheline)->allocated, str))
 		return *cacheline = create_string(str, length);
 
 	free((char *) str); // we don't need this string anymore, get rid of it.
@@ -169,35 +179,30 @@ void kn_string_free(struct kn_string_t *string) {
 #ifndef KN_ARENA_ALLOCATE
 		if (!string->refcount) {
 			if (string->length <= KN_STRING_CACHE_MAXLEN)
-				*get_cache_slot(string->str, string->length) = 0;
-			free((char *) string->str);
+				*get_cache_slot(string->allocated, string->length) = 0;
+			free((char *) string->allocated);
 			free(string);
 		}
 #endif /* KN_ARENA_ALLOCATE */
-	} else {
-		assert(string->kind == KN_STRING_KIND_STATIC
-			|| string->kind == KN_STRING_KIND_INTERN
-			|| string->kind == KN_STRING_KIND_FREE);
+
 	}
 }
 
 struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
 	assert(string != NULL);
 
-	if (string->kind == KN_STRING_KIND_STATIC)
-		return kn_string_new(strdup(string->str), string->length);
+	if (string->refcount == KN_STRING_KIND_STATIC)
+		return kn_string_new(strdup(string->allocated), string->length);
 
 	if (0 <= string->refcount) 
 		++string->refcount;
-	else
-		assert(string->kind == KN_STRING_KIND_INTERN);
 
 	return string;
 }
 
 struct kn_string_t *kn_string_clone_static(struct kn_string_t *string) {
-	if (string->kind == KN_STRING_KIND_STATIC)
-		return kn_string_new(strdup(string->str), string->length);
+	if (string->refcount == KN_STRING_KIND_STATIC)
+		return kn_string_new(strdup(string->allocated), string->length);
 	else
 		return string;
 }

@@ -127,9 +127,9 @@ kn_value_t kn_value_new_ast(struct kn_ast_t *ast) {
 	return ((uint64_t) ast) | KN_TAG_AST;
 }
 
-static kn_number_t string_to_number(const struct kn_string_t *value) {
+static kn_number_t string_to_number(struct kn_string_t *value) {
 	kn_number_t ret = 0;
-	const char *ptr = value->str;
+	const char *ptr = kn_string_deref(value);
 
 	// strip leading whitespace.
 	while (isspace(*ptr))
@@ -200,12 +200,7 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 	// note that `22` is the length of `-UINT64_MIN`, which is 21 characters
 	// long + the trailing `\0`.
 	static char buf[22];
-
-	// we explicitly note that refcount is `0`, as it's something that isnt
-	// allocated.
-	static struct kn_string_t number_string = {
-		.refcount = KN_STRING_KIND_STATIC
-	};
+	static struct kn_string_t number_string = KN_STRING_NEW_STATIC();
 
 	// should have been checked earlier.
 	assert(num != 0 && num != 1);
@@ -225,19 +220,19 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 	if (is_neg)
 		*--ptr = '-';
 
-	number_string.str = ptr;
-	*((size_t *) &number_string.length) = &buf[sizeof(buf) - 1] - ptr;
+	number_string.allocated = ptr;
+	number_string.length = &buf[sizeof(buf) - 1] - ptr;
 
 	return &number_string;
 }
 
 struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	static struct kn_string_t BUILTIN_STRINGS[5] = {
-		{ .str = "false", .length = 5, .kind = KN_STRING_KIND_INTERN, },
-		{ .str = "0",     .length = 1, .kind = KN_STRING_KIND_INTERN, },
-		{ .str = "null",  .length = 4, .kind = KN_STRING_KIND_INTERN, },
-		{ .str = "1",     .length = 1, .kind = KN_STRING_KIND_INTERN, },
-		{ .str = "true",  .length = 4, .kind = KN_STRING_KIND_INTERN, },
+		KN_STRING_NEW_EMBED("false"),
+		KN_STRING_NEW_EMBED("0"),
+		KN_STRING_NEW_EMBED("null"),
+		KN_STRING_NEW_EMBED("1"),
+		KN_STRING_NEW_EMBED("true"),
 	};
 
 	assert(value != KN_UNDEFINED);
@@ -281,7 +276,7 @@ void kn_value_dump(kn_value_t value) {
 
 	switch (KN_TAG(value)) {
 	case KN_TAG_STRING:
-		printf("String(%s)", kn_value_as_string(value)->str);
+		printf("String(%s)", kn_string_deref(kn_value_as_string(value)));
 		return;
 	case KN_TAG_VARIABLE:
 		printf("Identifier(%s)", kn_value_as_variable(value)->name);

@@ -67,7 +67,7 @@ void Function::register_function(char name, size_t arity, funcptr_t func) {
 	FUNCTIONS.insert(std::make_pair(name, std::make_pair(func, arity)));
 }
 
-#define REG_FUNC(name, len, body) register_function(name, len, [](args_t const& args) -> SharedValue body);
+#define REG_FUNC(name, len, body) Function::register_function(name, len, [](args_t const& args) -> SharedValue body);
 
 void Function::initialize(void) {
 	srand(time(NULL)); // seed `R`'s random number.

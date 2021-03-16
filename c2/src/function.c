@@ -11,7 +11,8 @@
 #include "env.h"      /* kn_env_fetch, kn_variable_t */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
 #include "string.h"   /* kn_string_t, kn_string_new, kn_string_free,
-                         kn_string_clone_static, KN_STRING_EMPTY */
+                         kn_string_clone_static, KN_STRING_EMPTY,
+                         kn_string_deref, kn_string_length */
 #include "value.h"    /* kn_value_t, kn_number_t, KN_TRUE, KN_FALSE, KN_NULL,
                          KN_UNDEFINED, kn_value_new_number, kn_value_new_string,
                          kn_value_new_boolean, kn_value_clone, kn_value_free,
@@ -77,7 +78,8 @@ KN_FUNCTION_DECLARE(random, 0, 'R') {
 #ifdef KN_EXT_VALUE
 KN_FUNCTION_DECLARE(value, 1, 'V') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
-	struct kn_variable_t *variable = kn_env_fetch(string->str, false);
+	struct kn_variable_t *variable =
+		kn_env_fetch(kn_string_deref(string), false);
 
 	kn_string_free(string);
 
@@ -92,7 +94,7 @@ KN_FUNCTION_DECLARE(value, 1, 'V') {
 
 KN_FUNCTION_DECLARE(eval, 1, 'E') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
-	kn_value_t ret = kn_run(string->str);
+	kn_value_t ret = kn_run(kn_string_deref(string));
 
 	kn_string_free(string);
 
@@ -114,11 +116,12 @@ KN_FUNCTION_DECLARE(call, 1, 'C') {
 
 KN_FUNCTION_DECLARE(system, 1, '`') {
 	struct kn_string_t *command = kn_value_to_string(args[0]);
-	FILE *stream = popen(command->str, "r");
+	const char *str = kn_string_deref(command);
+	FILE *stream = popen(str, "r");
 
 #ifndef KN_RECKLESS
 	if (stream == NULL)
-		die("unable to execute command '%s'.", command->str);
+		die("unable to execute command '%s'.", str);
 #endif /* KN_RECKLESS */
 
 	kn_string_free(command);
@@ -166,7 +169,7 @@ KN_FUNCTION_DECLARE(not, 1, '!') {
 
 KN_FUNCTION_DECLARE(length, 1 ,'L') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
-	size_t length = string->length;
+	size_t length = kn_string_length(string);
 
 	kn_string_free(string);
 
@@ -183,31 +186,23 @@ KN_FUNCTION_DECLARE(dump, 1 ,'D') {
 
 KN_FUNCTION_DECLARE(output, 1, 'O') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
-
-	// right here we're casting away the const.
-	//
-	// this is because we might need to replace the penult character
-	// with a `\0` if it's a backslash to prevent the printing of a
-	// newline. however, we replace it later, so it's ok. (assuming the
-	// input string isnt constant and doesn't have a `\\` in it, but no interned
-	// strings do, so we're ok.)
+	size_t length = kn_string_length(string);
+	char *str = kn_string_deref(string);
 	char *penult;
 
 #ifndef KN_RECKLESS
 	clearerr(stdout);
 #endif /* KN_RECKLESS */
 
-	if (string->length == 0) {
+	if (length == 0) {
 		putc('\n', stdout);
-	} else if ('\\' == *(penult = (char *) &string->str[string->length - 1])) {
-		assert(string->kind != KN_STRING_KIND_INTERN); // verify its not interned.
-
+	} else if ('\\' == *(penult = &str[length - 1])) {
 		*penult = '\0'; // replace the trailing `\`, so it wont be printed
-		fputs(string->str, stdout);
+		fputs(str, stdout);
 		*penult = '\\'; // ...and then restore it.
 		fflush(stdout);
 	} else {
-		puts(string->str);
+		puts(str);
 	}
 
 #ifndef KN_RECKLESS
@@ -221,27 +216,27 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 }
 
 static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
+	size_t lhslen, rhslen;
+
 	// return early if either 
-	if (lhs->length == 0) {
+	if ((lhslen = kn_string_length(lhs)) == 0) {
 		assert(lhs == &KN_STRING_EMPTY);
 
 		return kn_value_new_string(kn_string_clone_static(rhs));
 	}
 
-	if (rhs->length == 0) {
-		// there's no coercion on the lhs, so it shouldn't be static.
-		assert(lhs->kind != KN_STRING_KIND_STATIC);
+	if ((rhslen = kn_string_length(rhs)) == 0) {
 		assert(rhs == &KN_STRING_EMPTY);
 
 		return kn_value_new_string(lhs);
 	}
 
-	size_t length = lhs->length + rhs->length;
+	size_t length = lhslen + rhslen;
 	char *str = xmalloc(length + 1);
 
 	// concatenate the two strings
-	memcpy(str, lhs->str, lhs->length);
-	memcpy(str + lhs->length, rhs->str, rhs->length);
+	memcpy(str, kn_string_deref(lhs), lhslen);
+	memcpy(str + lhslen, kn_string_deref(rhs), rhslen);
 
 	str[length] = '\0';
 
@@ -278,30 +273,28 @@ KN_FUNCTION_DECLARE(sub, 2, '-') {
 }
 
 static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
-	if (lhs->length == 0 || times == 0) {
+	size_t lhslen = kn_string_length(lhs);
+
+	if (lhslen == 0 || times == 0) {
 
 		// if the string is not empty, free it.
-		if (lhs->length != 0) {
+		if (lhslen != 0)
 			kn_string_free(lhs); 
-		} else { // otherwise, the string should e interned.
-			assert(lhs->kind == KN_STRING_KIND_INTERN);
-		}
+		else 
+			assert(lhs == &KN_STRING_EMPTY);
 
 		return kn_value_new_string(&KN_STRING_EMPTY);
 	}
 
 	// we don't have to clone it, as we were given the cloned copy.
-	if (times == 1) {
-		// there's no coercion on the lhs, so it shouldn't be static.
-		assert(lhs->kind != KN_STRING_KIND_STATIC);
+	if (times == 1)
 		return kn_value_new_string(lhs);
-	}
 
-	size_t length = lhs->length * times;
+	size_t length = lhslen * times;
 	char *str = xmalloc(length + 1);
 
-	for (char *ptr = str; times != 0; --times, ptr += lhs->length)
-		memcpy(ptr, lhs->str, lhs->length);
+	for (char *ptr = str; times != 0; --times, ptr += lhslen)
+		memcpy(ptr, kn_string_deref(lhs), lhslen);
 
 	str[length] = '\0';
 
@@ -394,7 +387,8 @@ KN_FUNCTION_DECLARE(eql, 2, '?') {
 	struct kn_string_t *lstr = kn_value_as_string(lhs);
 	struct kn_string_t *rstr = kn_value_as_string(rhs);
 
-	eql = lstr->length == rstr->length && !strcmp(lstr->str, rstr->str);
+	eql = kn_string_length(lstr) == kn_string_length(rstr) && 
+		!strcmp(kn_string_deref(lstr), kn_string_deref(rstr));
 
 free_and_return:
 
@@ -412,7 +406,7 @@ KN_FUNCTION_DECLARE(lth, 2, '<') {
 		struct kn_string_t *lstr = kn_value_as_string(lhs);
 		struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
-		less = strcmp(lstr->str, rstr->str) < 0;
+		less = strcmp(kn_string_deref(lstr), kn_string_deref(rstr)) < 0;
 
 		kn_string_free(lstr);
 		kn_string_free(rstr);
@@ -435,7 +429,7 @@ KN_FUNCTION_DECLARE(gth, 2, '>') {
 		struct kn_string_t *lstr = kn_value_as_string(lhs);
 		struct kn_string_t *rstr = kn_value_to_string(args[1]);
 
-		more = strcmp(lstr->str, rstr->str) > 0;
+		more = strcmp(kn_string_deref(lstr), kn_string_deref(rstr)) > 0;
 
 		kn_string_free(lstr);
 		kn_string_free(rstr);
@@ -509,7 +503,8 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 	} else {
 		// otherwise, evaluate the expression, convert to a string,
 		// and then use that as the variable.
-		variable = kn_env_fetch(kn_value_to_string(args[0])->str, false);
+		variable =
+			kn_env_fetch(kn_string_deref(kn_value_to_string(args[0])), false);
 		ret = kn_value_run(args[1]);
 	}
 #endif /* KN_EXT_EQL_INTERPOLATE */
@@ -539,25 +534,29 @@ KN_FUNCTION_DECLARE(if, 3, 'I') {
 }
 
 KN_FUNCTION_DECLARE(get, 3, 'G') {
-	struct kn_string_t *substring;
-	struct kn_string_t *string = kn_value_to_string(args[0]);
-	size_t start = (size_t) kn_value_to_number(args[1]);
-	size_t length = (size_t) kn_value_to_number(args[2]);
+	struct kn_string_t *string, *substring;
+	size_t start, length, stringlen;
+
+	string = kn_value_to_string(args[0]);
+	start = (size_t) kn_value_to_number(args[1]);
+	length = (size_t) kn_value_to_number(args[2]);
+
+	stringlen = kn_string_length(string);
 
 	// if we're getting past the end of the array, simply return the
 	// empty string.
-	if (string->length <= start) {
+	if (stringlen <= start) {
 		substring = &KN_STRING_EMPTY;
 		goto free_and_return;
 	}
 
 	// if the total length is too much, simply wrap around to the end.
-	if (string->length <= start + length)
-		length = string->length - start;
+	if (stringlen <= start + length)
+		length = stringlen - start;
 
 	char *substr = xmalloc(length + 1);
 
-	memcpy(substr, string->str + start, length);
+	memcpy(substr, kn_string_deref(string) + start, length);
 	substr[length] = '\0';
 
 	substring = kn_string_new(substr, length);
@@ -570,35 +569,42 @@ free_and_return:
 }
 
 KN_FUNCTION_DECLARE(substitute, 4, 'S') {
-	struct kn_string_t *string = kn_value_to_string(args[0]);
-	size_t start = (size_t) kn_value_to_number(args[1]);
-	size_t amnt = (size_t) kn_value_to_number(args[2]);
-	struct kn_string_t *substr = kn_value_to_string(args[3]);
+	struct kn_string_t *string, *substring;
+	size_t start, amnt, length, stringlength, substringlength;
+
+	string = kn_value_to_string(args[0]);
+	start = (size_t) kn_value_to_number(args[1]);
+	amnt = (size_t) kn_value_to_number(args[2]);
+	substring = kn_value_to_string(args[3]);
+
+	stringlength = kn_string_length(string);
 
 #ifndef KN_RECKLESS
 	// if it's out of bounds, die.
-	if (string->length < start)
+	if (stringlength < start)
 		die("index '%zu' out of bounds (length=%zu)", start,
-			string->length);
+			stringlength);
 #endif /* KN_RECKLESS */
 
-	if (string->length <= start + amnt)
-		amnt = string->length - start;
+	if (stringlength <= start + amnt)
+		amnt = stringlength - start;
 
-	size_t length = string->length - amnt + substr->length;
+	substringlength = kn_string_length(substring);
+
+	length = stringlength - amnt + substringlength;
 	char *str = xmalloc(length + 1);
 	str[length] = '\0';
 
 	char *ptr = str;
 
-	memcpy(ptr, string->str, start);
+	memcpy(ptr, kn_string_deref(string), start);
 	ptr += start;
-	memcpy(ptr, substr->str, substr->length);
-	ptr += substr->length;
-	memcpy(ptr, string->str + start + amnt, string->length - amnt);
+	memcpy(ptr, kn_string_deref(substring), substringlength);
+	ptr += substringlength;
+	memcpy(ptr, kn_string_deref(string) + start + amnt, stringlength - amnt);
 
 	kn_string_free(string);
-	kn_string_free(substr);
+	kn_string_free(substring);
 
 	return kn_value_new_string(kn_string_new(str, length));
 }

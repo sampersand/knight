@@ -62,7 +62,7 @@ void kn_string_shutdown(void);
 
 #define KN_STRING_NEW_EMBED(data) \
 	((struct kn_string_t) { \
-		.refcount = ~(sizeof(data) - 1), \
+		.refcount = ~(((int) sizeof(data)) - 1), \
 		.embedded = data \
 	})
 
