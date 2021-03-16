@@ -6,7 +6,7 @@
 #include "value.h"
 #include "shared.h"
 
-char *read_file(const char *filename) {
+static char *read_file(const char *filename) {
 	FILE *file = fopen(filename, "r");
 
 	if (file == NULL) {
@@ -21,12 +21,10 @@ char *read_file(const char *filename) {
 		size_t nchars = fread(&contents[len], 1, cap - len, file);
 
 		if (nchars == 0) {
-			if (feof(stdin)) {
+			if (feof(stdin))
 				break;
-			} else {
-				die("unable to line in file '%s': %s'",
-					filename, strerror(errno));
-			}
+
+			die("unable to line in file '%s': %s'", filename, strerror(errno));
 		}
 
 		len += nchars;
@@ -46,8 +44,8 @@ int main(int argc, const char *argv[]) {
 	if (argc != 3)
 		goto usage;
 
- 	if (strlen(argv[1]) != 2 || argv[1][0] != '-')
- 		goto usage;
+	if (strlen(argv[1]) != 2 || argv[1][0] != '-')
+		goto usage;
 
 	const char *string;
 
@@ -62,12 +60,13 @@ int main(int argc, const char *argv[]) {
 		goto usage;
 	}
 
-	kn_init();
-	printf(__FILE__ " %d\n", __LINE__);
+	kn_startup(0);
 	kn_value_free(kn_run(string));
-	kn_free();
+	kn_shutdown();
 
 	return 0;
+
 usage:
+
 	die("usage: %s [-e program] [-f file]", argv[0]);
 }

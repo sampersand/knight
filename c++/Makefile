@@ -10,13 +10,16 @@ override CXXFLAGS += -F$(SRCDIR)
 ifdef DEBUG
 override CXXFLAGS += -g -fsanitize=address,undefined
 else
-CEXEFLAGS += -Wl,-stack_size,160000000 -O3 -DNDEBUG
+CEXEFLAGS += -O3 -DNDEBUG -flto -march=native
 endif
 
 # lower case because it's local to makefile.
 objects = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.cpp))
 
 all: $(EXE)
+
+optimized:
+	$(CXX) $(CXXFLAGS) $(CEXEFLAGS) -o $(EXE) $(wildcard $(SRCDIR)/*.cpp)
 
 $(EXE): $(objects)
 	$(CXX) $(CXXFLAGS) $(CEXEFLAGS) -o $@ $+

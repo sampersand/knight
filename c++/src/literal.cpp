@@ -1,5 +1,6 @@
-#include <iostream>
 #include "literal.hpp"
+#include <iostream>
+#include <algorithm>
 #include <memory>
 #include <inttypes.h>
 

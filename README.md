@@ -11,7 +11,8 @@ The following is the list of all languages that's supported. All in-progress imp
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
 | [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
-| [C++](c++) | X | X | X | X | Fully Functional, works with C++17 |
+| [C++](c++) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |
+| [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
 | [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
 | [Knight](knight.kn) |   |   | X | X | Yes, this is a Knight interpreter, written in Knight; It's yet to be tested for spec compliance, though. |
@@ -25,27 +26,28 @@ The following is the list of all languages that's supported. All in-progress imp
 | [Ruby](../ruby/ruby) | X |   | X | X | A hacky version currently exists; a more sophisticated one is being worked on. |
 | [Rust](../rust/rust) | X |   | X | X | Simple implementation without comments. It intentionally captures all UB, but eventually will have an efficient implementation. |
 | Java |   |   |   |   | Planned; I know Java already, so this should be fairly simple. |
-| [C#](../C#/C#) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
 | SML |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | Racket |   |   |   |   | Planned. I used this in college, and enjoyed it. |
 | LaTeX |   |   |   |   | Eventually; Because why not? I did a lot of LaTeX in college. |
 | Scratch |   |   |   |   | My first language! Might be fun to implement it in this |
 
 ## Time Comparisons
-The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. I used the command
-```sh
-  time <implementation> -f knight.kn <<<$'knight.kn\nexamples/fizzbuzz.kn'`
-```
-
+The following able describes how fast each implementation (in `user` time) was at running `examples/fizzbuzz.kn` in `knight.kn` in `knight.kn` in their implementation, on my machine. You can test it yourself via the [timeit](timeit) script provided.
 
 Note that these are simply benchmarks of _my_ implementations of Knight, and not a reflection of the efficiency of the languages themselves.
 
 |  Language  |  Time   | `<implementation>` | Notes |
 | ---------- |--------:|--------------------|-------|
-| C          | 19.10s  | `c/knight`         | Compiled using `make optimized`; See [c/Makefile](c/Makefile) for details. |
-| C++        | 166.76s | `c++/knight`       | The virtual functions are a bottleneck |
-| JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | The default stack size was too small, so we had to bump it up. |
+| C          |   7.01s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
+| C#         |  13.75s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
+| C++        |  25.09s | `c++/knight`       | The hashmap is the bottleneck; todo: pick a better hashmap implementation. |
+| Rust       |  28.99s | `rust/target/release/knight` | Built with `cargo build --release` and the `reckless` flag. |
+| JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | Default stack's too small, so we had to bump it up. |
 | PHP        |  64.73s | `php/knight.php`   | |
+| Ruby       | 110.04s | `ruby/knight.rb`   | Default stack's too small, so `RUBY_THREAD_VM_STACK_SIZE=10000000` was needed. |
+| Python     | 236.01s | `python/main.py`   | Default stack's too small, so `setrecursionlimit(100000)` was needed. |
+| Perl       | 436.55s | `perl/bin/knight.pl` | |
+
 
 
 # Examples
@@ -61,11 +63,11 @@ Here's some examples of the syntax to give you a feel for it:
 ; WHILE (| (< guess secret) (> guess secret)) # while guess != s:
   ; = guess (+ 0 (PROMPT '> '))               #   guess = int(prompt('> '))
   ; = nguess (+ nguess 1)                     #   nguess += 1
-    OUTPUT (                                  #   print(
+  : OUTPUT (                                  #   print(
      IF (< guess secret) 'too low'            #     if guess < secret: 'too low'
      IF (> guess secret) 'too high'           #     if guess > secret: 'too high'
                          'correct')           #     else: 'correct')
-OUTPUT (+ 'tries: ' nguess)                   # print('tries: ' + n)
+: OUTPUT (+ 'tries: ' nguess)                 # print('tries: ' + n)
 ```
 
 ## Fibonacci
