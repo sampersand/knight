@@ -145,7 +145,6 @@ All implementations must be able to represent a minimum integral value of `-2147
 - **string**: In string contexts, numbers are converted to their base-10 representation. Negative numbers shall have a `-` prepended to the beginning of the string. (e.g. `0` -> `"0"`, `123` -> `"123"`, `- 0 12` => `"-12"`)
 - **boolean**: In boolean contexts, nonzero numbers shall become `TRUE`, whereas zero shall become `FALSE`.
 
-
 ## 2.2 String
 Strings in Knight are like strings in other languages, albeit a bit simpler: They're immutable (like all types within Knight), and can only represent a specific subset of the ASCII character set. 
 
@@ -171,7 +170,7 @@ That is, the following is the list of allowed characters:
 - Newline (`0x0a`, ie `\n`)
 - Carriage return (`0x0d`, ie `\r`)
 - Space (`0x20`, ie a space---` `)
-- **numeric**: In numeric contexts, all leading whitespace (i.e. tabs (`0x09`), newlines (`0x0a`), carriage returns (`0x0d`), and spaces (`0x20`)) shall be stripped. An optional `-` may then appear to force the number to be negative. Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
+- **numeric**: In numeric contexts, all leading whitespace (i.e. tabs (`0x09`), newlines (`0x0a`), carriage returns (`0x0d`), and spaces (`0x20`)) shall be stripped. An optional `-` may then appear to force the number to be negative. (A `+` may appear instead of a `-`, and it should simply be ignored.) Then, as many consecutive digits as possible are read, and then interpreted as if it were a number literal. In regex terms, It would be capture group of `^\s*(-?\d*)`. Note that if no valid digits are found after stripping whitespace and the optional `-`, the number `0` shall be used.
 - **string**: In string contexts, the string itself is returned.
 - **boolean**: In boolean contexts, nonempty strings shall become `TRUE`, whereas empty strings shall become `FALSE`.
 
@@ -397,13 +396,13 @@ If the first argument is a number, the second will be coerced to a number and th
 If the first argument is not a number, the return value of this function is undefined.
 If the second argument is not a positive number, the return value is undefined.
 
-For example, `% 7 3` will return `1`, and `% 7 "-5"` will return `-2`.
+For example, `% 7 3` will return `1`, and `% (- 0 7) 5` will return `-2`.
 
 ### 4.3.6 `^(unchanged, number)`
 If the first argument is a number, the second will be coerced to a number and the resulting exponentiation will be returned. Note that for an exponent of `0`, the return value should always be `1`.
 
 If the first argument is not a number, the return value of this function is undefined.
-If the second argument is negative, the return value is undefined. (This is in contrast to "normal" math, where you can, eg, raise `-1` to a negative power).
+If the second argument is negative, the return value is undefined. ~~(This is in contrast to "normal" math, where you can, eg, raise `-1` to a negative power).~~
 
 ### 4.3.7 `<(unchanged, coerce)`
 The return value of this function depends on its first argument's type:

@@ -50,7 +50,7 @@ describe 'Block' do
 		describe 'CALL' do
 			it 'executes its body' do
 				assert_equal 12, eval('CALL BLOCK + 5 7')
-				assert_equal 13, eval('; = foo BLOCK bar ; = bar 13 : CALL bar')
+				assert_equal 18, eval('; = foo BLOCK + bar 5 ; = bar 13 : CALL foo')
 			end
 
 
