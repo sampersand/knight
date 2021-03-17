@@ -187,7 +187,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 		return 1;
 
 	if (kn_value_is_string(value))
-		return kn_value_as_string(value)->length != 0;
+		return kn_string_length(kn_value_as_string(value)) != 0;
 
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
@@ -220,8 +220,8 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 	if (is_neg)
 		*--ptr = '-';
 
-	number_string.allocated = ptr;
-	number_string.length = &buf[sizeof(buf) - 1] - ptr;
+	number_string.alloc.str = ptr;
+	number_string.alloc.length = &buf[sizeof(buf) - 1] - ptr;
 
 	return &number_string;
 }

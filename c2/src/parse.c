@@ -5,7 +5,7 @@
 
 #include "parse.h"    /* prototypes, kn_value_t, kn_number_t, kn_ast_t,
                          kn_value_new_number, kn_value_new_variable, 
-                         kn_value_new_string, kn_value_new_ast, KN_STRING_EMPTY,
+                         kn_value_new_string, kn_value_new_ast, kn_string_empty,
                          kn_string_new, KN_UNDEFINED, KN_TRUE, KN_FALSE, KN_NULL
                          */
 #include "shared.h"   /* xmalloc, xrealloc, die */
@@ -18,6 +18,10 @@ static int iswhitespace(char c) {
 		|| c == '(' || c == ')'
 		|| c == '[' || c == ']'
 		|| c == '{' || c == '}';
+}
+
+static int iswordfunc(char c) {
+	return isupper(c) || c == '_';
 }
 
 // Check to see if the character is an identifier character.
@@ -235,24 +239,28 @@ CASES2('\'', '\"')
 
 	// optimize for the empty string
 	if (!length)
-		return kn_value_new_string(&KN_STRING_EMPTY);
+		return kn_value_new_string(&kn_string_empty);
 
-	return kn_value_new_string(kn_string_new(strndup(start, length), length));
+	struct kn_string_t *string = kn_string_alloc(length);
+	memcpy(kn_string_deref(string), start, length);
+
+	kn_string_deref(string)[length] = '\0';
+	return kn_value_new_string(string);
 }
 
 LABEL(literal_true)
 CASES1('T')
-	while(isupper(ADVANCE_PEEK()));
+	while(iswordfunc(ADVANCE_PEEK()));
 	return KN_TRUE;
 
 LABEL(literal_false)
 CASES1('F')
-	while(isupper(ADVANCE_PEEK()));
+	while(iswordfunc(ADVANCE_PEEK()));
 	return KN_FALSE;
 
 LABEL(literal_null)
 CASES1('N')
-	while(isupper(ADVANCE_PEEK()));
+	while(iswordfunc(ADVANCE_PEEK()));
 	return KN_NULL;
 
 SYMBOL_FUNC(not, '!');
@@ -289,7 +297,7 @@ WORD_FUNC(value, 'V');
 #endif /* KN_EXT_VALUE */
 
 parse_kw_function:
-	while (isupper(ADVANCE_PEEK()));
+	while (iswordfunc(ADVANCE_PEEK()));
 
 	// fallthrough to parsing a normal function
 

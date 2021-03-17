@@ -11,7 +11,7 @@
 #include "env.h"      /* kn_env_fetch, kn_variable_t */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
 #include "string.h"   /* kn_string_t, kn_string_new, kn_string_free,
-                         kn_string_clone_static, KN_STRING_EMPTY,
+                         kn_string_clone_static, kn_string_empty,
                          kn_string_deref, kn_string_length */
 #include "value.h"    /* kn_value_t, kn_number_t, KN_TRUE, KN_FALSE, KN_NULL,
                          KN_UNDEFINED, kn_value_new_number, kn_value_new_string,
@@ -57,7 +57,7 @@ KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 			perror("unable to read line");
 #endif /* KN_RECKLESS */
 
-		return kn_value_new_string(&KN_STRING_EMPTY);
+		return kn_value_new_string(&kn_string_empty);
 	}
 
 	assert(0 <= len);
@@ -176,7 +176,7 @@ KN_FUNCTION_DECLARE(length, 1 ,'L') {
 	return kn_value_new_number((kn_number_t) length);
 }
 
-KN_FUNCTION_DECLARE(dump, 1 ,'D') {
+KN_FUNCTION_DECLARE(dump, 1, 'D') {
 	kn_value_t ret = kn_value_run(args[0]);
 
 	kn_value_dump(ret);
@@ -220,30 +220,26 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 
 	// return early if either 
 	if ((lhslen = kn_string_length(lhs)) == 0) {
-		assert(lhs == &KN_STRING_EMPTY);
+		assert(lhs == &kn_string_empty);
 
 		return kn_value_new_string(kn_string_clone_static(rhs));
 	}
 
 	if ((rhslen = kn_string_length(rhs)) == 0) {
-		assert(rhs == &KN_STRING_EMPTY);
+		assert(rhs == &kn_string_empty);
 
 		return kn_value_new_string(lhs);
 	}
 
 	size_t length = lhslen + rhslen;
-	char *str = xmalloc(length + 1);
+	struct kn_string_t *string = kn_string_alloc(length);
+	char *str = kn_string_deref(string);
 
-	// concatenate the two strings
 	memcpy(str, kn_string_deref(lhs), lhslen);
 	memcpy(str + lhslen, kn_string_deref(rhs), rhslen);
-
 	str[length] = '\0';
 
-	kn_string_free(lhs);
-	kn_string_free(rhs);
-
-	return kn_value_new_string(kn_string_new(str, length));
+	return kn_value_new_string(string);
 }
 
 KN_FUNCTION_DECLARE(add, 2, '+') {
@@ -281,9 +277,9 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 		if (lhslen != 0)
 			kn_string_free(lhs); 
 		else 
-			assert(lhs == &KN_STRING_EMPTY);
+			assert(lhs == &kn_string_empty);
 
-		return kn_value_new_string(&KN_STRING_EMPTY);
+		return kn_value_new_string(&kn_string_empty);
 	}
 
 	// we don't have to clone it, as we were given the cloned copy.
@@ -291,14 +287,15 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 		return kn_value_new_string(lhs);
 
 	size_t length = lhslen * times;
-	char *str = xmalloc(length + 1);
+	struct kn_string_t *string = kn_string_alloc(length);
+	char *str = kn_string_deref(string);
 
 	for (char *ptr = str; times != 0; --times, ptr += lhslen)
 		memcpy(ptr, kn_string_deref(lhs), lhslen);
 
 	str[length] = '\0';
 
-	return kn_value_new_string(kn_string_new(str, length));
+	return kn_value_new_string(string);
 }
 
 KN_FUNCTION_DECLARE(mul, 2, '*') {
@@ -546,7 +543,7 @@ KN_FUNCTION_DECLARE(get, 3, 'G') {
 	// if we're getting past the end of the array, simply return the
 	// empty string.
 	if (stringlen <= start) {
-		substring = &KN_STRING_EMPTY;
+		substring = &kn_string_empty;
 		goto free_and_return;
 	}
 
@@ -554,12 +551,12 @@ KN_FUNCTION_DECLARE(get, 3, 'G') {
 	if (stringlen <= start + length)
 		length = stringlen - start;
 
-	char *substr = xmalloc(length + 1);
+
+	substring = kn_string_alloc(length);
+	char *substr = kn_string_deref(substring);
 
 	memcpy(substr, kn_string_deref(string) + start, length);
 	substr[length] = '\0';
-
-	substring = kn_string_new(substr, length);
 
 free_and_return:
 
@@ -569,7 +566,7 @@ free_and_return:
 }
 
 KN_FUNCTION_DECLARE(substitute, 4, 'S') {
-	struct kn_string_t *string, *substring;
+	struct kn_string_t *string, *substring, *result;
 	size_t start, amnt, length, stringlength, substringlength;
 
 	string = kn_value_to_string(args[0]);
@@ -592,10 +589,9 @@ KN_FUNCTION_DECLARE(substitute, 4, 'S') {
 	substringlength = kn_string_length(substring);
 
 	length = stringlength - amnt + substringlength;
-	char *str = xmalloc(length + 1);
-	str[length] = '\0';
-
-	char *ptr = str;
+	result = kn_string_alloc(length);
+	char *ptr = kn_string_deref(result);
+	ptr[length] = '\0';
 
 	memcpy(ptr, kn_string_deref(string), start);
 	ptr += start;
@@ -606,5 +602,5 @@ KN_FUNCTION_DECLARE(substitute, 4, 'S') {
 	kn_string_free(string);
 	kn_string_free(substring);
 
-	return kn_value_new_string(kn_string_new(str, length));
+	return kn_value_new_string(result);
 }

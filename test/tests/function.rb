@@ -20,12 +20,12 @@ describe '4. Function' do
 		end
 
 		describe 'keyword functions' do
-			it 'should strip trailing uppercase chars' do
-				assert_equal 3, eval('LABCDEFHIJKLMNOPQRSTUVWXYZ"foo"')
+			it 'should strip trailing uppercase chars and _' do
+				assert_equal 3, eval('LABCDEFH_IJKLMNOPQRSTUVWXYZ"foo"')
 			end
 
 			it 'should not strip trailing `_`s' do
-				assert_equal 3, eval('; = _ 99 : + LENGTH_T') # 99 + true = 99 + 1 = 100
+				assert_equal 3, eval('; = _ 99 : + LENGTH _T') # 99 + true = 99 + 1 = 100
 			end
 		end
 	end
@@ -51,7 +51,7 @@ describe '4. Function' do
 
 		describe '4.1.4 PROMPT' do
 			it 'should return a string without the \n or \r\n' do
-				return pass
+				return pass # TODO: prompt
 				old_stdin = $stdin
 				$stdin = StringIO.new("line one\nline two\r\nline three")
 				assert_equal "line one", eval("PROMPT")
@@ -142,6 +142,10 @@ describe '4. Function' do
 		describe '4.2.5 `' do
 			it 'should return the stdout of the subshell' do
 				assert_equal "and then there was -1\n", eval(%q|` 'echo "and then there was -1"'|)
+			end
+
+			it 'should return an empty string with no output' do
+				assert_equal '', eval('` ":"')
 			end
 
 			it 'should convert its argument to a string' do
