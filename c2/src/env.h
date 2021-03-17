@@ -28,15 +28,12 @@ struct kn_variable_t {
 	const char *name;
 };
 
-
 /*
  * Initializes the global Knight environment with the given starting capacity.
  *
  * This _must_ be called before `kn_env_fetch` is called.
- *
- * `capacity` may not be zero.
  */
-void kn_env_startup(size_t capacity);
+void kn_env_startup(void);
 
 /*
  * Frees all resources associated with the global Knight environment.

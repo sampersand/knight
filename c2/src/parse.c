@@ -5,7 +5,7 @@
 
 #include "parse.h"    /* prototypes, kn_value_t, kn_number_t, kn_ast_t,
                          kn_value_new_number, kn_value_new_variable, 
-                         kn_value_new_string, kn_value_new_ast, KN_STRING_EMPTY,
+                         kn_value_new_string, kn_value_new_ast, kn_string_empty,
                          kn_string_new, KN_UNDEFINED, KN_TRUE, KN_FALSE, KN_NULL
                          */
 #include "shared.h"   /* xmalloc, xrealloc, die */
@@ -18,6 +18,10 @@ static int iswhitespace(char c) {
 		|| c == '(' || c == ')'
 		|| c == '[' || c == ']'
 		|| c == '{' || c == '}';
+}
+
+static int iswordfunc(char c) {
+	return isupper(c) || c == '_';
 }
 
 // Check to see if the character is an identifier character.
@@ -124,7 +128,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['P']  = &&function_prompt,
 		['Q']  = &&function_quit,
 		['R']  = &&function_random,
-		['S']  = &&function_set,
+		['S']  = &&function_substitute,
 		['T']  = &&literal_true,
 		['U']  = &&invalid,
 #ifdef KN_EXT_VALUE
@@ -152,7 +156,7 @@ kn_value_t kn_parse(register const char **stream) {
 #endif /* KN_COMPUTED_GOTOS */
 
 	char c;
-	struct kn_function_t *function;
+	const struct kn_function_t *function;
 
 	assert(stream != NULL);
 	assert(*stream != NULL);
@@ -210,7 +214,9 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 	while (isident(ADVANCE_PEEK()));
 
 	char *identifier = strndup(start, *stream - start);
-	return kn_value_new_variable(kn_env_fetch(identifier, true));
+	struct kn_variable_t *variable = kn_env_fetch(identifier, true);
+	kn_value_t v = kn_value_new_variable(variable);
+	return v;
 }
 
 LABEL(string)
@@ -233,24 +239,28 @@ CASES2('\'', '\"')
 
 	// optimize for the empty string
 	if (!length)
-		return kn_value_new_string(&KN_STRING_EMPTY);
+		return kn_value_new_string(&kn_string_empty);
 
-	return kn_value_new_string(kn_string_new(strndup(start, length), length));
+	struct kn_string_t *string = kn_string_alloc(length);
+	memcpy(kn_string_deref(string), start, length);
+
+	kn_string_deref(string)[length] = '\0';
+	return kn_value_new_string(string);
 }
 
 LABEL(literal_true)
 CASES1('T')
-	while(isupper(ADVANCE_PEEK()));
+	while(iswordfunc(ADVANCE_PEEK()));
 	return KN_TRUE;
 
 LABEL(literal_false)
 CASES1('F')
-	while(isupper(ADVANCE_PEEK()));
+	while(iswordfunc(ADVANCE_PEEK()));
 	return KN_FALSE;
 
 LABEL(literal_null)
 CASES1('N')
-	while(isupper(ADVANCE_PEEK()));
+	while(iswordfunc(ADVANCE_PEEK()));
 	return KN_NULL;
 
 SYMBOL_FUNC(not, '!');
@@ -279,7 +289,7 @@ WORD_FUNC(output, 'O');
 WORD_FUNC(prompt, 'P');
 WORD_FUNC(quit, 'Q');
 WORD_FUNC(random, 'R');
-WORD_FUNC(set, 'S');
+WORD_FUNC(substitute, 'S');
 WORD_FUNC(while, 'W');
 
 #ifdef KN_EXT_VALUE
@@ -287,7 +297,7 @@ WORD_FUNC(value, 'V');
 #endif /* KN_EXT_VALUE */
 
 parse_kw_function:
-	while (isupper(ADVANCE_PEEK()));
+	while (iswordfunc(ADVANCE_PEEK()));
 
 	// fallthrough to parsing a normal function
 

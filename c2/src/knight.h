@@ -1,11 +1,6 @@
 #ifndef KN_KNIGHT_H
 #define KN_KNIGHT_H
 
-
-#ifndef KN_ENV_DEFAULT_CAPACITY
-#define KN_ENV_DEFAULT_CAPACITY 256
-#endif
-
 #include <stddef.h> /* size_t */
 #include "value.h"  /* kn_value_t */
 
@@ -17,7 +12,7 @@
  * Note that if the capacity is zero, the default capacity (defined by 
  * `KN_ENV_DEFAULT_CAPACITY`, which can be overwritten).
  */
-void kn_startup(size_t capacity);
+void kn_startup(void);
 
 /*
  * Frees all memory related to the current running Knight process.

@@ -128,9 +128,9 @@ kn_value_t kn_value_new_ast(struct kn_ast_t *ast) {
 	return ((uint64_t) ast) | KN_TAG_AST;
 }
 
-static kn_number_t string_to_number(const struct kn_string_t *value) {
+static kn_number_t string_to_number(struct kn_string_t *value) {
 	kn_number_t ret = 0;
-	const char *ptr = value->str;
+	const char *ptr = kn_string_deref(value);
 
 	// strip leading whitespace.
 	while (isspace(*ptr))
@@ -188,7 +188,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 		return 1;
 
 	if (kn_value_is_string(value))
-		return kn_value_as_string(value)->length != 0;
+		return kn_string_length(kn_value_as_string(value)) != 0;
 
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 	kn_value_t ran = kn_value_run(value);
@@ -198,12 +198,10 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 } 
 
 static struct kn_string_t *number_to_string(kn_number_t num) {
-	// note that `22` is the length of `LONG_MIN`, which is 21 characters
+	// note that `22` is the length of `-UINT64_MIN`, which is 21 characters
 	// long + the trailing `\0`.
 	static char buf[22];
-	// we explicitly note that refcount is `0`, as it's something that isnt
-	// allocated.
-	static struct kn_string_t number_string = { .refcount = 0 };
+	static struct kn_string_t number_string = KN_STRING_NEW_STATIC();
 
 	// should have been checked earlier.
 	assert(num != 0 && num != 1);
@@ -223,19 +221,19 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 	if (is_neg)
 		*--ptr = '-';
 
-	number_string.str = ptr;
-	*((size_t *) &number_string.length) = &buf[sizeof(buf) - 1] - ptr;
+	number_string.alloc.str = ptr;
+	number_string.alloc.length = &buf[sizeof(buf) - 1] - ptr;
 
 	return &number_string;
 }
 
 struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	static struct kn_string_t BUILTIN_STRINGS[5] = {
-		{ .length = 5, .refcount = -1, .str = "false" },
-		{ .length = 1, .refcount = -1, .str = "0" },
-		{ .length = 4, .refcount = -1, .str = "null" },
-		{ .length = 1, .refcount = -1, .str = "1" },
-		{ .length = 4, .refcount = -1, .str = "true" },
+		KN_STRING_NEW_EMBED("false"),
+		KN_STRING_NEW_EMBED("0"),
+		KN_STRING_NEW_EMBED("null"),
+		KN_STRING_NEW_EMBED("1"),
+		KN_STRING_NEW_EMBED("true"),
 	};
 
 	assert(value != KN_UNDEFINED);
@@ -257,9 +255,10 @@ struct kn_string_t *kn_value_to_string(kn_value_t value) {
 }
 
 void kn_value_dump(kn_value_t value) {
-	assert(value != KN_UNDEFINED);
-
 	switch (value) {
+	case KN_UNDEFINED:
+		printf("KN_UNDEFINED()");
+		return;
 	case KN_TRUE:
 		printf("Boolean(true)");
 		return;
@@ -278,14 +277,19 @@ void kn_value_dump(kn_value_t value) {
 
 	switch (KN_TAG(value)) {
 	case KN_TAG_STRING:
-		printf("String(%s)", kn_value_as_string(value)->str);
+		printf("String(%s)", kn_string_deref(kn_value_as_string(value)));
 		return;
 	case KN_TAG_VARIABLE:
 		printf("Identifier(%s)", kn_value_as_variable(value)->name);
 		return;
 	case KN_TAG_AST: {
 		struct kn_ast_t *ast = kn_value_as_ast(value);
+
+#ifdef NDEBUG
+		printf("Function(%p", (void *) ast->func->func);
+#else
 		printf("Function(%c", ast->func->name);
+#endif /* NDEBUG */
 
 		for (size_t i = 0; i < ARITY(ast); ++i) {
 			printf(", ");
@@ -324,7 +328,7 @@ kn_value_t kn_value_run(kn_value_t value) {
 	assert(KN_TAG(value) == KN_TAG_AST);
 	struct kn_ast_t *ast = kn_value_as_ast(value);
 
-	return (ast->func->ptr)(ast->args);
+	return (ast->func->func)(ast->args);
 }
 
 kn_value_t kn_value_clone(kn_value_t value) {
