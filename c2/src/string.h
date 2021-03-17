@@ -2,35 +2,84 @@
 #define KN_STRING_H
 
 #include <stddef.h> /* size_t */
-#include <stdint.h>
 
-// needs to be 15, otherwise alignment of `str` may be off.
-#define KN_STRING_EMBEDDED_LENGTH (sizeof(size_t) * 2 + sizeof(char *) - 1)
-
+/*
+ * These flags are used to record information about how the memory of a 
+ * `kn_string_t` should be managed.
+ */
 enum kn_string_flags_t {
+	/*
+	 * Indicates that the struct itself was allocated.
+	 *
+	 * If this is set, when a string is `kn_string_free`d, the struct pointer
+	 * itself will also be freed.
+	 */
 	KN_STRING_FL_STRUCT_ALLOC,
+
+	/*
+	 * Indicates that a string's data is stored in the `embed`ded field of
+	 * the string, rather than the `alloc`ated  part.
+	 */
 	KN_STRING_FL_EMBED,
+
+	/*
+	 * Indicates that the string is a `static` string---that is, it's not
+	 * allocated, but should it should be fully duplicated when the function
+	 * `kn_string_clone_static` is called.
+	 */
 	KN_STRING_FL_STATIC,
 };
 
 /*
+ * The length of the embedded segment of the string.
+ */
+#define KN_STRING_EMBEDDED_LENGTH (sizeof(size_t) * 2 + sizeof(char *) - 1)
+
+/*
  * The string type in Knight.
  *
- * This struct is created via `kn_string_new`, and should be passed to 
- * `kn_string_free` when it is no longer needed.
+ * This struct is generally allocated by a `kn_string_alloc`, which can then
+ * be populated via the `kn_string_deref` function.
+ *
+ * As an optimization, strings can either be `embed`ded (where the `chars` are
+ * actually a part of the struct), or `alloc`ated (where the data is stored
+ * elsewhere, and a pointer to it is used.)
+ *
+ * Regardless of the type of string, it should be passed to `kn_string_free` to
+ * properly dispose of its resources when you're finished with it.
  */
 struct kn_string_t {
+	/* The flags that dictate how to manage this struct's memory. */
 	enum kn_string_flags_t flags;
 
+	/* All strings are either embedded or allocated. */
 	union {
 		struct {
+			/* The length of the embedded string. */
 			char length;
+
+			/* The actual data for the embedded string. */
 			char data[KN_STRING_EMBEDDED_LENGTH];
 		} embed;
 
 		struct {
+			/*
+			 * The length of the allocated string.
+			 *
+			 * This should equal `strlen(str)`, and is just an optimization aid.
+			 */
 			size_t length;
+
+			/*
+			 * The amount of references to this string.
+			 *
+			 * This is increased when `kn_string_clone`d and decreased when
+			 * `kn_string_free`d, and when it reaches zero, the `str` will
+			 * be freed.
+			 */
 			size_t refcount;
+
+			/* The data for an allocate. */
 			char *str;
 		} alloc;
 	};
@@ -44,30 +93,86 @@ extern struct kn_string_t kn_string_empty;
 /*
  * Initializes the string allocations.
  *
- * This should be called before `kn_string_new` is run.
+ * This should be called before `kn_string_alloc` or `kn_string_new` is run.
  */
 void kn_string_startup(void);
+
+/*
+ * Unmaps all string allocations.
+ *
+ * After calling this, all strings pointers are invalidated, and
+ * `kn_string_startup` must be called again allocating new strings.
+ */
 void kn_string_shutdown(void);
 
-#define KN_STRING_NEW_STATIC() \
-	((struct kn_string_t) { \
-		.flags = KN_STRING_FL_STATIC \
-	})
-
+/*
+ * A macro to create a new embedded struct.
+ *
+ * It's up to the caller to ensure that `data_` can fit within an embedded
+ * string.
+ */
 #define KN_STRING_NEW_EMBED(data_) \
 	((struct kn_string_t) { \
 		.flags = KN_STRING_FL_EMBED, \
 		.embed = { .length = sizeof(data_) - 1, .data = data_ } \
 	})
 
-size_t kn_string_length(const struct kn_string_t *string);
-char *kn_string_deref(struct kn_string_t *string);
-
+/*
+ * Allocates a new `kn_string_t` that can hold at least the given length.
+ */
 struct kn_string_t *kn_string_alloc(size_t length);
+
+/*
+ * Creates a new `kn_string_t` of the given length, and then initializes it to
+ * `str`; the `str`'s ownership should be given given to this function.
+ *
+ * Note that `length` should equal `strlen(str)`.
+ *
+ * Also note that this will _always_ allocate strings, and never embed them.
+ * (After all, a pointer's already allocated, which is what embedding is trying
+ * to avoid.)
+ */
 struct kn_string_t *kn_string_new(char *str, size_t length);
 
-void kn_string_free(struct kn_string_t *string);
+/*
+ * Returns the length of the string, in bytes.
+ */
+size_t kn_string_length(const struct kn_string_t *string);
+
+/*
+ * Dereferences the string, returning a mutable pointer to its data.
+ */
+char *kn_string_deref(struct kn_string_t *string);
+
+/*
+ * Duplicates this string, returning another copy of it.
+ *
+ * Each copy must be `kn_string_free`d separately after use to ensure that no
+ * memory errors occur.
+ */
 struct kn_string_t *kn_string_clone(struct kn_string_t *string);
+
+/*
+ * Duplicates `KN_STRING_FL_STATIC` strings, simply returns all others.
+ *
+ * This is intended to be used for strings that are `static`---they normally
+ * don't need to be heap-allocated (eg if they're simply being printed out), but
+ * if an entire new string is needed, this is used to ensure that the returned
+ * string won't change if the original static one does.
+ */
 struct kn_string_t *kn_string_clone_static(struct kn_string_t *string);
 
-#endif
+/* 
+ * Indicates that the caller is done using this string.
+ *
+ * For structs without the `KN_STRING_FL_EMBED` flag (ie with the `alloc` field
+ * active), the refcount of the string will be decremented, and if it's zero,
+ * the `str` field will be freed.
+ *
+ * For structs with the `KN_STRING_FL_STRUCT_ALLOC`, the entire struct itself
+ * will be freed. (This is not the case when the `refcount` of an non-embedded
+ * struct is not zero.)
+ */
+void kn_string_free(struct kn_string_t *string);
+
+#endif /* KN_STRING_H */

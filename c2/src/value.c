@@ -201,7 +201,7 @@ static struct kn_string_t *number_to_string(kn_number_t num) {
 	// note that `22` is the length of `-UINT64_MIN`, which is 21 characters
 	// long + the trailing `\0`.
 	static char buf[22];
-	static struct kn_string_t number_string = KN_STRING_NEW_STATIC();
+	static struct kn_string_t number_string = { .flags = KN_STRING_FL_STATIC };
 
 	// should have been checked earlier.
 	assert(num != 0 && num != 1);

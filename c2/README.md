@@ -14,6 +14,8 @@ TODO: update everything to include RECKLESS.
 ## Micro-optimizations
 - `KN_ENV_NBUCKETS`: Used to adjust how many buckets the environment uses when hashing.
 - `KN_ENV_CAPACITY`: Used to adjust the amount of variables that can exist in each bucket.
+- `KN_ARENA_ALLOCATE`:
+- `KN_STRING_CACHE`:
 - `KN_STRING_CACHE_MAXLEN`: 
 - `KN_STRING_CACHE_LINESIZE`:
 
