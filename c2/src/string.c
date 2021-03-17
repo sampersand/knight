@@ -40,12 +40,13 @@ static void free_strings() {
 	string_arena_next = NULL;
 
 	for (curr = string_arena_start; curr != string_arena_end; ++curr) {
-		assert(curr->refcount >= 0);
+		assert(!(curr->flags & KN_STRING_FL_EMBED));
+		assert(curr->alloc.refcount >= 0);
 
-		if (curr->refcount)
+		if (curr->alloc.refcount)
 			continue;
 
-		free((char *) curr->str);
+		free((char *) curr->alloc.str);
 		free(curr);
 
 		if (string_arena_next == NULL)
@@ -57,17 +58,16 @@ static void free_strings() {
 }
 
 static inline struct kn_string_t *allocate_string() {
-	if (string_arena_next == string_arena_end)
-		free_strings();
-
 	struct kn_string_t *string;
 
 	do {
+		if (string_arena_next == string_arena_end)
+			free_strings();
+
 		string = string_arena_next++;
-	} while (string->refcount); // mmap anon guarantees they will be zero.
+	} while (string->alloc.refcount != 0); // mmap anon guarantees they will be zero.
 
 	return string;
-
 }
 
 #else /* KN_ARENA_ALLOCATE */
@@ -96,7 +96,6 @@ static inline struct kn_string_t *allocate_string() {
 
 static struct kn_string_t *
 	string_cache[KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
-#endif /* KN_STRING_CACHE */
 
 static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	assert(length != 0);
@@ -106,6 +105,7 @@ static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	return &string_cache[length - 1][hash & (KN_STRING_CACHE_LINESIZE - 1)];
 }
 #endif /* KN_STRING_CACHE */
+
 
 struct kn_string_t kn_string_empty = KN_STRING_NEW_EMBED("");
 
@@ -151,7 +151,6 @@ struct kn_string_t *kn_string_alloc(size_t length) {
 		string->alloc.refcount = 1;
 		string->alloc.str = xmalloc(length + 1);
 	}
-
 	return string;
 }
 

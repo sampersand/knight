@@ -1,18 +1,10 @@
-#include <string.h>  /* memcpy, strcmp, strndup */
-#include <assert.h>  /* assert */
-#include <stdlib.h>  /* rand, srand, free, exit, size_t,, NULL */
-#include <stdbool.h> /* bool, true, false */
-#include <stdio.h>   /* fflush, fputs, fgets, putc, puts, feof, ferror, perror,
-                        clearerr, stdout, stdin, popen, fread, pclose */
-#include <time.h>    /* time */
-
 #include "function.h" /* prototypes */
 #include "knight.h"   /* kn_run */
 #include "env.h"      /* kn_env_fetch, kn_variable_t */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
-#include "string.h"   /* kn_string_t, kn_string_new, kn_string_free,
-                         kn_string_clone_static, kn_string_empty,
-                         kn_string_deref, kn_string_length */
+#include "string.h"   /* kn_string_t, kn_string_new, kn_string_alloc,
+                         kn_string_free, kn_string_empty, kn_string_deref,
+                         kn_string_length, kn_string_clone_static, */
 #include "value.h"    /* kn_value_t, kn_number_t, KN_TRUE, KN_FALSE, KN_NULL,
                          KN_UNDEFINED, kn_value_new_number, kn_value_new_string,
                          kn_value_new_boolean, kn_value_clone, kn_value_free,
@@ -22,20 +14,27 @@
                          kn_value_as_variable, kn_value_to_boolean, 
                          kn_value_to_number, kn_value_to_string */
 
-void kn_function_startup(void) {
-	// all we gotta do on startup is seed the random number.
+#include <string.h>  /* memcpy, strcmp, strndup */
+#include <assert.h>  /* assert */
+#include <stdlib.h>  /* rand, srand, free, exit, size_t, NULL */
+#include <stdbool.h> /* bool, true, false */
+#include <stdio.h>   /* fflush, fputs, fgets, putc, puts, feof, ferror, perror,
+                        clearerr, stdout, stdin, popen, fread, pclose */
+#include <time.h>    /* time */
 
+void kn_function_startup(void) {
+	// all we have to do on startup is seed the random number.
 	srand(time(NULL));
 }
 
 #define KN_FUNCTION_DECLARE(func_, arity_, name_) \
-	static kn_value_t fn_##func_##_function(const kn_value_t *); \
+	static kn_value_t kn_fn_##func_##_function(const kn_value_t *); \
 	const struct kn_function_t kn_fn_##func_ = { \
-		.func = fn_##func_##_function, \
+		.func = kn_fn_##func_##_function, \
 		.arity = arity_, \
 		.name = name_ \
 	}; \
-	static kn_value_t fn_##func_##_function(const kn_value_t *args)
+	static kn_value_t kn_fn_##func_##_function(const kn_value_t *args)
 
 KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 	(void) args;
