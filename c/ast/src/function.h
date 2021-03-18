@@ -1,5 +1,5 @@
-#ifndef FUNCTION_H
-#define FUNCTION_H
+#ifndef KN_FUNCTION_H
+#define KN_FUNCTION_H
 
 #include "value.h" /* kn_value_t */
 

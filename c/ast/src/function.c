@@ -19,7 +19,7 @@
 #include <stdlib.h>  /* rand, srand, free, exit, size_t, NULL */
 #include <stdbool.h> /* bool, true, false */
 #include <stdio.h>   /* fflush, fputs, fgets, putc, puts, feof, ferror, perror,
-                        clearerr, stdout, stdin, popen, fread, pclose */
+                        clearerr, stdout, stdin, popen, fread, pclose, FILE */
 #include <time.h>    /* time */
 
 void kn_function_startup(void) {

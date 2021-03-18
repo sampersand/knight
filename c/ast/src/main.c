@@ -1,76 +1,75 @@
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
+#include "knight.h" /* kn_startup, kn_run, kn_value_free, kn_shutdown */
+#include "shared.h" /* die, xmalloc, xrealloc */
 
-#include "knight.h"
-#include "value.h"
-#include "shared.h"
+#include <string.h> /* strlen */
+#include <stdio.h>  /* FILE, fopen, sterror, feof, fread, fclose */
+#include <errno.h>  /* errno */
 
 static char *read_file(const char *filename) {
 	FILE *file = fopen(filename, "r");
 
-	if (file == NULL) {
+	if (file == NULL)
 		die("unable to read file '%s': %s", filename, strerror(errno));
-	}
 
-	size_t len = 0;
-	size_t cap = 2048;
-	char *contents = xmalloc(cap);
+	size_t length = 0;
+	size_t capacity = 2048;
+	char *contents = xmalloc(capacity);
 
 	while (!feof(file)) {
-		size_t nchars = fread(&contents[len], 1, cap - len, file);
+		size_t amntread = fread(&contents[length], 1, capacity - length, file);
 
-		if (nchars == 0) {
+		if (amntread == 0) {
 			if (feof(stdin))
 				break;
 
 			die("unable to line in file '%s': %s'", filename, strerror(errno));
 		}
 
-		len += nchars;
+		length += amntread;
 
-		if (len == cap) {
-			cap *= 2;
-			contents = xrealloc(contents, cap);
+		if (length == cap) {
+			capacity *= 2;
+			contents = xrealloc(contents, capacity);
 		}
 	}
 
 	fclose(file);
-	return xrealloc(contents, len);
+
+	return xrealloc(contents, length);
 }
 
-int main(int argc, const char *argv[]) {
-	// note: to keep it cross-platform, i opted not to use optparse.
+void usage(char *program) {
+	die("usage: %s [-e program] [-f file]", argv[0]);
+}
+
+int main(int argc, char **argv) {
+	char *str;
+
 	if (argc != 3)
-		goto usage;
+		usage(argv[0]);
 
 	if (strlen(argv[1]) != 2 || argv[1][0] != '-')
-		goto usage;
-
-	const char *string;
+		usage(argv[0]);
 
 	switch(argv[1][1]) {
 	case 'e':
-		string = argv[2];
+		str = argv[2];
 		break;
 	case 'f':
-		string = read_file(argv[2]);
+		str = read_file(argv[2]);
 		break;
 	default:
-		goto usage;
+		usage(argv[0]);
 	}
 
 	kn_startup();
+
 #ifdef KN_RECKLESS
-	kn_run(string);
+	kn_run(str);
 #else
-	kn_value_free(kn_run(string));
+	kn_value_free(kn_run(str));
 	kn_shutdown();
 #endif /* KN_RECKLESS */
 
 	return 0;
-
-usage:
-
-	die("usage: %s [-e program] [-f file]", argv[0]);
 }
