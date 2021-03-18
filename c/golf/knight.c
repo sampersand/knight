@@ -164,7 +164,7 @@ ll run(ll value) {
 		case '/': return NEWNUM(ton(ARG(1)) / ton(ARG(2)));
 		case '%': return NEWNUM(ton(ARG(1)) % ton(ARG(2)));
 		case '^':
-			
+
 			exit(1);
 	// // there's no builtin way to do integer exponentiation, so we have to
 	// // do it manually.
@@ -217,8 +217,8 @@ ll run(ll value) {
 
 int main(int argc, char**argv){
 	srand(time(0));
-	if(argc!=3)fprintf(stderr,"usage: %s (-e 'program' | -f file)\n",*argv),exit(1);
+	if(!argc)fprintf(stderr,"usage: %s (-e 'program' | -f file)\n",*argv),exit(1);
 	if(argv[1][1]-'f')stream=argv[2]; // ie if it's `-e`
-	else exit(1);
+	else /* todo*/;
 	run(parse());
 }
