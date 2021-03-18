@@ -61,8 +61,12 @@ int main(int argc, const char *argv[]) {
 	}
 
 	kn_startup();
+#ifdef KN_RECKLESS
+	kn_run(string);
+#else
 	kn_value_free(kn_run(string));
 	kn_shutdown();
+#endif /* KN_RECKLESS */
 
 	return 0;
 

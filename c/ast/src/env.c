@@ -92,29 +92,16 @@ void kn_env_shutdown() {
 	}
 }
 
-static struct kn_variable_t *get_variable(
-	const struct kn_env_bucket_t *bucket,
-	const char *identifier
-) {
-	struct kn_variable_t *variable;
-
-	for (size_t i = 0; i < bucket->length; ++i)
-		if (strcmp((variable = &bucket->variables[i])->name, identifier) == 0)
-			return variable;
-
-	return NULL;
-}
-
 struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 	struct kn_env_bucket_t *bucket;
 	struct kn_variable_t *variable;
 
 	assert(identifier != NULL);
 
-	bucket = &kn_env_map[kn_hash(identifier) & (KN_ENV_NBUCKETS - 1)]
+	bucket = &kn_env_map[kn_hash(identifier) & (KN_ENV_NBUCKETS - 1)];
 
 	for (size_t i = 0; i < bucket->length; ++i) {
-		variable = &bucket->variable[i];
+		variable = &bucket->variables[i];
 
 		// if the variable already exists, return it.
 		if (strcmp(variable->name, identifier) == 0) {
