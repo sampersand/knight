@@ -27,7 +27,7 @@ static char *read_file(const char *filename) {
 
 		length += amntread;
 
-		if (length == cap) {
+		if (length == capacity) {
 			capacity *= 2;
 			contents = xrealloc(contents, capacity);
 		}
@@ -39,7 +39,7 @@ static char *read_file(const char *filename) {
 }
 
 void usage(char *program) {
-	die("usage: %s [-e program] [-f file]", argv[0]);
+	die("usage: %s [-e program] [-f file]", program);
 }
 
 int main(int argc, char **argv) {

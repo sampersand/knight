@@ -64,13 +64,6 @@ struct kn_string_t {
 
 		struct {
 			/*
-			 * The length of the allocated string.
-			 *
-			 * This should equal `strlen(str)`, and is just an optimization aid.
-			 */
-			size_t length;
-
-			/*
 			 * The amount of references to this string.
 			 *
 			 * This is increased when `kn_string_clone`d and decreased when
@@ -78,6 +71,13 @@ struct kn_string_t {
 			 * be freed.
 			 */
 			size_t refcount;
+
+			/*
+			 * The length of the allocated string.
+			 *
+			 * This should equal `strlen(str)`, and is just an optimization aid.
+			 */
+			size_t length;
 
 			/* The data for an allocate. */
 			char *str;

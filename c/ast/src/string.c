@@ -216,6 +216,9 @@ struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
 	assert(string != NULL);
 	assert(!(string->flags & KN_STRING_FL_STATIC));
 
+	// TODO: my tests didn't show this as invalid, but it seems like it should
+	// be leading to double frees if `string` is embedded?
+
 	// if we're not embedded, increase the refcount.
 	if (!(string->flags & KN_STRING_FL_EMBED))
 		++string->alloc.refcount;
