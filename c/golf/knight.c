@@ -152,8 +152,11 @@ ll run(ll value) {
 			return NUL;
 
 		case '+':
-			if ((tval = run(ARG(1))) & TSTR) return NEWSTR(strcat(ASSTR(tval), tos(ARG(2))));
-			return NEWNUM(ASNUM(tval) + ton(ARG(2)));
+			if (!(tval = run(ARG(1)) & TSTR))
+				return NEWNUM(ASNUM(tval) + ton(ARG(2)));
+			str=ASSTR(tval);
+			tstr=tos(ARG(2));
+			return NEWSTR(strcat(strcat(calloc(1+strlen(str)+strlen(tstr),1),str),tstr));
 		case '-': return NEWNUM(ton(ARG(1)) - ton(ARG(2)));
 		case '*':
 			if ((tval = run(ARG(1))) & TNUM) return NEWNUM(ASNUM(tval) * ton(ARG(2)));
@@ -179,16 +182,21 @@ ll run(ll value) {
 	// }
 
 		case '<':
-			if (TNUM & (tval=run(ARG(1)))) return tval < ton(ARG(2));
-			if (TSTR & (tval=run(ARG(1)))) return strcmp(ASSTR(tval),tos(ARG(2))) < 0;
-			return tob(ARG(1)) && tval!=TRU;
+			return NEWBOOL(
+				(TNUM & (tval=run(ARG(1)))) ? tval < ton(ARG(2))
+				: (TSTR & (tval=run(ARG(1)))) ? strcmp(ASSTR(tval),tos(ARG(2))) < 0
+				: tob(ARG(1)) && tval!=TRU);
+
 		case '>': // todo: memcp then >`?
-			if (TNUM & (tval=run(ARG(1)))) return tval > ton(ARG(2));
-			if (TSTR & (tval=run(ARG(1)))) return strcmp(ASSTR(tval),tos(ARG(2))) > 0;
-			return !tob(ARG(1)) && tval==TRU;
+			return NEWBOOL(
+				(TNUM & (tval=run(ARG(1)))) ? tval > ton(ARG(2))
+				: (TSTR & (tval=run(ARG(1)))) ? strcmp(ASSTR(tval),tos(ARG(2))) > 0
+				: !tob(ARG(1)) && tval==FLS);
 		case '?':
-			if (TSTR & (tval=run(ARG(1)))) return !strcmp(ASSTR(tval),tos(ARG(2)));
-			return tval == run(ARG(2));
+			return NEWBOOL(
+				(TSTR & (tval=run(ARG(1))))
+				? !strcmp(ASSTR(tval),tos(ARG(2)))
+				: tval == run(ARG(2)));
 		case '&': return tob(tval = run(ARG(1))) ? run(ARG(2)) : tval;
 		case '|': return tob(tval = run(ARG(1))) ? tval : run(ARG(2));
 		case ';': run(ARG(1)); return run(ARG(2));
