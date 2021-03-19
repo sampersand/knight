@@ -1,4 +1,4 @@
-.include "debug.s"
+.include "debugh.s"
 
 .bss
 kn_env_data:

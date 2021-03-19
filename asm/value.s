@@ -1,51 +1,8 @@
 // RDI, RSI, RDX, RCX, R8, R9
 
-.include "debug.s"
-.include "value_header.s"
+.include "debugh.s"
+.include "valueh.s"
 
-/* Creates a new number. */
-.globl kn_value_new_number
-kn_value_new_number:
-.ifdef KN_DEBUG
-.if 0
-	mov %rdi, %rax
-	shl %rax
-	shr %rax
-	assert_eq %rax, %rdi /* ensure we are not massive. */
-.endif
-.endif /* KN_DEBUG */
-	shl $2, %rdi
-	lea 2(%rdi), %rax
-	ret
-
-/* Create a new boolean. 
- *
- * If rdi is zero, `False` is returned. Otherwise, `True` is returned.
- */
-.globl kn_value_new_boolean
-kn_value_new_boolean:
-	cmp $0, %rdi
-	je kn_value_new_false /* If the value given is zero, return 'false'. */
-	/* otherwise, fall through and return 'true'. */
-
-/* Create a true value. */
-.globl kn_value_new_true
-kn_value_new_true:
-	mov $TRUE_BITS, %eax
-	ret
-
-/* Create a false value. */
-.globl kn_value_new_false
-kn_value_new_false:
-	xor %eax, %eax
-	assert_eq $FALSE_BITS, %rax
-	ret
-
-/* Create a null value. */
-.globl kn_value_new_null
-kn_value_new_null:
-	mov $NULL_BITS, %eax
-	ret
 
 .macro ensure_lower_bits_not_set src=%rdi, clobber=%rcx
 .ifdef KN_DEBUG
@@ -55,17 +12,6 @@ kn_value_new_null:
 .endif /* KN_DEBUG */
 .endm /* ensure_lower_bits_not_set */
 
-/* Creates a new string value from the given string.
- *
- * This doesn't accept c-style strings; it only accepts strings created from
- * functions (or the interned strings) within `functions.s`.
- */
-.globl kn_value_new_string
-kn_value_new_string:
-	ensure_lower_bits_not_set
-	lea STRING_TAG(%rdi), %rax
-	ret
-
 /* Creates a new identifier.
  *
  * This function accepts a single c-style string, which it will
@@ -73,9 +19,12 @@ kn_value_new_string:
  */
 .globl kn_value_new_identifier
 kn_value_new_identifier:
+	todo "kn_value_new_identifier"
+.if 0
 	ensure_lower_bits_not_set
 	lea IDENT_TAG(%rdi), %rax
 	ret
+.endif
 
 /* Creates a new function
  *
@@ -84,6 +33,8 @@ kn_value_new_identifier:
  */
 .globl kn_value_new_function
 kn_value_new_function:
+	todo "kn_value_new_function"
+.if 0
 	ensure_lower_bits_not_set
 	push %rbx
 	push %r13
@@ -115,6 +66,7 @@ kn_value_new_function:
 	pop %r13
 	pop %rbx
 	ret
+.endif
 
 /* Frees the memory associated with a value.
  *
@@ -122,6 +74,8 @@ kn_value_new_function:
  */
 .globl kn_value_free
 kn_value_free:
+	jmp die
+.if 0
 	mov %rdi, %rax
 	test $ALLOC_BIT, %rax /* optimize for the case where it's a literal */
 	jnz 0f
@@ -156,6 +110,7 @@ kn_value_free:
 	pop %r12
 	pop %rbx
 	jmp _free      /* free the entire struct, as it was malloced. */
+.endif
 
 /* Runs a value
  *
@@ -164,6 +119,9 @@ kn_value_free:
  */
 .globl kn_value_run
 kn_value_run:
+	jmp die
+
+.if 0
 	mov %rdi, %rax        /* both prep for immediate return and the start of allocated runs */
 	test $ALLOC_BIT, %rdi /* check to see if we are an allocated type */
 	jnz 0f                /* if so, continue onwards */
@@ -187,6 +145,7 @@ kn_value_run:
 	mov (%rdi), %rax          /* load the function pointer */
 	lea 8(%rdi), %rdi         /* load the arguments start */
 	jmp *%rax                 /* run the function */
+.endif
 
 /* Converts a value to a string
  *
@@ -194,6 +153,8 @@ kn_value_run:
  * must be individually freed.
  */
 .globl kn_value_to_string
+	jmp die
+.if 0
 kn_value_to_string:
 	test $ALLOC_BIT, %rdi   /* check to see if we are an allocated type */
 	jnz 1f                  /* if so, continue onwards */
@@ -266,10 +227,14 @@ integer_to_string:
 	mov %rax, %rdi
 	add $40, %rsp
 	jmp kn_string_new
+.endif
 
 /* Converts a value to a number */
 .globl kn_value_to_number
 kn_value_to_number:
+	jmp die
+
+.if 0
 	test $NUM_BIT, %rdi     /* see if we are a number */
 	jz 0f                   /* if we aren't, go forward */
 /* At this point, we have a number; optimize for number -> number conversion. */
@@ -298,10 +263,13 @@ kn_value_to_number:
 	mov %rax, %rdi
 	add $8, %rsp
 	jmp kn_value_to_number/* after running, try to parse the number again */
+.endif
 
 /*** TODO: this should return 0 or nonzero, not true/false. ***/
 .globl kn_value_to_boolean
 kn_value_to_boolean:
+	jmp die
+.if 0
 	test $ALLOC_BIT, %rdi
 	jnz 0f
 	xor %eax, %eax
@@ -321,10 +289,12 @@ kn_value_to_boolean:
 	mov %rax, %rdi
 	add $8, %rsp
 	jmp kn_value_to_boolean /* after running, try to parse the boolean again */
-
+.endif
 /* Clones the given value. */
 .globl kn_value_clone
 kn_value_clone:
+	jmp die
+.if 0
 	mov %rdi, %rax
 	test $ALLOC_BIT, %rdi
 	jnz 0f
@@ -383,9 +353,11 @@ kn_value_clone:
 # 	pop %r12
 # 	todo "clone a function"
 # 	add $8, %rsp
-
+.endif
 .globl kn_value_dump
 kn_value_dump:
+	jmp die
+.if 0
 	mov %rdi, %rsi
 	test $NUM_BIT, %rsi
 	jz 0f
@@ -463,6 +435,7 @@ kn_value_dump:
 0: // unknown
 	lea invalid_fmt(%rip), %rdi
 	call abort
+.endif
 
 .data:
 invalid_fmt: .asciz "unknown value type: '%d'\n"

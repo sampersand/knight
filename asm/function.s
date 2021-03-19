@@ -1,5 +1,5 @@
-.include "debug.s"
-.include "value_header.s"
+.include "debugh.s"
+.include "valueh.s"
 
 .macro define_function argc:req suffix:req
 .balign 16
@@ -21,17 +21,25 @@ define_function 0, prompt
 	todo "kn_func_prompt"
 
 define_function 0, random
+	todo "kn_fn_random"
+.if 0
 	sub $8, %rsp
 	call _rand
 	add $8, %rsp
 	mov %rax, %rdi
 	jmp kn_value_new_number
+.endif
 
 define_function 1, block
+	todo "kn_fn_block"
+.if 0
 	mov (%rdi), %rdi
 	jmp kn_value_clone // simply clone the value given
+.endif
 
 define_function 1, call
+	todo "kn_fn_call"
+.if 0
 	push %rbx
 	mov (%rdi), %rdi
 	call kn_value_run  // execute the passed parameter
@@ -44,8 +52,11 @@ define_function 1, call
 	mov %rbx, %rax     // restore the return value
 	pop %rbx
 	ret
+.endif
 
 define_function 1, eval
+	todo "kn_fn_eval"
+.if 0
 	push %rbx
 	mov (%rdi), %rdi
 	call kn_value_to_string // convert the passed parameter into a string
@@ -58,8 +69,11 @@ define_function 1, eval
 	mov %rbx, %rax          // restore the return value
 	pop %rbx
 	ret
+.endif
 
 define_function 1, debug
+	todo "kn_fn_debug"
+.if 0
 	push %rbx
 	mov (%rdi), %rdi
 	mov %rdi, %rbx
@@ -72,18 +86,24 @@ define_function 1, debug
 	mov %rbx, %rax
 	pop %rbx
 	ret
+.endif
 
 define_function 1, system
 	todo "kn_func_system"
 
 define_function 1, quit
+	todo "kn_fn_quit"
+.if 0
 	sub $8, %rsp
 	mov (%rdi), %rdi
 	call kn_value_to_number
 	mov %rax, %rdi
 	call _exit
+.endif
 
 define_function 1, not
+	todo "kn_fn_not"
+.if 0
 	sub $8, %rsp
 	mov (%rdi), %rdi          // fetch the first argument
 	call kn_value_to_boolean  // convert it to a boolean
@@ -91,8 +111,11 @@ define_function 1, not
 	cmp $0, %rax              // check to see if the value is false
 	je kn_value_new_true      // if they are, then return true
 	jmp kn_value_new_false    // otherwise, return false.
+.endif
 
 define_function 1, length
+	todo "kn_fn_length"
+.if 0
 	push %rbx
 	mov (%rdi), %rdi        // deref the first argument
 	call kn_value_to_string // convert it to a string
@@ -105,12 +128,15 @@ define_function 1, length
 	mov %rbx, %rdi          // restore the return value
 	pop %rbx
 	jmp kn_value_new_number
+.endif
 
 
 define_function 1, output
 	todo "kn_func_output"
 
 define_function 2, add
+	todo "kn_fn_add"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx  /* save arg2 */
 	mov (%rdi), %rdi   /* fetch arg1 */
@@ -138,8 +164,11 @@ define_function 2, add
 //	add $8, %rsp
 //	pop %r12
 	todo "string_concat"
+.endif
 
 define_function 2, sub
+	todo "kn_fn_sub"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx       /* Save the second arg for the future. */
 	mov (%rdi), %rdi
@@ -151,8 +180,11 @@ define_function 2, sub
 	mov %rbx, %rdi
 	pop %rbx
 	jmp kn_value_new_number
+.endif
 
 define_function 2, mul
+	todo "kn_fn_mul"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx  /* save arg2 */
 	mov (%rdi), %rdi   /* fetch arg1 */
@@ -180,9 +212,12 @@ define_function 2, mul
 //	add $8, %rsp
 //	pop %r12
 	todo "string_dupl"
+.endif
 
 
 define_function 2, div
+	todo "kn_fn_div"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx       /* Save arg2 for the future. */
 	mov (%rdi), %rdi
@@ -207,8 +242,11 @@ define_function 2, div
 divide_by_zero:
 	.asciz "Fatal error: Cannot divide by zero!\n"
 .popsection
+.endif
 
 define_function 2, mod
+	todo "kn_fn_mod"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx       /* Save arg2 for the future. */
 	mov (%rdi), %rdi
@@ -227,8 +265,11 @@ define_function 2, mod
 modulo_by_zero:
 	.asciz "Fatal error: Cannot modulo by zero!\n"
 .popsection
+.endif
 
 define_function 2, pow
+	todo "kn_fn_pow"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx       /* Save the second arg for the future. */
 	mov (%rdi), %rdi
@@ -246,9 +287,12 @@ define_function 2, pow
 	imul %rax, %rdi         /* result *= base */
 	dec %rcx                /* exponent -- */
 	jmp 0b
+.endif
 
 /* Check to see if two values are equal */
 define_function 2, eql
+	todo "kn_fn_eql"
+.if 0
 	push %rbx
 /* run the values */
 	mov 8(%rdi), %rbx     /* save second argument for later */
@@ -305,6 +349,7 @@ define_function 2, eql
 	call kn_value_free
 	pop %rbx
 	jmp kn_value_new_false
+.endif
 
 define_function 2, lth
 	todo "kn_func_lth"
@@ -313,6 +358,8 @@ define_function 2, gth
 	todo "kn_func_gth"
 
 define_function 2, then
+	todo "kn_fn_then"
+.if 0
 	push %rbx
 	mov 8(%rdi), %rbx
 	mov (%rdi), %rdi
@@ -322,8 +369,11 @@ define_function 2, then
 	mov %rbx, %rdi
 	pop %rbx
 	jmp kn_value_run
+.endif
 
 define_function 2, assign
+	todo "kn_fn_assign"
+.if 0
 	push %rbx
 	mov (%rdi), %eax
 	and $TAG_MASK, %eax
@@ -340,6 +390,7 @@ define_function 2, assign
 	jmp kn_env_set
 0:
 	todo "kn_func_assign for non-identifiers"
+.endif
 
 define_function 2, while
 	todo "kn_func_while"

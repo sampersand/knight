@@ -1,3 +1,6 @@
+.include "valueh.s"
+.include "debugh.s"
+
 .macro peek where:req
 	movzb (%r12), \where
 .endm
@@ -26,10 +29,6 @@ done_parsing:
 	pop %r12
 	ret
 
-/* A token was expected, but could not be found. */
-expected_token:
-	lea expected_token_fmt(%rip), %rdi
-	jmp abort
 
 .equ whitespace, handle_stream
 
@@ -39,22 +38,26 @@ comment:
 	advance
 	cmp $'\n', %ecx      /* check to see if we're at end of line */
 	je handle_stream     /* if we are, go find the next token */
-	jecxz expected_token /* if we are at eof, we expected a token */
+	cmp $0, %ecx
+	jz expected_token    /* if we are at eof, we expected a token */
 	jmp comment          /* otherwise, get the next character */
 
 integer:
-	lea -'0'(%rax), %rdi
-	lea done_parsing(%rip), %rax
-	push %rax
+	lea -'0'(%rax), %rax
+	lea done_parsing(%rip), %rcx
+	push %rcx
 0:
-	peek %eax
-	sub $'0', %eax
-	cmp $9, %rax
-	jg kn_value_new_number
+	peek %ecx
+	sub $'0', %ecx
+	cmp $9, %rcx
+	jg 1f
 	advance
-	imul $10, %rdi
-	add %rax, %rdi
+	imul $10, %rax
+	add %rax, %rax
 	jmp 0b
+1:
+	kn_new_number %rax
+	ret
 
 identifier:
 	unadvance
@@ -92,60 +95,34 @@ string:
 	mov %r12, %rsi
 	sub %rdi, %rsi
 	dec %rsi
-	call _strndup
-	mov %rax, %rdi
-	call kn_string_new
-	mov %rax, %rdi
-	lea done_parsing(%rip), %rax
-	push %rax
-	jmp kn_value_new_string
+	call kn_str_alloc
+	call _strcpy
+	call ddebug
+	kn_new_string %rax
+	jmp done_parsing
 1: // An unterminated quote was encountered.
 	dec %rdi
 	mov %rdi, %rsi
 	lea unterminated_quote_msg(%rip), %rdi
 	jmp abort
 
-invalid:
-	lea invalid_token_fmt(%rip), %rdi
-	mov %rax, %rsi
-	jmp abort
-
-literal_true:
-	lea done_parsing(%rip), %rax
-	push %rax
-0:
-	peek %eax
-	advance
-	sub $'A', %al
-	cmp $('Z' - 'A'), %rax
-	jle 0b
-	unadvance
-	jmp kn_value_new_true
-
 literal_false:
-	lea done_parsing(%rip), %rax
-	push %rax
-0:
-	peek %eax
-	advance
-	sub $'A', %al
-	cmp $('Z' - 'A'), %rax
-	jle 0b
-	unadvance
-	jmp kn_value_new_false
-
+	assert_eq $KN_FALSE, %rax
+	xor %eax, %eax
+	jmp kw_literal
+literal_true:
+	mov $KN_TRUE, %eax
+	jmp kw_literal
 literal_null:
-	lea done_parsing(%rip), %rax
-	push %rax
-0:
-	peek %eax
+	mov $KN_NULL, %eax
+	/* fallthrough */
+kw_literal:
 	advance
-	sub $'A', %al
-	cmp $('Z' - 'A'), %rax
-	jle 0b
-	unadvance
-	jmp kn_value_new_null
-
+	peek %ecx
+	sub $'A', %cl
+	cmp $('Z' - 'A'), %rcx
+	jle kw_literal
+	jmp done_parsing
 
 .macro decl_sym_function label:req
 function_\label:
@@ -202,6 +179,15 @@ function:
 	push %rax
 	jmp kn_value_new_function
 
+/* A token was expected, but could not be found. */
+expected_token:
+	lea expected_token_fmt(%rip), %rdi
+	jmp abort
+
+invalid:
+	lea invalid_token_fmt(%rip), %rdi
+	mov %rax, %rsi
+	jmp abort
 .data
 
 expected_token_fmt:
