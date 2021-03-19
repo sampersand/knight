@@ -65,6 +65,8 @@ Knight does not have a distinction between statements and expressions: Every fun
 
 All characters other than those mentioned in this document are considered invalid within Knight, both within source code and strings. Notably, the NUL character (`\0`) is not permissible within Knight strings, and can be used as a deliminator within implementations.
 
+Each Knight program consists of a single expression---such as `OUTPUT 3` or `; (= a 4) : OUTPUT(+ "a=" a)`. Any additional tokens after this first expression (ie anything other than [Whitespace](#11-whitespace) and [Comments](1.2)) is undefined behaviour.
+
 ## 1.1 Whitespace
 Implementations are **required** to recognize the following characters as whitespace:
 - Tab (`0x09`, ie `\t`)
@@ -122,6 +124,33 @@ Note that `:` is the "no-op" function, and can safely be considered a piece of w
 
 ### 1.5.1 Implementation-Defined Functions
 Implementations may define their own functions, as long as they start with an upper-case letter, or a symbol. 
+
+## Example
+Here's an example of a simple guessing game and how it should parse:
+```text
+; = secret RANDOM
+; = guess + 0 PROMPT
+OUTPUT IF (? secret guess) "correct!" "wrong!"
+```
+```text
+[;]
+ ├──[=]
+ │   ├──[secret]
+ │   └──[RANDOM]
+ └──[;]
+     ├──[=]
+     │   ├──[guess]
+     │   └──[+]
+     │       ├──[0]
+     │       └──[PROMPT]
+     └──[OUTPUT]
+         └──[IF]
+             ├──[?]
+             │   ├──[secret]
+             │   └──[guess]
+             ├──["correct!"]
+             └──["wrong!"]
+```
 
 # 2 Types
 Knight itself only has a handful of builtin types---Numbers, Strings, Booleans, and Null. Knight has a few different contexts (see [Functions](#Functions) for more details), of which `numeric`, `string`, and `boolean` coerce their types to the correct type. As such, all types define infallible conversions to each of these contexts.
@@ -330,8 +359,7 @@ Note that this is intended to be used for debugging (and unit testing) purposes,
 - `Number(<number>)` - `<number>` should be base-10, with a leading `-` if negative.
 - `Boolean(<bool>)` - `<bool>` must be either `true` or `false`.
 - `String(<string>)` - The literal contents of the string---no escaping whatsoever should be performed. (e.g. `DUMP "foo'b)ar\"` should write `String(foo'b)ar\)`).
-- `Identifier(<ident>)` - the name of an identifier.
-- `Function(...)` - the contents do not matter, as long as it starts with `Function` and has parens.
+- The return value of `BLOCK` doesn't need to dump anything out, as the tests won't check for it.
 
 ### 4.2.10 `OUTPUT(string)`
 Writes the string to stdout, flushes stdout, and then returns `NULL`.
