@@ -1,20 +1,20 @@
-SRCDIR ?= src
-OBJDIR ?= obj
-EXE ?= knight
+SRCDIR?=src
+OBJDIR?=obj
+EXE?=knight
+CXX=g++
 
-CXX = g++
-CEXEFLAGS =
-CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -Wpedantic -Wno-infinite-recursion -O3 -DNDEBUG -flto -march=native
-override CXXFLAGS += -F$(SRCDIR)
+CXXFLAGS+=-Wall -Wextra -Wpedantic  -Werror -std=c++17 -Wno-infinite-recursion
+override CXXFLAGS+=-F$(SRCDIR)
 
 ifdef DEBUG
-override CXXFLAGS += -g -fsanitize=address,undefined
+override CXXFLAGS+=-g -fsanitize=address,undefined
 else
-CEXEFLAGS += -O3 -DNDEBUG -flto -march=native
+override CXXFLAGS+=-O3 -DNDEBUG -flto -march=native
 endif
 
-# lower case because it's local to makefile.
 objects = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.cpp))
+
+.PHONY: all optimized clean
 
 all: $(EXE)
 
