@@ -290,7 +290,7 @@ Note that `RANDOM` _should_ return different numbers across subsequent calls and
 A no-op: Simply returns its value unchanged. 
 
 ### 4.2.2 `EVAL(string)`
-This function takes a single string argument, which should be executed as if it where Knight source code.
+This function takes a single string argument, which should be executed as if it where Knight source code. As such, the string should be valid Knight source code for your implementation. (ie a single expression, possibly with trailing tokens, depending on how the parser was impelmented.)
 
 This function should act _as if_ its invocation were replaced by the contents of the string, eg:
 ```
@@ -304,6 +304,7 @@ should be equivalent to
 ; = bar "* a 4"
 : OUTPUT + "a*4=" (* a 4)
 ```
+
 
 ### 4.2.3 `BLOCK(unevaluated)`
 Unlike nearly every other function in Knight, the `BLOCK` function does _not_ execute its argument---instead, it returns the argument, unevaluated. This is the only way for knight programs to get unevaluated blocks of code, which can be used for delayed execution.
@@ -430,7 +431,6 @@ For example, `% 7 3` will return `1`, and `% (- 0 7) 5` will return `-2`.
 If the first argument is a number, the second will be coerced to a number and the resulting exponentiation will be returned. Note that for an exponent of `0`, the return value should always be `1`.
 
 If the first argument is not a number, the return value of this function is undefined.
-If the second argument is negative, the return value is undefined. ~~(This is in contrast to "normal" math, where you can, eg, raise `-1` to a negative power).~~
 
 ### 4.3.7 `<(unchanged, coerce)`
 The return value of this function depends on its first argument's type:
@@ -514,4 +514,29 @@ If the ending index (ie `start+length`) is larger than the length of the string,
 For example, `SET "abcd" 1 2 "3"` would return the string `"a3d"`.
 
 # 5 Extensions
-All functions starting with `X` are explicitly reserved for extensions. Note that because they're reserved for extensions, you aren't required to conform to the "first character must indicate what the function means" (More details to come.) 
+This section describes possible extensions that Knight implementations could add. Because these are extensions, none of them are required to be compliant. They're simply ways to make Knight more ~~enjoyable~~ bearable to write in. 
+
+### 5.0.1 The `X` Function.
+Note that the function `X` is explicitly reserved for extensions: Knight will never use `X` for function names, and implementations are free to use it as they wish. Note that since this is reserved for extensions, they're free to "overload" it. That is, you can have different functions that all start with `X`, eg, `X_OPENFILE`, `X_READFILE`, `X_CLOSEFILE`.
+
+
+## 5.1 `VALUE(string)`: Look up strings as variables
+This function would convert its argument to a string, then look it up as if it were a variable name. That is, it could be a replacement for `EVAL string`, when `string` is just a variable name.
+
+## 5.2 `~(number)`: Unary minus
+The `~` function could be used to implement unary minus. That is, `~ expression` would be the same as `- 0 expression`.
+
+## 5.3 Counting Parenthesis
+Parenthesis in Knight are whitespace, and are used simply as a way to visually group things. However, as Knight programs are quite hard to debug, you could count parenthesis and ensure that parens match
+
+## 5.4 Handle undefined behaviour
+The Knight specs have a lot of undefined behaviour to leave a lot up to implementations. However, this means that writing Knight programs has a lot of potential pitfalls. As such, you may want to catch most forms of undefined behaviour and exit gracefully. (catching _all_ forms is a bit much, eg integer overflow.)
+
+## 5.5 `USE(string)`: Import other knight files
+Currently, to import files, you need to use the `` ` `` function: `` EVAL ` + "cat " filename ``. However, this is quite dangerous if `filename` has any shell characters in it. 
+
+## 5.6 Extensibility 
+### 5.6.1 Ability to register new, arbitrary native functions
+### 5.6.2 Ability to register new, arbitrary native types
+(eg arrays, floats)
+### 5.6.3 Embedability (ie toggle "dangerous"/io commands.)
