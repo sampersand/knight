@@ -3,8 +3,10 @@ An extremely simple programming language that I've designed to be easy to implem
 
 Unofficial Tag-line: "Knight: Runs everywhere. Not because it's cross-platform, but because it has a implementation in virtually all major languages."
 
+Checkout the [community](COMMUNITY.md), and join us on discord: https://discord.gg/SE3TjsewDk.
+
 # Implementations
-The following is the list of all languages that's supported. All in-progress implementations are in separate branches.
+The following is the list of all languages that I've written it in. All in-progress implementations are in separate branches.
 
 | Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
@@ -84,10 +86,9 @@ Here's some examples of the syntax to give you a feel for it:
 : OUTPUT +++ 'fib(' n ')=' CALL fib     # print "fib(" + n + ")=" + fib()
 # => fib(10)=55
 ```
+
 # Specs
-
-For exact details please see [specs.md](specs.md). The following is just a rough overview, and may be slightly out of date.
-
+For exact details please see [specs.md](specs.md). The following is just a rough overview, and is probably out of date.
 ## Syntax
 Every Knight program is a single expression. (The `;` function can be used to write more than one expression, sequentially.) Because of this, parsing is extremely simple: Parse a token, then parse as many arguments as that expression dictates.
 
