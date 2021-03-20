@@ -14,13 +14,12 @@ struct Inner {
 	value: RefCell<Option<Value>>
 }
 
-
 impl Variable {
 	pub fn new(name: &str) -> Self {
 		Self::fetch_or_leak(name, |name| Box::leak(name.to_string().into_boxed_str()))
 	}
 
-	fn fetch_or_leak<N: AsRef<str>>(name: N, leak: impl FnOnce(N) -> &'static str) -> Self {
+	pub fn fetch_or_leak<N: AsRef<str>>(name: N, leak: impl FnOnce(N) -> &'static str) -> Self {
 		static mut ENVIRONMENT: OnceCell<RefCell<HashMap<&'static str, &'static Inner>>> = OnceCell::new();
 
 		let mut env = unsafe { ENVIRONMENT.get_or_init(Default::default) }.borrow_mut();
