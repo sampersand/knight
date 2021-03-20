@@ -53,8 +53,11 @@ static void free_strings() {
 		if (curr->refcount)
 			continue;
 
-		if (!(curr->flags & KN_STRING_FL_EMBED))
+		if (!(curr->flags & KN_STRING_FL_EMBED
+			|| curr->flags & KN_STRING_FL_STATIC))
+		{
 			free(curr->alloc.str);
+		}
 
 		if (string_arena_next == NULL)
 			string_arena_next = curr;
@@ -208,6 +211,8 @@ void kn_string_free(struct kn_string_t *string) {
 		return;
 	}
 
+	assert(string->refcount);
+
 	// if we aren't the last reference, then just return.
 	if (--string->refcount)
 		return;
@@ -221,9 +226,10 @@ void kn_string_free(struct kn_string_t *string) {
 	// if we aren't embedded, free the allocated string.
 	if (!(string->flags & KN_STRING_FL_EMBED))
 		free(string->alloc.str);
-#endif /* KN_ARENA_ALLOCATE */
 
 	free(string);
+#endif /* KN_ARENA_ALLOCATE */
+
 }
 
 struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
