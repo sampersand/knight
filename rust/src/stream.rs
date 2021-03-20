@@ -8,7 +8,6 @@ struct Stream<I: Iterator<Item=char>> {
 	lineno: usize,
 }
 
-
 impl<I: Iterator<Item=char>> Iterator for Stream<I> {
 	type Item = char;
 
@@ -82,7 +81,7 @@ fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 		}
 	}
 
-	Value::Variable(ident)
+	Value::Variable(crate::Variable::from(ident))
 }
 
 fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
@@ -107,7 +106,7 @@ fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Re
 	let lineno = stream.lineno;
 
 	if stream.next().unwrap().is_ascii_uppercase() {
-		while stream.iter.peek().map_or(false, char::is_ascii_uppercase) {
+		while stream.iter.peek().map_or(false, |c| c.is_ascii_uppercase() || *c == '_') {
 			stream.next();
 		}
 	}

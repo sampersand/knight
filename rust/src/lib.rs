@@ -7,10 +7,12 @@ mod error;
 mod function;
 pub mod rcstr;
 mod stream;
-pub mod env;
+mod variable;
 
 
 pub type Number = i64;
+
+pub use variable::Variable;
 pub use rcstr::RcStr;
 pub use value::Value;
 pub use function::Function;

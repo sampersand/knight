@@ -165,7 +165,7 @@ declare_functions! {
 	fn 'D' (value) {
 		let ret = value.run()?;
 
-		println!("{:?}", ret);
+		print!("{:?}", ret);
 
 		Ok(ret)
 	}
@@ -248,21 +248,19 @@ declare_functions! {
 		rhs.run()
 	}
 
-	fn '=' (arg, rhs) {
-		let rhsval;
+	fn '=' (var, rhs) {
+		let variable = 
+			if let Value::Variable(ref variable) = var {
+				variable
+			} else {
+				return Err(RuntimeError::InvalidOperand { func: '?', operand: var.typename() });
+			};
 
-		if let Value::Variable(ref ident) = arg {
-			rhsval = rhs.run()?;
+		let rhs = rhs.run()?;
 
-			crate::env::insert(ident, rhsval.clone());
-		} else {
-			let ident = arg.to_rcstr()?;
-			rhsval = rhs.run()?;
+		variable.assign(rhs.clone());
 
-			crate::env::insert(&ident, rhsval.clone());
-		}
-
-		Ok(rhsval)
+		Ok(rhs)
 	}
 
 	fn 'W' (lhs, rhs) {

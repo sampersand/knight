@@ -40,7 +40,7 @@ pub enum RuntimeError {
 	/// An unknown identifier was attempted to be dereferenced.
 	UnknownIdentifier {
 		/// The identifier at fault.
-		identifier: String
+		identifier: &'static str
 	},
 	/// A function was executed with an invalid operand.
 	InvalidOperand {
