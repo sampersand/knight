@@ -33,7 +33,8 @@ enum kn_string_flags_t {
 /*
  * The length of the embedded segment of the string.
  */
-#define KN_STRING_EMBEDDED_LENGTH (sizeof(size_t) * 2 + sizeof(char *) - 1)
+#define KN_STRING_EMBEDDED_LENGTH \
+	(sizeof(size_t) + sizeof(char *) - 1 + sizeof(char [8]))
 
 /*
  * The string type in Knight.
@@ -52,6 +53,15 @@ struct kn_string_t {
 	/* The flags that dictate how to manage this struct's memory. */
 	enum kn_string_flags_t flags;
 
+	/*
+	 * The amount of references to this string.
+	 *
+	 * This is increased when `kn_string_clone`d and decreased when
+	 * `kn_string_free`d, and when it reaches zero, the struct will
+	 * be freed.
+	 */
+	int refcount;
+
 	/* All strings are either embedded or allocated. */
 	union {
 		struct {
@@ -64,15 +74,6 @@ struct kn_string_t {
 
 		struct {
 			/*
-			 * The amount of references to this string.
-			 *
-			 * This is increased when `kn_string_clone`d and decreased when
-			 * `kn_string_free`d, and when it reaches zero, the `str` will
-			 * be freed.
-			 */
-			size_t refcount;
-
-			/*
 			 * The length of the allocated string.
 			 *
 			 * This should equal `strlen(str)`, and is just an optimization aid.
@@ -83,6 +84,11 @@ struct kn_string_t {
 			char *str;
 		} alloc;
 	};
+
+	/*
+	 * Padding to get the struct to 32 bytes.
+	 */
+	char _padding[8];
 };
 
 /*
