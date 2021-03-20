@@ -36,7 +36,7 @@ SharedValue Function::parse(std::string_view& view) {
 
 	// remove trailing upper-case letters for keyword functions.
 	if (isupper(front)) {
-		while (isupper(view.front())) {
+		while (isupper(view.front()) || view.front() == '_') {
 			view.remove_prefix(1);
 		}
 	}
