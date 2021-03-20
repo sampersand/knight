@@ -1,14 +1,19 @@
-#include "string.h"
-#include "shared.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include "string.h" /* prototypes, flags, size_t */
+#include "shared.h" /* xmalloc, die, kn_hash */
+#include <stdlib.h> /* fre, NULLe */
+#include <string.h> /* strlen, strcmp, memcpy */
+#include <assert.h> /* assert */
 
 #ifdef KN_ARENA_ALLOCATE
 
+/* The following two imports import these collectively:
+
+getpagesize, mmap, munmap, MAP_FAILED, PROT_READ, PROT_WRITE, MAP_PRIVATE,
+MAP_ANONYMOUS, perror
+*/
 #include <sys/mman.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #ifndef KN_NUM_PAGES
 #define KN_NUM_PAGES (4096*4)
@@ -48,8 +53,8 @@ static void free_strings() {
 		if (curr->refcount)
 			continue;
 
-		free((char *) curr->alloc.str);
-		free(curr);
+		if (!(curr->flags & KN_STRING_FL_EMBED))
+			free(curr->alloc.str);
 
 		if (string_arena_next == NULL)
 			string_arena_next = curr;
@@ -88,7 +93,6 @@ static inline struct kn_string_t *allocate_string() {
 
 
 #ifdef KN_STRING_CACHE
-
 #ifndef KN_STRING_CACHE_MAXLEN
 #define KN_STRING_CACHE_MAXLEN 32
 #endif /* KN_STRING_CACHE_MAXLEN */
@@ -97,8 +101,8 @@ static inline struct kn_string_t *allocate_string() {
 #define KN_STRING_CACHE_LINESIZE (1<<14)
 #endif /* KN_STRING_CACHE_LINESIZE */
 
-static struct kn_string_t *
-	string_cache[KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
+static struct kn_string_t *string_cache[
+	KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
 
 static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 	assert(length != 0);
@@ -139,6 +143,7 @@ struct kn_string_t *kn_string_alloc(size_t length) {
 		string->alloc.length = length;
 		string->alloc.str = xmalloc(length + 1);
 	}
+
 	return string;
 }
 
@@ -150,7 +155,6 @@ static struct kn_string_t *create_string(char *str, size_t length) {
 	struct kn_string_t *string = allocate_string();
 
 	string->flags = KN_STRING_FL_STRUCT_ALLOC;
-
 	string->refcount = 1;
 	string->alloc.length = length;
 	string->alloc.str = str;
@@ -165,7 +169,7 @@ struct kn_string_t *kn_string_new(char *str, size_t length) {
 	assert(strlen(str) == length);
 
 	if (length == 0) {
-		free((char *) str);
+		free(str); // we're always given owned strings.
 		return &kn_string_empty;
 	}
 
@@ -183,7 +187,7 @@ struct kn_string_t *kn_string_new(char *str, size_t length) {
 	if (*cacheline == NULL || strcmp((string = *cacheline)->alloc.str, str))
 		return *cacheline = create_string(str, length);
 
-	free((char *) str); // we don't need this string anymore, get rid of it.
+	free(str); // we don't need this string anymore, get rid of it.
 	assert(string->refcount >= 0);
 
 	++string->refcount;
@@ -198,6 +202,7 @@ void kn_string_free(struct kn_string_t *string) {
 
 	// if we didn't allocate the struct, simply return.
 	if (!(string->flags & KN_STRING_FL_STRUCT_ALLOC)) {
+		// printf("%d[%p]'%s'\n", string->flags, string, kn_string_deref(string));
 		assert(string->flags & KN_STRING_FL_EMBED);
 
 		return;
@@ -215,7 +220,7 @@ void kn_string_free(struct kn_string_t *string) {
 #ifndef KN_ARENA_ALLOCATE
 	// if we aren't embedded, free the allocated string.
 	if (!(string->flags & KN_STRING_FL_EMBED))
-		free((char *) string->alloc.str);
+		free(string->alloc.str);
 #endif /* KN_ARENA_ALLOCATE */
 
 	free(string);

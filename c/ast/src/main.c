@@ -21,13 +21,13 @@ static char *read_file(const char *filename) {
 		size_t amntread = fread(&contents[length], 1, capacity - length, file);
 
 		if (amntread == 0) {
-			if (feof(stdin))
-				break;
 
 #ifndef KN_RECKLESS
+		if (!feof(stdin))
 			die("unable to line in file '%s': %s'", filename, strerror(errno));
 #endif /* KN_RECKLESS */
 
+			break;
 		}
 
 		length += amntread;
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 		str = read_file(argv[2]);
 		break;
 	default:
-		usage(argv([0]));
+		usage(argv[0]);
 	}
 
 	kn_startup();

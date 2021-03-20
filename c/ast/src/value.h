@@ -1,10 +1,15 @@
 #ifndef KN_VALUE_H
 #define KN_VALUE_H
 
-#include <stdint.h>
-#include "string.h"
-#include <stdbool.h>
+#include "string.h" /* kn_string_t */
+#include <stdint.h>  /* uint64_t, int64_t */
+#include <stdbool.h> /* bool, true, false */
 
+/*
+ * The type that represents values within Knight.
+ *
+ * All the different types are actually packed into this one type
+ */
 typedef uint64_t kn_value_t;
 typedef int64_t kn_number_t;
 typedef bool kn_boolean_t;

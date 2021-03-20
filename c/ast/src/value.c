@@ -342,6 +342,7 @@ kn_value_t kn_value_clone(kn_value_t value) {
 		return value;
 	}
 
+	assert(KN_TAG(value) == KN_TAG_AST);
 	++kn_value_as_ast(value)->refcount;
 
 	return value;
@@ -358,6 +359,8 @@ void kn_value_free(kn_value_t value) {
 		return;
 	}
 
+	printf("<%llu>\n", KN_TAG(value));
+	assert(KN_TAG(value) == KN_TAG_AST);
 	struct kn_ast_t *ast = kn_value_as_ast(value);
 
 	if (--ast->refcount)

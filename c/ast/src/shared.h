@@ -11,9 +11,9 @@
  */
 void die(const char *msg, ...) __attribute__((noreturn,cold));
 
-
 #ifdef KN_RECKLESS
-#define assert_reckless(_) do { } while(0)
+#define assert_reckless(_) \
+	do { } while(0)
 #else
 #define assert_reckless(value) \
 	do { if (!(value)) die("invalid value: %s", #value); } while(0)
