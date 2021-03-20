@@ -8,7 +8,7 @@
 		# convert fib(n-1) + fib(n-2) into fib(n) + fib(n-1)
 		; = n (- n 1)
 		# Push the value of `n - 1` onto the "stack of `n`s"
-		; = (+ "_fib_stack_" _fib_recur) (- n 1)
+		; EVAL (++ "=_fib_stack_" _fib_recur "- n 1")
 		; = _fib_recur (+ _fib_recur 1)
 
 		# Get the result of `fib(n)` (ie `fib(n-1)`, as we converted earlier)

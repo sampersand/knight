@@ -50,7 +50,7 @@ describe 'Block' do
 		describe 'CALL' do
 			it 'executes its body' do
 				assert_equal 12, eval('CALL BLOCK + 5 7')
-				assert_equal 13, eval('; = foo BLOCK bar ; = bar 13 : CALL bar')
+				assert_equal 18, eval('; = foo BLOCK + bar 5 ; = bar 13 : CALL foo')
 			end
 
 
@@ -62,6 +62,7 @@ describe 'Block' do
 				assert_equal false, eval('CALL BLOCK FALSE')
 				assert_equal :null, eval('CALL BLOCK NULL')
 				assert_equal 1, eval('; = ident 1 : CALL BLOCK ident')
+				assert_equal 3, eval('CALL BLOCK + 1 2')
 			end
 		end
 =begin

@@ -144,7 +144,7 @@ describe 'String' do
 	end
 
 	describe 'operators' do
-		describe '+' do
+		describe '4.3.1 +' do
 			it 'concatenates' do
 				assert_equal "1121a3", eval('+ "112" "1a3"')
 				assert_equal "Plato Aristotle", eval('+ "Plato" " Aristotle"')
@@ -159,7 +159,7 @@ describe 'String' do
 			end
 		end
 
-		describe '*' do
+		describe '4.3.3 *' do
 			it 'duplicates itself with positive integers' do
 				assert_equal '', eval('* "" 12')
 				assert_equal 'foo', eval('* "foo" 1')
@@ -180,7 +180,7 @@ describe 'String' do
 			end
 		end
 
-		describe '?' do
+		describe '4.3.9 ?' do
 			it 'is only equal to itself' do
 				assert_equal true, eval('? "" ""')
 				assert_equal true, eval('? "a" "a"')
@@ -223,7 +223,7 @@ describe 'String' do
 			end
 		end
 
-		describe '<' do
+		describe '4.3.7 <' do
 			it 'performs lexicographical comparison' do
 				assert_equal true,  eval('< "a" "aa"')
 				assert_equal false, eval('< "b" "aa"')
@@ -283,7 +283,7 @@ describe 'String' do
 			end
 		end
 
-		describe '>' do
+		describe '4.3.8 >' do
 			it 'performs lexicographical comparison' do
 				assert_equal false, eval('> "a" "aa"')
 				assert_equal true,  eval('> "b" "aa"')
