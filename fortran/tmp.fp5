@@ -1,0 +1,29 @@
+program addNumbers
+
+! This simple program adds two numbers
+      implicit none
+
+! Type declarations
+      real :: a, b, result
+      integer(kind = 1) :: i, n, val
+      character(len=1) :: msg
+      logical :: x
+      x = a /= b
+      msg = "hello world"
+
+      print *, x !msg
+!      .true.
+!
+!! Executable statements
+!      a = 12.0
+!      b = 15.0
+!      result = a + b
+!      print *, 'The total is ', result
+!
+!      i = 0
+!      n = 0
+!      !while (i < 10)
+!      !end while
+!      print *, huge(i)
+!
+end program addNumbers
