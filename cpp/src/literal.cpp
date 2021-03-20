@@ -234,18 +234,19 @@ bool Literal::operator==(Value const& rhs_value) const {
 }
 
 int Literal::cmp(Value const& rhs) const {
-	if (!is_string()) {
+	if (is_string()) {
+		string const& this_string = std::get<string>(data);
+		string rhs_string = rhs.to_string();
+
+		return this_string < rhs_string ? -1 : this_string > rhs_string ? 1 : 0;
+	} else if (is_number()) {
 		auto this_num = to_number();
 		auto rhs_num = rhs.to_number();
 
 		return this_num < rhs_num ? -1 : this_num > rhs_num ? 1 : 0;
+	} else {
+		/* todo: boolean comparison */
 	}
-
-	string const & this_string = std::get<string>(data);
-	string rhs_string = rhs.to_string();
-
-
-	return this_string < rhs_string ? -1 : this_string > rhs_string ? 1 : 0;
 }
 
 bool Literal::operator<(Value const& rhs) const {
