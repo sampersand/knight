@@ -13,6 +13,9 @@ namespace kn {
 		std::string const name;
 
 		// The value associated with this variable.
+		//
+		// Note that this is mutable because _logically_, assigning to a variable shouldn't change the _variable_ itself,
+		// but we store the value within this class as an optimization.
 		mutable SharedValue value;
 
 		// Whether or not this value's been assigned to.
@@ -39,10 +42,5 @@ namespace kn {
 
 		// Assigns a value to this variable, discarding its previous value.
 		void assign(SharedValue newvalue) const noexcept;
-
-		friend struct std::hash<Variable>;
-		friend bool operator==(Variable const& lhs, Variable const& rhs);
 	};
-
-	bool operator==(Variable const& lhs, Variable const& rhs);
 }

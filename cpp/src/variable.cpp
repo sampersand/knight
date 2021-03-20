@@ -1,27 +1,15 @@
 #include "variable.hpp"
 #include "literal.hpp"
-#include <unordered_set>
+#include <unordered_map>
+#include <iostream>
 #include <memory>
 
 using namespace kn;
 
 Variable::Variable(std::string name) noexcept : name(name), assigned(false) {}
 
-bool kn::operator==(Variable const& lhs, Variable const& rhs) {
-	return lhs.name == rhs.name;
-}
-
-namespace std {
-	template <>
-	struct hash<Variable> {
-		size_t operator()(const Variable& variable) const {
-			return hash<std::string>()(variable.name);
-		}
-	};
-}
-
 // The set of all known variables.
-static std::unordered_set<std::shared_ptr<Variable>> ENVIRONMENT;
+static std::unordered_map<std::string_view, std::shared_ptr<Variable>> ENVIRONMENT;
 
 SharedValue Variable::parse(std::string_view& view) {
 	char front = view.front();
@@ -37,9 +25,15 @@ SharedValue Variable::parse(std::string_view& view) {
 		front = view.front();
 	} while (std::islower(front) || front == '_' || std::isdigit(front));
 
-	std::string identifier(start, view.cbegin());
+	auto identifier = std::string_view(start, view.cbegin() - start);
 
-	return *ENVIRONMENT.insert(std::make_shared<Variable>(identifier)).first;
+	if (auto match = ENVIRONMENT.find(identifier); match != ENVIRONMENT.cend()) {
+		return match->second;
+	}
+
+	auto variable = std::make_shared<Variable>(std::string(identifier));
+
+	return ENVIRONMENT.emplace(std::string_view(variable->name), std::move(variable)).first->second;
 }
 
 std::string Variable::dump() const {
@@ -47,7 +41,6 @@ std::string Variable::dump() const {
 }
 
 SharedValue Variable::run() const {
-	printf("%p\n", (void*)this);
 	if (assigned) {
 		return value;
 	} else {
@@ -58,5 +51,4 @@ SharedValue Variable::run() const {
 void Variable::assign(SharedValue newvalue) const noexcept {
 	value = newvalue;
 	assigned = true;
-	printf("%p\n", (void*)this);
 }
