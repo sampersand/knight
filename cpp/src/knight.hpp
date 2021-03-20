@@ -1,3 +1,5 @@
+#pragma once
+
 #include "value.hpp"
 
 namespace kn {

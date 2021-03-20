@@ -1,6 +1,7 @@
 #include "function.hpp"
 #include "value.hpp"
 #include "literal.hpp"
+#include "variable.hpp"
 #include "knight.hpp"
 
 #include <unordered_map>
@@ -18,14 +19,10 @@ SharedValue Function::run() const {
 	return func(args);
 }
 
-bool Function::operator==(Value const& rhs) const {
-	return this == &rhs;
-}
-
 SharedValue Function::parse(std::string_view& view) {
 	char front = view.front();
 
-	// if the first character isn't a valid function identifier, then just return early.
+	// if the first character isn't a valid function Variable, then just return early.
 	if (FUNCTIONS.count(front) == 0) {
 		return nullptr;
 	}
@@ -66,8 +63,6 @@ std::string Function::dump() const {
 void Function::register_function(char name, size_t arity, funcptr_t func) {
 	FUNCTIONS.insert(std::make_pair(name, std::make_pair(func, arity)));
 }
-
-#define REG_FUNC(name, len, body) Function::register_function(name, len, [](args_t const& args) -> SharedValue body);
 
 // Prompts for a single line from stdin.
 static SharedValue prompt(args_t const& args) {
@@ -251,7 +246,17 @@ static SharedValue then(args_t const& args) {
 
 // Assigns the second value to the first.
 static SharedValue assign(args_t const& args) {
-	return args[0]->assign(args[1]);
+	auto variable = dynamic_cast<Variable const*>(args[0].get());
+
+	if (variable == nullptr) {
+		throw Error("Cannot assign to " + variable->dump());
+	}
+
+	auto value = args[1]->run();
+
+	variable->assign(value);
+
+	return value;
 }
 
 // Evaluates the second value while the first one is truthy.

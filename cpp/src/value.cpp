@@ -1,5 +1,5 @@
 #include "value.hpp"
-#include "identifier.hpp"
+#include "variable.hpp"
 #include "function.hpp"
 #include "literal.hpp"
 
@@ -34,17 +34,13 @@ SharedValue Value::parse(std::string_view& view) {
 
 	remove_whitespace(view);
 
-	if ((ret = Literal::parse(view)) || (ret = Identifier::parse(view)) || (ret = Function::parse(view))) {
+	if ((ret = Literal::parse(view)) || (ret = Variable::parse(view)) || (ret = Function::parse(view))) {
 		return ret;
 	} else if (view.empty()) {
 		throw std::invalid_argument("nothing to parse");
 	} else {
 		throw std::invalid_argument("invalid character encountered: " + std::to_string(view.front()));
 	}
-}
-
-SharedValue Value::assign(SharedValue value) const {
-	return Identifier(to_string()).assign(value);
 }
 
 bool Value::to_boolean() const {
@@ -58,7 +54,6 @@ number Value::to_number() const {
 string Value::to_string() const {
 	return run()->to_string();
 }
-
 
 SharedValue Value::operator+(Value const& rhs) const {
 	return *run() + *rhs.run();
