@@ -2,7 +2,6 @@
 #include<stdlib.h>
 #include<ctype.h>
 #include<string.h>
-#include<time.h>
 #define ll long long
 
 #define U(s) ((s) & ~15)
@@ -107,9 +106,9 @@ ll r(ll v){ll t,t2,t3=1;char*s,*ts,*ts2;FILE*f;
 }
 
 int main(int c,char**v){
-	srand(time(0));
+	srand((int)v);
 	I(!c)R fprintf(stderr,"usage: %s (-e 'program' | -f file)\n",*v),1;
-	I(v[1][1]-'f')S=v[2];
-	else getdelim(&S,&z,'\0',fopen(v[2],"r"));
+	I('f'-v[1][1])S=v[2];
+	else getdelim(&S,&z,0,fopen(v[2],"r"));
 	r(p());
 }
