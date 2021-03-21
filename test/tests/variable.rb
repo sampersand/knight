@@ -46,7 +46,7 @@ describe 'Variable' do
 			assert_equal false, eval('= foo FALSE')
 			assert_equal 'hi', eval('= foo "hi"')
 			assert_equal 123, eval('= foo 123')
-			assert_kind_of Kn::Test::Function, eval('= foo BLOCK + 1 2')
+			# assert_kind_of Kn::Test::Function, eval('= foo BLOCK + 1 2')
 		end
 
 		it 'must return the rhs, but evaluated.' do
