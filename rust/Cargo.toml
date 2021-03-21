@@ -1,9 +1,13 @@
 [package]
 name = "knight"
-version = "0.1.0"
+version = "0.1.5"
 authors = ["Sam Westerman <sam@sampersand.me>"]
 edition = "2018"
 description = "The Knight programming language, in Rust"
+
+[features]
+default = []
+embedded = [] # remove functions that need to access the file system.
 
 [dependencies]
 rand = "0.8.0"

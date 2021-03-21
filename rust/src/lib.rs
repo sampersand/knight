@@ -1,5 +1,3 @@
-#![deny(unsafe_code)]
-
 #[cfg(all(feature="pretty-errors", any(feature="reckless", feature="fatal-errors")))]
 compile_error!("'pretty-errors' cannot be enabled with either 'reckless' or 'fatal-errors'!");
 
@@ -7,12 +5,14 @@ compile_error!("'pretty-errors' cannot be enabled with either 'reckless' or 'fat
 mod value;
 mod error;
 mod function;
-mod rcstr;
+pub mod rcstr;
 mod stream;
-pub mod env;
+mod variable;
 
 
 pub type Number = i64;
+
+pub use variable::Variable;
 pub use rcstr::RcStr;
 pub use value::Value;
 pub use function::Function;

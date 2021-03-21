@@ -7,13 +7,15 @@ pub struct RcStr(Inner);
 
 #[derive(Debug, Clone)]
 enum Inner {
-	Literal(&'static str),
-	Rc(Rc<str>)
+	Literal(&'static [u8]),
+	Shared(Rc<str>)
 }
 
 impl Default for RcStr {
 	fn default() -> Self {
-		RcStr::new_literal("")
+		unsafe {
+			RcStr::new_literal_unchecked(b"")
+		}
 	}
 }
 
@@ -29,9 +31,9 @@ impl Debug for RcStr {
 					.field(&literal)
 					.finish(),
 
-			Inner::Rc(rc) =>
-				f.debug_tuple("RcStr::Rc")
-					.field(&rc)
+			Inner::Shared(shared) =>
+				f.debug_tuple("RcStr::Shared")
+					.field(&shared)
 					.finish()
 		}
 	}
@@ -68,20 +70,52 @@ impl Ord for RcStr {
 	}
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct InvalidLiteral {
+	pub byte: u8,
+	pub idx: usize
+}
+
+impl Display for InvalidLiteral {
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		write!(f, "invalid byte '\\x{:02x}' found at position {}", self.byte, self.idx)
+	}
+}
+
+impl std::error::Error for InvalidLiteral {}
+
+fn validate_string(data: &[u8]) -> Result<(), InvalidLiteral> {
+	for (idx, &byte) in data.iter().enumerate() {
+		if !matches!(byte, b'\r' | b'\n' | b' '..=b'~') {
+			return Err(InvalidLiteral { byte, idx });
+		}
+	}
+
+	Ok(())
+}
+
+
 impl RcStr {
 	#[inline]
-	pub const fn new_literal(literal: &'static str) -> Self {
+	pub fn new_literal(literal: &'static [u8]) -> Result<Self, InvalidLiteral> {
+		validate_string(literal)
+			.map(|_| unsafe { Self::new_literal_unchecked(literal) })
+	}
+
+	pub unsafe fn new_literal_unchecked(literal: &'static [u8]) -> Self {
+		debug_assert_eq!(validate_string(literal), Ok(()), "invalid literal encountered: {:?}", literal);
+
 		Self(Inner::Literal(literal))
 	}
 
 	pub fn new_shared(string: impl ToString) -> Self {
-		Self(Inner::Rc(string.to_string().into()))
+		Self(Inner::Shared(string.to_string().into()))
 	}
 
 	pub fn as_str(&self) -> &str {
 		match &self.0 {
-			Inner::Literal(literal) => literal,
-			Inner::Rc(rc) => &*rc
+			Inner::Literal(literal) => unsafe { std::str::from_utf8_unchecked(literal) },
+			Inner::Shared(shared) => &*shared
 		}
 	}
 }
@@ -89,14 +123,14 @@ impl RcStr {
 impl From<&'static str> for RcStr {
 	#[inline]
 	fn from(literal: &'static str) -> Self {
-		Self::new_literal(literal)
+		Self::new_literal(literal.as_bytes()).unwrap()
 	}
 }
 
 impl From<Rc<str>> for RcStr {
 	#[inline]
-	fn from(rc: Rc<str>) -> Self {
-		Self(Inner::Rc(rc))
+	fn from(shared: Rc<str>) -> Self {
+		Self(Inner::Shared(shared))
 	}
 }
 
