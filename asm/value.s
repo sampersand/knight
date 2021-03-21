@@ -87,7 +87,7 @@ kn_value_free:
 	test $FUNC_BIT, %rax
 	jz _free              /* if we are an ident, use `_free` */
 /* At this point, we are a function */
-	assert_test $FUNC_BIT, %rax
+	assert_test1 $FUNC_BIT, %rax
 	push %rbx
 	push %r12
 	sub $8, %rsp /* we only need two registers, but we need alignment */
@@ -134,14 +134,14 @@ kn_value_run:
 	cmovz (%rdi), %rdi    /* if we are an identifier, fetch it... */
 	jz kn_env_get         /* ...and then run it */
 /* here we should be running a string */
-	assert_test $STRING_BIT, %rax
+	assert_test1 $STRING_BIT, %rax
 	sub $8, %rsp
 	call kn_string_clone    /* running a string duplicates it */
 	add $8, %rsp
 	mov %rax, %rdi
 	jmp kn_value_new_string /* create a new string with the return value. */
 0: /* run a function */
-	assert_test $FUNC_BIT, %rax /* sanity check */
+	assert_test1 $FUNC_BIT, %rax /* sanity check */
 	mov (%rdi), %rax          /* load the function pointer */
 	lea 8(%rdi), %rdi         /* load the arguments start */
 	jmp *%rax                 /* run the function */
@@ -319,7 +319,7 @@ kn_value_clone:
 	push %r12
 	push %r13
 
-	assert_test $FUNC_BIT, %rax
+	assert_test1 $FUNC_BIT, %rax
  	mov %rdi, %rbx /* Store the base address. */
  
  	mov (%rdi), %rax
@@ -354,10 +354,66 @@ kn_value_clone:
 # 	todo "clone a function"
 # 	add $8, %rsp
 .endif
-.globl kn_value_dump
-kn_value_dump:
+.globl kn_vl_dump
+kn_vl_dump:
+	cmp $KN_TRUE, %rdi
+	jne 0f
+	lea kn_vl_dump_true(%rip), %rdi
+	jmp _printf
+0:
+	cmp $KN_FALSE, %rdi
+	jne 0f
+	lea kn_vl_dump_false(%rip), %rdi
+	jmp _printf
+0:
+	cmp $KN_NULL, %rdi
+	jne 0f
+	lea kn_vl_dump_null(%rip), %rdi
+	jmp _printf
+0:
+	test $KN_NUM_BIT, %rdi
+	jz 0f
+	mov %rdi, %rsi
+	kn_vl_as_number %rsi
+	lea kn_vl_dump_num(%rip), %rdi
+	jmp _printf
+0:
+	test $KN_NUM_BIT, %rdi
+	jz 0f
+	mov %rdi, %rsi
+	kn_vl_as_number %rsi
+	lea kn_vl_dump_num(%rip), %rdi
+	jmp _printf
+0:
+	test $KN_STR_BIT, %rdi
+	jz 0f
+	kn_vl_as_string %rdi
+	call kn_str_deref
+	mov %rax, %rsi
+	lea kn_vl_dump_str(%rip), %rdi
+	jmp _printf
+0:
 	jmp die
+
+kn_vl_dump_num:
+	.asciz "Number(%lli)\n"
+kn_vl_dump_str:
+	.asciz "String(%s)\n"
+kn_vl_dump_var:
+	.asciz "Identifier(%p)\n"
+kn_vl_dump_true:
+	.asciz "Boolean(true)\n"
+kn_vl_dump_false:
+	.asciz "Boolean(false)\n"
+kn_vl_dump_null:
+	.asciz "Null()\n"
+
+
+
+/*
+
 .if 0
+	jmp die
 	mov %rdi, %rsi
 	test $NUM_BIT, %rsi
 	jz 0f
@@ -435,7 +491,6 @@ kn_value_dump:
 0: // unknown
 	lea invalid_fmt(%rip), %rdi
 	call abort
-.endif
 
 .data:
 invalid_fmt: .asciz "unknown value type: '%d'\n"
@@ -447,3 +502,5 @@ ident_fmt: .asciz "Ident(%s)\n"
 true_fmt: .asciz "True\n"
 false_fmt: .asciz "False\n"
 null_fmt: .asciz "Null\n"
+.endif
+*/

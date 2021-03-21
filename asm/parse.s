@@ -53,10 +53,10 @@ integer:
 	jg 1f
 	advance
 	imul $10, %rax
-	add %rax, %rax
+	add %rcx, %rax
 	jmp 0b
 1:
-	kn_new_number %rax
+	kn_vl_new_number %rax
 	ret
 
 identifier:
@@ -84,22 +84,47 @@ identifier:
 	jmp kn_value_new_identifier
 
 string:
-	mov %r12, %rdi // store the quote start.
+	sub $32, %rsp
+	mov %r12, (%rsp) /* store quote start */
 0:
 	peek %ecx
 	advance
-	jecxz 1f
+	cmp $0, %ecx
+	je 1f
 	cmp %al, %cl
 	jne 0b
 
-	mov %r12, %rsi
-	sub %rdi, %rsi
-	dec %rsi
+	/* find the length of the string */
+	mov %r12, %rdi
+	sub (%rsp), %rdi
+	dec %rdi
+	mov %rdi, 8(%rsp) /* preserve length */
+
+	/* allocate it and dereference it */
 	call kn_str_alloc
-	call _strcpy
-	call ddebug
-	kn_new_string %rax
+	mov %rax, 16(%rsp)
+	mov %rax, %rdi
+	call kn_str_deref
+
+	/* populate the string */
+	mov %rax, %rdi    /* the string we jsut allocated */
+	mov (%rsp), %rsi  /* quote start */
+	mov 8(%rsp), %rdx /* length */
+
+	/* set trailing NUL */
+	mov %rdi, %rax
+	add %rdx, %rax
+	movb $0, (%rax)
+	
+	call _memcpy
+
+	/* return */
+	mov 16(%rsp), %rax /* load the allocated string */
+	add $32, %rsp
+
+	kn_vl_new_string %rax
 	jmp done_parsing
+
 1: // An unterminated quote was encountered.
 	dec %rdi
 	mov %rdi, %rsi
@@ -107,8 +132,8 @@ string:
 	jmp abort
 
 literal_false:
-	assert_eq $KN_FALSE, %rax
 	xor %eax, %eax
+	assert_eq $KN_FALSE, %rax
 	jmp kw_literal
 literal_true:
 	mov $KN_TRUE, %eax

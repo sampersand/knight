@@ -18,15 +18,50 @@ kn_debug_todo_\@:
 .popsection
 .endm
 
+
 .ifdef KN_DEBUG
-    .macro assert_eq lhs:req rhs:req
+    .macro assert op:req lhs:req rhs:req success_jmp:req msg="assertion failed\n"
+	\op \lhs, \rhs
+	\success_jmp kn_debug_assert_jmp_\@
+
+    .ifc \rhs, %rsi
+    .ifc \lhs, %rdi
+	mov \rhs, %rax
+	mov \lhs, %rsi
+	mov %rax, %rdi
+    .endif
+    .endif
+        mov \rhs, %rdi
+        mov \lhs, %rsi
+
+	lea kn_debug_assert_msg_\@(%rip), %rdi
+	jmp kn_debug_write_abort
+    .pushsection .data, ""
+    kn_debug_assert_msg_\@:
+	.asciz "\msg"
+    .popsection
+
+    kn_debug_assert_jmp_\@:
+    .endm
+.else
+    .macro assert op:req lhs:req rhs:req success_jmp:req msg=""
+    .endm
+.endif
+
+.ifdef KN_DEBUG
+    .macro assert_eq lhs:req rhs:req msg="assertion failed\n"
 	cmp \lhs, \rhs
 	je assert_eq_\@
 	// We just assume (for now) that lhs and rhs arent equal to rsi or rdi
 	mov \lhs, %rsi
-	mov \rhs, %rdi
-	lea assertion_failed(%rip), %rdi
+	mov \rhs, %rdx
+	lea kn_debug_assert_\@(%rip), %rdi
 	jmp kn_debug_write_abort
+    .pushsection .data, ""
+    kn_debug_assert_\@:
+	.asciz "\msg"
+    .popsection
+
     assert_eq_\@:
     .endm
 .else
@@ -50,16 +85,9 @@ kn_debug_todo_\@:
     .endm
 .endif // .macro assert_eq
 
-.macro assert_test lhs:req rhs:req
-	test \lhs, \rhs
-	jnz assert_test_\@
-	// We just assume (for now) that lhs and rhs arent equal to rsi or rdi
-	mov \lhs, %rsi
-	mov \rhs, %rdi
-	lea assertion_failed(%rip), %rdi
-	jmp kn_debug_write_abort
-assert_test_\@:
-.endm // .macro assert_test
+.macro assert_test lhs:req rhs:req rest="assertion for test failed\n"
+	assert test, \lhs, \rhs, jz, "\rest"
+.endm
 
 
 // Note that this is not a proper function, it takes arguments 
