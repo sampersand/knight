@@ -166,7 +166,7 @@ KN_FUNCTION_DECLARE(not, 1, '!') {
 	return kn_value_new_boolean(!kn_value_to_boolean(args[0]));
 }
 
-KN_FUNCTION_DECLARE(length, 1 ,'L') {
+KN_FUNCTION_DECLARE(length, 1, 'L') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
 	size_t length = kn_string_length(string);
 
