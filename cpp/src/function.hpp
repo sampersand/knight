@@ -1,11 +1,11 @@
 #pragma once
 
 #include "value.hpp"
-#include <vector>
+#include "small_vector.hpp"
 
 namespace kn {
 	// The argument type that functions must accept.
-	using args_t = std::vector<SharedValue>;
+	using args_t = itlib::small_vector<SharedValue, 4, 4>;
 
 	// The pointer type that all functions must fulfill.
 	using funcptr_t = SharedValue(*)(args_t const&);
