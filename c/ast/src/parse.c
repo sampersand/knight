@@ -384,7 +384,9 @@ parse_function_end:
 	return kn_value_new_ast(ast);
 }
 
+#ifndef KN_RECKLESS
 expected_token:
+#endif /* KN_UNDEFINED */
 CASES1('\0')
 	return KN_UNDEFINED;
 

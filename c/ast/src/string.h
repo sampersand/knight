@@ -112,10 +112,10 @@ void kn_string_shutdown(void);
  * string.
  */
 #define KN_STRING_NEW_EMBED(data_) \
-	((struct kn_string_t) { \
+	{ \
 		.flags = KN_STRING_FL_EMBED, \
 		.embed = { .length = sizeof(data_) - 1, .data = data_ } \
-	})
+	}
 
 /*
  * Allocates a new `kn_string_t` that can hold at least the given length.

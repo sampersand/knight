@@ -285,11 +285,7 @@ void kn_value_dump(kn_value_t value) {
 	case KN_TAG_AST: {
 		struct kn_ast_t *ast = kn_value_as_ast(value);
 
-#ifdef NDEBUG
-		printf("Function(%p", (void *) ast->func->func);
-#else
 		printf("Function(%c", ast->func->name);
-#endif /* NDEBUG */
 
 		for (size_t i = 0; i < ARITY(ast); ++i) {
 			printf(", ");
