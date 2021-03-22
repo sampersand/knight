@@ -2,8 +2,8 @@ SRCDIR?=src
 OBJDIR?=obj
 EXE?=knight
 
-CC=gcc
-CFLAGS+=-Wall -Wextra -Wpedantic 
+CC?=gcc
+CFLAGS+=-Wall -Wextra -Wpedantic
 override CFLAGS+=-F$(SRCDIR)
 
 ifdef DEBUG

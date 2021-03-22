@@ -95,7 +95,10 @@ struct kn_string_t {
 	};
 
 	/*
-	 * Padding to get the struct to 32 bytes.
+	 * Extra padding for the struct.
+	 *
+	 * This is generally a number that makes this struct's size a multiple of
+	 * two, but the precise length can be customized if desired.
 	 */
 	char _padding[KN_STRING_PADDING_LENGTH];
 };
