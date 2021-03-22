@@ -387,9 +387,9 @@ parse_function_end:
 
 #ifndef KN_RECKLESS
 expected_token:
-#endif /* KN_UNDEFINED */
 CASES1('\0')
 	return KN_UNDEFINED;
+#endif /* KN_RECKLESS */
 
 LABEL(invalid)
 #ifndef KN_COMPUTED_GOTOS
