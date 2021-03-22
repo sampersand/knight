@@ -26,18 +26,13 @@ namespace kn {
 		virtual ~Value() = default;
 
 		// All implementing types must provide a `run` function.
-		virtual SharedValue run() const = 0;
+		virtual SharedValue run() const= 0;
 
 		// The dump function is used for debugging.
 		virtual std::string dump() const = 0;
 
 		// Parses a value from the given view. Implementing types should provide their own logic.
 		static SharedValue parse(std::string_view& view);
-
-		// Assigns a `value` to `this`.
-		//
-		// The default implementation converts `this` to a string, and then and runs `Identifier`'s `assign` method.
-		virtual SharedValue assign(SharedValue value) const;
 
 		// Converts this class to a boolean.
 		//

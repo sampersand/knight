@@ -8,7 +8,6 @@ struct Stream<I: Iterator<Item=char>> {
 	lineno: usize,
 }
 
-
 impl<I: Iterator<Item=char>> Iterator for Stream<I> {
 	type Item = char;
 
@@ -82,7 +81,7 @@ fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 		}
 	}
 
-	Value::Variable(ident)
+	Value::Variable(crate::Variable::from(ident))
 }
 
 fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
@@ -90,6 +89,7 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 
 	let quote = stream.next().unwrap();
 	let mut string = String::new();
+	debug_assert!(quote == '\'' || quote == '\"');
 
 	while let Some(chr) = stream.next() {
 		if chr == quote {
@@ -107,23 +107,25 @@ fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Re
 	let lineno = stream.lineno;
 
 	if stream.next().unwrap().is_ascii_uppercase() {
-		while stream.iter.peek().map_or(false, char::is_ascii_uppercase) {
-			stream.next();
-		}
+		strip_word(stream);
 	}
 
 	for number in 0..func.arity() {
 		match Value::parse_inner(stream) {
 			Ok(value) => args.push(value),
-			Err(ParseError::UnexpectedEOF) =>
-				return Err(ParseError::MissingFunctionArgument {
-					name: func.name(), number, lineno }
-				),
+			Err(ParseError::NothingToParse) =>
+				return Err(ParseError::MissingFunctionArgument { func: func.name(), number, lineno }),
 			Err(other) => return Err(other)
 		}
 	}
 
 	Ok(Value::Function(func, args.into_boxed_slice().into()))
+}
+
+fn strip_word(stream: &mut Stream<impl Iterator<Item=char>>) {
+	while stream.iter.peek().map_or(false, |c| c.is_ascii_uppercase() || *c == '_') {
+		stream.next();
+	}
 }
 
 impl Value {
@@ -137,11 +139,9 @@ impl Value {
 
 	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Self, ParseError> {
 		loop {
-			let chr = *stream.iter.peek().ok_or(ParseError::UnexpectedEOF)?;
-
-			match chr {
+			match *stream.iter.peek().ok_or(ParseError::NothingToParse)? {
 				// note that this is ascii whitespace, as non-ascii characters are invalid.
-				_ if chr.is_ascii_whitespace() => whitespace(stream),
+				chr if chr.is_ascii_whitespace() => whitespace(stream),
 
 				// strip comments until eol.
 				'#' => comment(stream),
@@ -155,34 +155,14 @@ impl Value {
 				// identifiers start only with lower-case digits or `_`.
 				'a'..='z' | '_' => return Ok(identifier(stream)),
 
-				'T' | 'F' => {
-					while let Some(c) = stream.iter.peek() {
-						if c.is_ascii_uppercase() {
-							stream.next();
-						} else {
-							break;
-						}
-					}
+				chr @ 'T' | chr @ 'F' => { strip_word(stream); return Ok(Value::Boolean(chr == 'T')); },
 
-					return Ok(Value::Boolean(chr == 'T'))
-				},
-
-				'N' => {
-					while let Some(chr) = stream.iter.peek() {
-						if chr.is_ascii_uppercase() {
-							stream.next();
-						} else {
-							break;
-						}
-					}
-
-					return Ok(Value::Null)
-				},
+				'N' => { strip_word(stream); return Ok(Value::Null); },
 				
 				// strings start with a single or double quote (and not `` ` ``).
 				'\'' | '\"' => return string(stream),
 
-				_ =>
+				chr =>
 					if let Some(func) = Function::fetch(chr) {
 						return function(func, stream);
 					} else {

@@ -20,6 +20,7 @@ static int iswhitespace(char c) {
 		|| c == '{' || c == '}';
 }
 
+// Checks to see if the character is part of a word function body.
 static int iswordfunc(char c) {
 	return isupper(c) || c == '_';
 }

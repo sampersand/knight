@@ -1,5 +1,8 @@
+#pragma once
+
 #include <string>
 #include <stdexcept>
+#include <ostream>
 
 namespace kn {
 	// the base class for all errors within Knight.

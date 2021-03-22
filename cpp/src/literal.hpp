@@ -16,10 +16,6 @@ namespace kn {
 		// Checks to see if this value is a string.
 		constexpr bool is_string() const noexcept;
 
-		// If `this` is a string, returns true if `this` lexicographically compared to `rhs`. Otherwise,
-		// returns the numerical comparison.
-		int cmp(Value const& rhs) const;
-
 	public:
 
 		// Creates a new null value.

@@ -37,9 +37,6 @@ namespace kn {
 		// Returns debugging information about this type.
 		std::string dump() const override;
 
-		// Functions are only ever equal to themselves---they're not equal to anything else.
-		bool operator==(Value const& rhs) const override;
-
 		// Attempts to parse a `Function` instance from the `string_view`.
 		//
 		// If the first character of `view` isn't a known `Function` name, `nullptr` is returned.

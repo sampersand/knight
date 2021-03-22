@@ -21,6 +21,7 @@ describe 'Block' do
 		end
 
 		it 'requires an argument' do
+			return pass if $all_ub
 			assert_fails { eval 'BLOCK' }
 			assert_fails { eval 'BLOCK BLOCK' }
 		end

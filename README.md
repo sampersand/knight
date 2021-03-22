@@ -13,7 +13,7 @@ The following is the list of all languages that I've written it in. All in-progr
 | [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
 | [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
-| [C++](c++) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |
+| [C++](cpp) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |
 | [C#](csharp) | X |   | X | X | Simple version without any documentation. It can be cleaned up slightly though. |
 | [Haskell](haskell) |   | ish | X | X | Works for an older spec of Knight, needs to be updated. |
 | [JavaScript](javascript) | X | X | X | X | Fully Functional, although it requires Node.js for the OS-related functions. |
@@ -40,9 +40,9 @@ Note that these are simply benchmarks of _my_ implementations of Knight, and not
 
 |  Language  |  Time   | `<implementation>` | Notes |
 | ---------- |--------:|--------------------|-------|
-| C          |   7.01s | `c2/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/Makefile](c/Makefile) for details. |
+| C          |   7.01s | `c/ast/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/ast/README.md](c/ast/README.md) for details. |
 | C#         |  13.75s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
-| C++        |  25.09s | `c++/knight`       | The hashmap is the bottleneck; todo: pick a better hashmap implementation. |
+| C++        |  21.48s | `cpp/knight`       | Copiled using `make optimized` |
 | Rust       |  28.99s | `rust/target/release/knight` | Built with `cargo build --release` and the `reckless` flag. |
 | JavaScript |  30.64s | `node --stack-size=1000000 javasript/bin/knight.js` | Default stack's too small, so we had to bump it up. |
 | PHP        |  64.73s | `php/knight.php`   | |
