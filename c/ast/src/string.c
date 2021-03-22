@@ -204,9 +204,8 @@ void kn_string_free(struct kn_string_t *string) {
 	assert(string != NULL);
 
 	// if we didn't allocate the struct, simply return.
-	if (!(string->flags & KN_STRING_FL_STRUCT_ALLOC)) {
-		// printf("%d[%p]'%s'\n", string->flags, string, kn_string_deref(string));
-		assert(string->flags & KN_STRING_FL_EMBED);
+	if (!(string->flags & KN_STRING_FL_STRUCT_ALLOC)) {	
+		assert(string->flags & (KN_STRING_FL_EMBED | KN_STRING_FL_STATIC));
 
 		return;
 	}
