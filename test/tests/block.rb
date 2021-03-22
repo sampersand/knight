@@ -1,9 +1,11 @@
 require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
+require_relative '../harness'
 
 describe 'Block' do
 	include Kn::Test::Shared
+	extend Kn::Test::Harness
 
 	describe 'conversions' do
 		# Blocks cannot be converted to anything
@@ -16,11 +18,13 @@ describe 'Block' do
 			assert_runs { eval 'BLOCK TRUE' }
 			assert_runs { eval 'BLOCK FALSE' }
 			assert_runs { eval 'BLOCK NULL' }
-			assert_runs { eval 'BLOCK B 3' }
+			assert_runs { eval 'BLOCK BLOCK 3' }
+			assert_runs { eval 'BLOCK + 5 4' }
 			assert_runs { eval 'BLOCK ident' }
 		end
 
-		it 'requires an argument' do
+		
+		it 'requires an argument', sanitizes: :required_args do
 			assert_fails { eval 'BLOCK' }
 			assert_fails { eval 'BLOCK BLOCK' }
 		end
@@ -30,8 +34,8 @@ describe 'Block' do
 			assert_runs { eval 'BL!1' }
 			assert_runs { eval 'BLO!1' }
 			assert_runs { eval 'BLO RANDOM' }
-			assert_runs { eval 'BLO RANDOM' }
-			assert_runs { eval 'BLO RANDOM' }
+			assert_runs { eval 'BL_O RANDOM' }
+			assert_runs { eval 'BLOCK 1' }
 			assert_runs { eval 'BLOa' }
 			assert_runs { eval 'BLa' }
 			assert_runs { eval 'Ba' }
@@ -53,20 +57,18 @@ describe 'Block' do
 				assert_equal 13, eval('; = foo BLOCK bar ; = bar 13 : CALL bar')
 			end
 
-
 			it 'can be called with any type' do
-				# we call these because they may be implemented as a function.
 				assert_equal 1, eval('CALL BLOCK 1')
 				assert_equal 'foo', eval('CALL BLOCK "foo"')
 				assert_equal true, eval('CALL BLOCK TRUE')
 				assert_equal false, eval('CALL BLOCK FALSE')
 				assert_equal :null, eval('CALL BLOCK NULL')
 				assert_equal 1, eval('; = ident 1 : CALL BLOCK ident')
-				assert_equal 3, eval('CALL BLOCK + 1 2')
+				assert_equal 31, eval('CALL BLOCK + 9 12')
 			end
 		end
-=begin
-		describe '?' do
+
+		describe '?', extension: :universal_equality do
 			it 'is only equivalent to _the exact instance_' do
 				assert_equal true, eval('; = x B R : ? x x')
 			end
@@ -76,6 +78,5 @@ describe 'Block' do
 				assert_equal false, eval('? B (! TRUE) FALSE')
 			end
 		end
-=end
 	end
 end

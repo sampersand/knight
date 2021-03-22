@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
 require 'minitest/autorun'
-
+require_relative 'harness'
 $check_ub = true
 $executable_to_test ||= $*.shift or abort "usage: #$0 <program to test>"
+
 
 require_relative 'tests/number'
 require_relative 'tests/null'

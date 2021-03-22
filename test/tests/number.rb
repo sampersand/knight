@@ -45,12 +45,21 @@ describe '2.1 Number' do
 
 		# This is because it's `number(0)` `ident(x)` <other stuff>
 		it 'interprets `0x...` and other bases as `0`.' do
-			assert_equal 0, eval('0x1f')
-			assert_equal 0, eval('0xag')
-			assert_equal 0, eval('0b1101011')
-			assert_equal 0, eval('0b1102011')
-			assert_equal 0, eval('0o127')
-			assert_equal 0, eval('0o129')
+			if should_test? extension: :ignore_trailing_text
+				assert_equal 0, eval('0x1f')
+				assert_equal 0, eval('0xag')
+				assert_equal 0, eval('0b1101011')
+				assert_equal 0, eval('0b1102011')
+				assert_equal 0, eval('0o127')
+				assert_equal 0, eval('0o129')
+			end
+
+			assert_equal 4, eval('; = x1f 4 : +0x1f')
+			assert_equal 4, eval('; = xag 4 : +0xag')
+			assert_equal 4, eval('; = b1101011 4 : +0b1101011')
+			assert_equal 4, eval('; = b1102011 4 : +0b1102011')
+			assert_equal 4, eval('; = o127 4 : +0o127')
+			assert_equal 4, eval('; = o129 4 : +0o129')
 		end
 	end
 
@@ -91,12 +100,13 @@ describe '2.1 Number' do
 			end
 
 			it 'has `0` equal to `- 0 0`' do
-				assert_equal eval('- 0 0'), 0
+				assert_equal 0, eval('- 0 0')
 			end
 
 			it 'converts other values to integers' do
 				assert_equal -1, eval('- 1 "2"')
 				assert_equal 87, eval('- 91 "4"')
+				assert_equal -6, eval('- 5 "-1"')
 				assert_equal 8, eval('- 9 TRUE')
 				assert_equal 9, eval('- 9 FALSE')
 				assert_equal 9, eval('- 9 NULL')
@@ -146,7 +156,7 @@ describe '2.1 Number' do
 				assert_equal -2, eval('/ (- 0 7) 3')
 			end
 
-			it 'does not divide by zero' do
+			it 'does not divide by zero', sanitizes: :zero_division do
 				assert_fails { eval('/ 1 0') }
 				assert_fails { eval('/ 100 0') }
 				assert_fails { eval('/ 1 FALSE') }
@@ -161,7 +171,7 @@ describe '2.1 Number' do
 		end
 
 		describe '4.3.5 %' do
-			# note that, as per the Knight spec, modulo where either number is negative is undefined.
+			# note that, as per the Knight spec, modulo with a negative base is undefined.
 			it 'modulos positive numbers normally' do
 				assert_equal 0, eval('% 1 1')
 				assert_equal 0, eval('% 4 4')
@@ -170,7 +180,14 @@ describe '2.1 Number' do
 				assert_equal 0, eval('% 15 3')
 			end
 
-			it 'does modulo by zero' do
+			it 'does not modulo by negative numbers', sanitizes: :'4.3.5-negative-modulo-base' do
+				assert_fails { eval('% 1 0') }
+				assert_fails { eval('% 100 0') }
+				assert_fails { eval('% 1 FALSE') }
+				assert_fails { eval('% 1 NULL') }
+			end
+
+			it 'does not modulo by zero', sanitizes: :negative_modulo do
 				assert_fails { eval('% 1 0') }
 				assert_fails { eval('% 100 0') }
 				assert_fails { eval('% 1 FALSE') }

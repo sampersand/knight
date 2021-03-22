@@ -29,9 +29,11 @@ describe '2.3 Boolean' do
 		end
 
 		it 'does not parse `true` or `false`' do
-			# when its not in scope, it fails.
-			assert_fails { eval('true') }
-			assert_fails { eval('false') }
+			if should_test? sanitizes: :undefined_identifiers
+				# when its not in scope, it fails.
+				assert_fails { eval('true') }
+				assert_fails { eval('false') }
+			end
 
 			# when it is in scope, its evaluates to what its assigned.
 			assert_equal 12, eval('; = true 12 : true')
@@ -40,9 +42,9 @@ describe '2.3 Boolean' do
 
 		it 'strips trailing keywords properly' do
 			assert_equal 12, eval(';T12')
-			assert_equal 12, eval(';TR12')
-			assert_equal 12, eval(';TRU12')
-			assert_equal 12, eval(';TRUE12')
+			assert_equal 12, eval(';TR_12')
+			assert_equal 12, eval(';TRU_12')
+			assert_equal 12, eval(';TR_UE12')
 			assert_equal 12, eval(';F12')
 			assert_equal 12, eval(';FA12')
 			assert_equal 12, eval(';FAL12')

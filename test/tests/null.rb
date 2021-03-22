@@ -25,8 +25,10 @@ describe '2.4.1 Null' do
 		end
 
 		it 'does not parse `null`' do
-			# when its not in scope, it fails.
-			assert_fails { eval('null') }
+			if should_test? sanities: :undefined_identifiers
+				# when its not in scope, it fails.
+				assert_fails { eval('null') }
+			end
 
 			# when it is in scope, its evaluates to what its assigned.
 			assert_equal 12, eval('; = null 12 : null')
