@@ -121,7 +121,7 @@ struct kn_string_t kn_string_empty = KN_STRING_NEW_EMBED("");
 
 size_t kn_string_length(const struct kn_string_t *string) {
 	return string->flags & KN_STRING_FL_EMBED
-		? string->embed.length
+		? (size_t) string->embed.length
 		: string->alloc.length;
 }
 

@@ -1,8 +1,9 @@
 CC=gcc
+override CFLAGS+=-Wall -Wpedantic -Wextra -Werror
 ifdef DEBUG
 override CFLAGS+=-g -fsanitize=address,undefined
 else
-CFLAGS=-O3 -DNDEBUG -march=native
+CFLAGS=-O1
 endif
 
 .PHONY: clean
