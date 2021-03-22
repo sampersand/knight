@@ -2,6 +2,7 @@
 #include "shared.h" /* die, xmalloc, xrealloc */
 
 #include <string.h> /* strlen */
+#include <stdlib.h> /* free */
 #include <stdio.h>  /* FILE, fopen, sterror, feof, fread, fclose */
 #include <errno.h>  /* errno */
 
@@ -78,6 +79,9 @@ int main(int argc, char **argv) {
 #else
 	kn_value_free(kn_run(str));
 	kn_shutdown();
+
+	if (argv[1][1] == 'f')
+		free(str);
 #endif /* KN_RECKLESS */
 
 	return 0;

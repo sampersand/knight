@@ -158,9 +158,7 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 		return kn_value_as_number(value);
 
 	if (value <= KN_TRUE) {
-		assert(value == KN_FALSE
-			|| value == KN_NULL
-			|| value == KN_TRUE);
+		assert(value == KN_FALSE || value == KN_NULL || value == KN_TRUE);
 
 		return value == KN_TRUE;
 	}
@@ -239,7 +237,6 @@ struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	};
 
 	assert(value != KN_UNDEFINED);
-
 
 	if (value <= 4)
 		return &BUILTIN_STRINGS[value];
@@ -333,12 +330,11 @@ kn_value_t kn_value_run(kn_value_t value) {
 kn_value_t kn_value_clone(kn_value_t value) {
 	assert(value != KN_UNDEFINED);
 
-
 	if (kn_value_is_literal(value) || KN_TAG(value) == KN_TAG_VARIABLE)
 		return value;
 
 	if (KN_TAG(value) == KN_TAG_STRING) {
-		(void) kn_string_clone(kn_value_to_string(value));
+		(void) kn_string_clone(kn_value_as_string(value));
 		return value;
 	}
 

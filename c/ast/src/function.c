@@ -166,7 +166,7 @@ KN_FUNCTION_DECLARE(not, 1, '!') {
 	return kn_value_new_boolean(!kn_value_to_boolean(args[0]));
 }
 
-KN_FUNCTION_DECLARE(length, 1 ,'L') {
+KN_FUNCTION_DECLARE(length, 1, 'L') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
 	size_t length = kn_string_length(string);
 
@@ -238,6 +238,9 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	memcpy(str + lhslen, kn_string_deref(rhs), rhslen);
 	str[length] = '\0';
 
+	kn_string_free(lhs);
+	kn_string_free(rhs);
+
 	return kn_value_new_string(string);
 }
 
@@ -293,6 +296,8 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 		memcpy(ptr, kn_string_deref(lhs), lhslen);
 
 	str[length] = '\0';
+
+	kn_string_free(lhs);
 
 	return kn_value_new_string(string);
 }
