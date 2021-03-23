@@ -82,6 +82,14 @@ extern const struct kn_function_t kn_fn_dump;
 /* 4.2.10 OUTPUT */
 extern const struct kn_function_t kn_fn_output;
 
+#ifdef KN_EXT_NEGATE
+/*
+ * An extension which simply negates its argument, converting it to a number if
+ * need be.
+ */
+extern const struct kn_function_t kn_fn_negate;
+#endif /* KN_EXT_NEGATE */
+
 #ifdef KN_EXT_VALUE
 /*
  * An extension function that converts its argument to a string, and then uses
