@@ -22,8 +22,8 @@
 #define Z strndup
 #define T A(1)
 #define V A(2)
-int H,J;char*S,*O[9999],BF[24];ll M[9999];size_t z,a,b,d;ll p(){ll*f,v;char*t,c,
-n[2]={0,0};J=v=0;W(N(S,"\t\n\f\r {}[]():#"))I(*S-35)++S;else W(*S++!=10);W(//S&!
+int H,J;char*S,*O[99999],BF[24];ll M[99999];size_t z,a,b,d;ll p(){ll*f,v;char*t,
+c,n[2]={0,0};J=v=0;W(N(S,"\t\n\f\r {}[]():#"))I(*S-35)++S;else W(*S++!=10);W(///
 isdigit(*S))v=v*10+*S++-(J=48);I(J)R 1|v<<4;W(islower(*n=c=*S)||isdigit(c)||95==
 c)J?++S:(J=1,t=S);I(J)R 4|(ll)Z(t,S-t);I(c==34||c==39){t=++S;W(*S++-c){}R 2|(ll)
 Z(t,S-t-1);}++S;I(isupper(c))W(isupper(*S)||*S==95)++S;I(N(n,"TFN"))R c-85?c-78?
