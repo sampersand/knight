@@ -207,7 +207,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 	}
 
 	if (kn_value_is_number(value)) {// already checked the zero case
-		asserT(value != kn_value_new_number(0));
+		assert(value != kn_value_new_number(0));
 
 		return 1;
 	}
@@ -348,8 +348,11 @@ kn_value_t kn_value_run(kn_value_t value) {
 
 	// we need to clone the string, as the return value must be independent of
 	// `value`.
-	if (KN_TAG(value) == KN_TAG_STRING)
-		return kn_string_clone(kn_value_as_string(value));
+	if (KN_TAG(value) == KN_TAG_STRING) {
+		(void) kn_string_clone(kn_value_as_string(value));
+
+		return value;
+	}
 
 	if (KN_TAG(value) == KN_TAG_VARIABLE) {
 		struct kn_variable_t *variable = kn_value_as_variable(value);
@@ -374,8 +377,11 @@ kn_value_t kn_value_clone(kn_value_t value) {
 	if (kn_value_is_literal(value) || KN_TAG(value) == KN_TAG_VARIABLE)
 		return value;
 
-	if (KN_TAG(value) == KN_TAG_STRING)
-		return kn_string_clone(kn_value_as_string(value));
+	if (KN_TAG(value) == KN_TAG_STRING) {
+		(void) kn_string_clone(kn_value_as_string(value));
+
+		return value;
+	}
 
 	++kn_value_as_ast(value)->refcount;
 
