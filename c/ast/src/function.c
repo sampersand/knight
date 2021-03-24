@@ -74,23 +74,6 @@ KN_FUNCTION_DECLARE(random, 0, 'R') {
 	return kn_value_new_number((kn_number_t) rand());
 }
 
-#ifdef KN_EXT_VALUE
-KN_FUNCTION_DECLARE(value, 1, 'V') {
-	struct kn_string_t *string = kn_value_to_string(args[0]);
-	struct kn_variable_t *variable =
-		kn_env_fetch(kn_string_deref(string), false);
-
-	kn_string_free(string);
-
-#ifndef KN_RECKLESS
-	if (variable->value == KN_UNDEFINED)
-		die("undefined variable '%s'", variable->str);
-#endif /* KN_RECKLESS */
-
-	return kn_value_clone(variable->value);
-}
-#endif /* KN_EXT_VALUE */
-
 KN_FUNCTION_DECLARE(eval, 1, 'E') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
 	kn_value_t ret = kn_run(kn_string_deref(string));
@@ -166,7 +149,7 @@ KN_FUNCTION_DECLARE(not, 1, '!') {
 	return kn_value_new_boolean(!kn_value_to_boolean(args[0]));
 }
 
-KN_FUNCTION_DECLARE(length, 1 ,'L') {
+KN_FUNCTION_DECLARE(length, 1, 'L') {
 	struct kn_string_t *string = kn_value_to_string(args[0]);
 	size_t length = kn_string_length(string);
 
@@ -214,6 +197,29 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 	return KN_NULL;
 }
 
+#ifdef KN_EXT_VALUE
+KN_FUNCTION_DECLARE(value, 1, 'V') {
+	struct kn_string_t *string = kn_value_to_string(args[0]);
+	struct kn_variable_t *variable =
+		kn_env_fetch(kn_string_deref(string), false);
+
+	kn_string_free(string);
+
+#ifndef KN_RECKLESS
+	if (variable->value == KN_UNDEFINED)
+		die("undefined variable '%s'", variable->str);
+#endif /* KN_RECKLESS */
+
+	return kn_value_clone(variable->value);
+}
+#endif /* KN_EXT_VALUE */
+
+#ifdef KN_EXT_NEGATE
+KN_FUNCTION_DECLARE(negate, 1, '~') {
+	return kn_value_new_number(-kn_value_to_number(args[0]));
+}
+#endif /* KN_EXT_NEGATE */
+
 static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	size_t lhslen, rhslen;
 
@@ -237,6 +243,9 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	memcpy(str, kn_string_deref(lhs), lhslen);
 	memcpy(str + lhslen, kn_string_deref(rhs), rhslen);
 	str[length] = '\0';
+
+	kn_string_free(lhs);
+	kn_string_free(rhs);
 
 	return kn_value_new_string(string);
 }
@@ -293,6 +302,8 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 		memcpy(ptr, kn_string_deref(lhs), lhslen);
 
 	str[length] = '\0';
+
+	kn_string_free(lhs);
 
 	return kn_value_new_string(string);
 }

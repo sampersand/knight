@@ -4,9 +4,11 @@ use clap::{App, Arg, ArgMatches};
 fn run(matches: ArgMatches) -> Result<(), RuntimeError> {
 	if let Some(expr) = matches.value_of("expr") {
 		knight::run_str(&expr)?;
-	} else {
-		let filename = matches.value_of("file").unwrap();
+	} else if let Some(filename) = matches.value_of("file") {
 		knight::run_str(std::fs::read_to_string(filename)?)?;
+	} else {
+		eprintln!("{}", matches.usage());
+		std::process::exit(1);
 	}
 
 	Ok(())
@@ -32,7 +34,6 @@ fn main() {
 				.short("f")
 				.long("file"))
 		.get_matches();
-		// .get_matches_from(vec![ "knight", "-e", "D + 9 '1a"]);
 
 	if let Err(err) = run(matches) {
 		eprintln!("error: {}", err);

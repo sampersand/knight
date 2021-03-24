@@ -75,12 +75,13 @@ macro_rules! declare_functions {
 	(ARITY;) => { 0 };
 	(ARITY; $_name:ident $($rest:tt)*) => { 1 +  declare_functions!(ARITY; $($rest)*) };
 
-	($( fn $name:literal ($($arg:ident),*) $body:block  )+) => {
+	($( $(#[$meta:meta])* fn $name:literal ($($arg:ident),*) $body:block  )+) => {
 		lazy_static::lazy_static! {
 			static ref FUNCTIONS: Mutex<HashMap<char, Function>> = Mutex::new({
 				let mut map = HashMap::new();
 
 				$(
+					$(#[$meta])*
 					map.insert($name, Function {
 						name: $name,
 						arity: declare_functions!(ARITY; $($arg)*),
@@ -102,6 +103,9 @@ use std::io::{self, Write};
 use std::process;
 
 declare_functions! {
+	// arity zero
+
+	#[cfg(not(feature = "embedded"))]
 	fn 'P' () {
 		let mut buf = String::new();
 
@@ -114,6 +118,7 @@ declare_functions! {
 		Ok(rand::random::<Number>().into())
 	}
 
+	// arity one.
 
 	fn 'E' (arg) {
 		arg.to_rcstr()
@@ -128,6 +133,7 @@ declare_functions! {
 		block.run()?.run()
 	}
 
+	#[cfg(not(feature = "embedded"))]
 	fn '`' (cmd) {
 		process::Command::new("sh")
 			.arg("-c")
@@ -138,6 +144,7 @@ declare_functions! {
 			.map(Value::from)
 	}
 
+	#[cfg(not(feature = "embedded"))]
 	fn 'Q' (code) {
 		process::exit(code.to_number()? as i32);
 	}
@@ -154,14 +161,16 @@ declare_functions! {
 			.map(Value::from)
 	}
 
+	#[cfg(not(feature = "embedded"))]
 	fn 'D' (value) {
 		let ret = value.run()?;
 
-		println!("{:?}", ret);
+		print!("{:?}", ret);
 
 		Ok(ret)
 	}
 
+	#[cfg(not(feature = "embedded"))]
 	fn 'O' (msg) {
 		let text = msg.to_rcstr()?;
 
@@ -175,6 +184,8 @@ declare_functions! {
 
 		Ok(Value::default())
 	}
+
+	// arity two
 
 	fn '+' (lhs, rhs) {
 		lhs.run()?.try_add(&rhs.run()?)
@@ -237,21 +248,19 @@ declare_functions! {
 		rhs.run()
 	}
 
-	fn '=' (arg, rhs) {
-		let rhsval;
+	fn '=' (var, rhs) {
+		let variable = 
+			if let Value::Variable(ref variable) = var {
+				variable
+			} else {
+				return Err(RuntimeError::InvalidOperand { func: '?', operand: var.typename() });
+			};
 
-		if let Value::Variable(ref ident) = arg {
-			rhsval = rhs.run()?;
+		let rhs = rhs.run()?;
 
-			crate::env::insert(ident, rhsval.clone());
-		} else {
-			let ident = arg.to_rcstr()?;
-			rhsval = rhs.run()?;
+		variable.assign(rhs.clone());
 
-			crate::env::insert(&ident, rhsval.clone());
-		}
-
-		Ok(rhsval)
+		Ok(rhs)
 	}
 
 	fn 'W' (lhs, rhs) {
@@ -262,6 +271,7 @@ declare_functions! {
 		Ok(Value::Null)
 	}
 
+	// arity three
 
 	fn 'I' (cond, iftrue, iffalse) {
 		if cond.to_boolean()? {
@@ -282,6 +292,8 @@ declare_functions! {
 				.into()
 		))
 	}
+
+	// arity four
 
 	fn 'S' (string, start, length, repl) {
 		let s = string.to_rcstr()?;

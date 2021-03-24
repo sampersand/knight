@@ -1,4 +1,4 @@
-use crate::{Function, Number, RcStr, RuntimeError};
+use crate::{Function, Number, RcStr, Variable, RuntimeError};
 use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
 use std::convert::TryFrom;
@@ -9,7 +9,7 @@ pub enum Value {
 	Boolean(bool),
 	Number(Number),
 	String(RcStr),
-	Variable(String),
+	Variable(Variable),
 	Function(Function, Rc<[Value]>)
 }
 
@@ -43,7 +43,7 @@ impl Debug for Value {
 			Self::Boolean(boolean) => write!(f, "Boolean({})", boolean),
 			Self::Number(number) => write!(f, "Number({})", number),
 			Self::String(string) => write!(f, "String({})", string),
-			Self::Variable(identifier) => write!(f, "Identifier({})", identifier),
+			Self::Variable(variable) => write!(f, "Identifier({})", variable.name()),
 			Self::Function(function, args) => write!(f, "Function({}, {:?})", function.name(), args),
 		}
 	}
@@ -73,6 +73,12 @@ impl From<RcStr> for Value {
 	}
 }
 
+impl From<Variable> for Value {
+	fn from(variable: Variable) -> Self {
+		Self::Variable(variable)
+	}
+}
+
 
 impl TryFrom<&Value> for bool {
 	type Error = RuntimeError;
@@ -93,10 +99,10 @@ impl TryFrom<&Value> for RcStr {
 
 	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
 		match value {
-			Value::Null => Ok(RcStr::new_literal("null")),
-			Value::Boolean(true) => Ok(RcStr::new_literal("true")),
-			Value::Boolean(false) => Ok(RcStr::new_literal("false")),
-			Value::Number(0) => Ok(RcStr::new_literal("0")),
+			Value::Null => Ok(unsafe { RcStr::new_literal_unchecked(b"null") }),
+			Value::Boolean(true) => Ok(unsafe { RcStr::new_literal_unchecked(b"true") }),
+			Value::Boolean(false) => Ok(unsafe { RcStr::new_literal_unchecked(b"false") }),
+			Value::Number(0) => Ok(unsafe { RcStr::new_literal_unchecked(b"0") }),
 			Value::Number(number) => Ok(RcStr::new_shared(number)),
 			Value::String(string) => Ok(string.clone()),
 			_ => value.run().and_then(|value| TryFrom::try_from(&value))
@@ -134,7 +140,7 @@ impl TryFrom<&Value> for Number {
 }
 
 impl Value {
-	const fn typename(&self) -> &'static str {
+	pub const fn typename(&self) -> &'static str {
 		match self {
 			Self::Null => "Null",
 			Self::Boolean(_) => "Boolean",
@@ -151,7 +157,7 @@ impl Value {
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),
 			Self::Number(number) => Ok(Self::Number(*number)),
 			Self::String(rcstr) => Ok(Self::String(rcstr.clone())),
-			Self::Variable(ident) => crate::env::get(ident),
+			Self::Variable(variable) => variable.run(),
 			Self::Function(func, args) => (func.func())(&args),
 		}
 	}
@@ -172,39 +178,23 @@ impl Value {
 impl Value {
 	pub fn try_add(&self, rhs: &Self) -> Result<Self, RuntimeError> {
 		match self {
-			Self::Number(lhs) =>
-				rhs.to_number()
-					.map(|rhs| lhs + rhs)
-					.map(Self::Number),
-
-			Self::String(lhs) =>
-				rhs.to_rcstr()
-					.map(|rhs| lhs.to_string() + &rhs)
-					.map(From::from)
-					.map(Self::String),
-
+			Self::Number(lhs) => Ok(Self::Number(lhs + rhs.to_number()?)),
+			Self::String(lhs) => Ok(Self::String((lhs.to_string() + &rhs.to_rcstr()?).into())),
 			_ => Err(RuntimeError::InvalidOperand { func: '+', operand: self.typename() })
 		}
 	}
 
 	pub fn try_sub(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		match self {
-			Self::Number(lhs) =>
-				rhs.to_number()
-					.map(|rhs| lhs - rhs)
-					.map(Self::Number),
-
-			_ => Err(RuntimeError::InvalidOperand { func: '-', operand: self.typename() })
+		if let Self::Number(lhs) = self {
+			Ok(Self::Number(lhs - rhs.to_number()?))
+		} else {
+			Err(RuntimeError::InvalidOperand { func: '-', operand: self.typename() })
 		}
 	}
 
 	pub fn try_mul(&self, rhs: &Self) -> Result<Self, RuntimeError> {
 		match self {
-			Self::Number(lhs) =>
-				rhs.to_number()
-					.map(|rhs| lhs * rhs)
-					.map(Self::Number),
-
+			Self::Number(lhs) => Ok(Self::Number(lhs * rhs.to_number()?)),
 			Self::String(lhs) =>
 				rhs.to_number()
 					.map(|rhs| (0..rhs).map(|_| lhs.as_str()).collect::<String>())

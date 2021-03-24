@@ -11,5 +11,10 @@ void initialize() {
 }
 
 value_t execute(const char *string) {
-	return vm_run(block_parse(&string));
+	block_t *block = block_parse(&string);
+
+	block_dump(block);
+
+	return vm_run(block);
+	// return vm_run(block_parse(&string));
 }

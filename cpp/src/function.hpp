@@ -1,11 +1,11 @@
 #pragma once
 
 #include "value.hpp"
-#include <vector>
+#include "small_vector.hpp"
 
 namespace kn {
 	// The argument type that functions must accept.
-	using args_t = std::vector<SharedValue>;
+	using args_t = itlib::small_vector<SharedValue, 4, 4>;
 
 	// The pointer type that all functions must fulfill.
 	using funcptr_t = SharedValue(*)(args_t const&);
@@ -36,9 +36,6 @@ namespace kn {
 
 		// Returns debugging information about this type.
 		std::string dump() const override;
-
-		// Functions are only ever equal to themselves---they're not equal to anything else.
-		bool operator==(Value const& rhs) const override;
 
 		// Attempts to parse a `Function` instance from the `string_view`.
 		//

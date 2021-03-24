@@ -20,6 +20,7 @@ static int iswhitespace(char c) {
 		|| c == '{' || c == '}';
 }
 
+// Checks to see if the character is part of a word function body.
 static int iswordfunc(char c) {
 	return isupper(c) || c == '_';
 }
@@ -131,11 +132,13 @@ kn_value_t kn_parse(register const char **stream) {
 		['S']  = &&function_substitute,
 		['T']  = &&literal_true,
 		['U']  = &&invalid,
+
 #ifdef KN_EXT_VALUE
 		['V']  = &&function_value,
 #else
 		['V']  = &&invalid,
 #endif /* KN_EXT_VALUE */
+
 		['W']  = &&function_while,
 		['X']  = &&invalid,
 		['Y']  = &&invalid,
@@ -150,7 +153,13 @@ kn_value_t kn_parse(register const char **stream) {
 		['{']  = &&whitespace,
 		['|']  = &&function_or,
 		['}']  = &&whitespace,
+
+#ifdef KN_EXT_NEGATE
+		['~']  = &&negate,
+#else
 		['~']  = &&invalid,
+#endif /* KN_EXT_NEGATE */
+
 		[0x7f ... 0xff] = &&invalid
 	};
 #endif /* KN_COMPUTED_GOTOS */
@@ -278,6 +287,11 @@ SYMBOL_FUNC(or, '|');
 SYMBOL_FUNC(then, ';');
 SYMBOL_FUNC(assign, '=');
 SYMBOL_FUNC(system, '`');
+
+#ifdef KN_EXT_NEGATE
+SYMBOL_FUNC(negate, '~');
+#endif /* KN_EXT_NEGATE */
+
 WORD_FUNC(block, 'B');
 WORD_FUNC(call, 'C');
 WORD_FUNC(dump, 'D');
@@ -384,9 +398,11 @@ parse_function_end:
 	return kn_value_new_ast(ast);
 }
 
+#ifndef KN_RECKLESS
 expected_token:
 CASES1('\0')
 	return KN_UNDEFINED;
+#endif /* KN_RECKLESS */
 
 LABEL(invalid)
 #ifndef KN_COMPUTED_GOTOS

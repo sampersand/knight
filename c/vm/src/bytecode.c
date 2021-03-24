@@ -1,6 +1,7 @@
 #include "bytecode.h"
 #include "shared.h"
 #include "env.h"
+#include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -54,6 +55,7 @@ static void block_parse_inner(const char **stream, block_t *block) {
 				if (**stream == '\0') goto expected_value;
 			// fallthrough
 		case ' ': case '\n': case '\t': case '\r': case '\f':
+		case '[': case ']': case '{': case '}': case '(': case ')': case ':':
 			while (isspace_orparen(**stream)) ++*stream;
 			block_parse_inner(stream, block);
 			return;
@@ -163,8 +165,8 @@ static void block_parse_inner(const char **stream, block_t *block) {
 	parse_function:
 		++*stream;
 	parsefn:
-		block_push_opcode(block, op);
-		printf("[%x]\n", op);
+		if (op != OP_THEN) // `then` is implicit.
+			block_push_opcode(block, op);
 
 		for (unsigned i = 0; i < OPCODE_ARGC(op); ++i)
 			block_parse_inner(stream, block);
@@ -181,4 +183,57 @@ block_t *block_parse(const char **stream) {
 	block->rc = 0;
 
 	return block;
+}
+
+void block_dump(const block_t *block) {
+	opcode_t op;
+
+	for (unsigned i = 0; i < block->length; ++i) {
+		op = block->code[i].opcode;
+
+		printf("[% 3d:%u] (%02x) ", i, OPCODE_ARGC(op), op);
+
+		switch (op) {
+			case OP_UNDEFINED: printf("OP_UNDEFINED"); break;
+			case OP_PROMPT: printf("OP_PROMPT"); break;
+			case OP_RANDOM: printf("OP_RANDOM"); break;
+			case OP_PUSHL:
+				printf("OP_PUSHL: ");
+				value_dump(block->code[++i].value);
+				printf("\n");
+				continue;
+
+			case OP_EVAL: printf("OP_EVAL"); break;
+
+			case OP_CALL: printf("OP_CALL"); break;
+			case OP_SYSTEM: printf("OP_SYSTEM"); break;
+			case OP_QUIT: printf("OP_QUIT"); break;
+			case OP_NOT: printf("OP_NOT"); break;
+			case OP_LENGTH: printf("OP_LENGTH"); break;
+			case OP_DUMP: printf("OP_DUMP"); break;
+			case OP_OUTPUT: printf("OP_OUTPUT"); break;
+			case OP_POP: printf("OP_POP"); break;
+
+			case OP_ADD: printf("OP_ADD"); break;
+			case OP_SUB: printf("OP_SUB"); break;
+			case OP_MUL: printf("OP_MUL"); break;
+			case OP_DIV: printf("OP_DIV"); break;
+			case OP_MOD: printf("OP_MOD"); break;
+			case OP_POW: printf("OP_POW"); break;
+			case OP_EQL: printf("OP_EQL"); break;
+			case OP_LTH: printf("OP_LTH"); break;
+			case OP_GTH: printf("OP_GTH"); break;
+			case OP_AND: printf("OP_AND"); break;
+			case OP_OR: printf("OP_OR"); break;
+			case OP_THEN: printf("OP_THEN"); break;
+			case OP_ASSIGN: printf("OP_ASSIGN"); break;
+			case OP_WHILE: printf("OP_WHILE"); break;
+
+			case OP_IF: printf("OP_IF"); break;
+			case OP_GET: printf("OP_GET"); break;
+
+			case OP_SET: printf("OP_SET"); break;
+		}
+		printf(" \n");
+	}
 }

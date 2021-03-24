@@ -14,26 +14,36 @@ enum kn_string_flags_t {
 	 * If this is set, when a string is `kn_string_free`d, the struct pointer
 	 * itself will also be freed.
 	 */
-	KN_STRING_FL_STRUCT_ALLOC,
+	KN_STRING_FL_STRUCT_ALLOC = 1,
 
 	/*
 	 * Indicates that a string's data is stored in the `embed`ded field of
 	 * the string, rather than the `alloc`ated  part.
 	 */
-	KN_STRING_FL_EMBED,
+	KN_STRING_FL_EMBED = 2,
 
 	/*
 	 * Indicates that the string is a `static` string---that is, it's not
 	 * allocated, but should it should be fully duplicated when the function
 	 * `kn_string_clone_static` is called.
 	 */
-	KN_STRING_FL_STATIC,
+	KN_STRING_FL_STATIC = 4,
 };
+
+/*
+ * How many bytes of padding to use; the larger the number, the more strings are
+ * embedded, but the more memory used.
+ */
+#ifndef KN_STRING_PADDING_LENGTH
+#define KN_STRING_PADDING_LENGTH 8
+#endif
 
 /*
  * The length of the embedded segment of the string.
  */
-#define KN_STRING_EMBEDDED_LENGTH (sizeof(size_t) * 2 + sizeof(char *) - 1)
+#define KN_STRING_EMBEDDED_LENGTH \
+	(sizeof(size_t) + sizeof(char *) - 1 + \
+		sizeof(char [KN_STRING_PADDING_LENGTH]))
 
 /*
  * The string type in Knight.
@@ -51,6 +61,15 @@ enum kn_string_flags_t {
 struct kn_string_t {
 	/* The flags that dictate how to manage this struct's memory. */
 	enum kn_string_flags_t flags;
+
+	/*
+	 * The amount of references to this string.
+	 *
+	 * This is increased when `kn_string_clone`d and decreased when
+	 * `kn_string_free`d, and when it reaches zero, the struct will
+	 * be freed.
+	 */
+	int refcount;
 
 	/* All strings are either embedded or allocated. */
 	union {
@@ -70,19 +89,18 @@ struct kn_string_t {
 			 */
 			size_t length;
 
-			/*
-			 * The amount of references to this string.
-			 *
-			 * This is increased when `kn_string_clone`d and decreased when
-			 * `kn_string_free`d, and when it reaches zero, the `str` will
-			 * be freed.
-			 */
-			size_t refcount;
-
 			/* The data for an allocate. */
 			char *str;
 		} alloc;
 	};
+
+	/*
+	 * Extra padding for the struct.
+	 *
+	 * This is generally a number that makes this struct's size a multiple of
+	 * two, but the precise length can be customized if desired.
+	 */
+	char _padding[KN_STRING_PADDING_LENGTH];
 };
 
 /*
@@ -112,10 +130,10 @@ void kn_string_shutdown(void);
  * string.
  */
 #define KN_STRING_NEW_EMBED(data_) \
-	((struct kn_string_t) { \
+	{ \
 		.flags = KN_STRING_FL_EMBED, \
 		.embed = { .length = sizeof(data_) - 1, .data = data_ } \
-	})
+	}
 
 /*
  * Allocates a new `kn_string_t` that can hold at least the given length.

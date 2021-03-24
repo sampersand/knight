@@ -132,12 +132,8 @@ SharedValue Literal::run() const {
 	return shared_from_this();
 }
 
-constexpr bool Literal::is_string() const noexcept {
-	return std::holds_alternative<string>(data);
-}
-
 SharedValue Literal::operator+(Value const& rhs) const {
-	if (!is_string()) {
+	if (!std::holds_alternative<string>(data)) {
 		return std::make_shared<Literal>(to_number() + rhs.to_number());
 	}
 
@@ -152,7 +148,7 @@ SharedValue Literal::operator-(Value const& rhs) const {
 }
 
 SharedValue Literal::operator*(Value const& rhs) const {
-	if (!is_string()) {
+	if (!std::holds_alternative<string>(data)) {
 		return std::make_shared<Literal>(to_number() * rhs.to_number());
 	}
 
@@ -233,25 +229,34 @@ bool Literal::operator==(Value const& rhs_value) const {
 	}, data);
 }
 
-int Literal::cmp(Value const& rhs) const {
-	if (!is_string()) {
+bool Literal::operator<(Value const& rhs) const {
+	if (std::holds_alternative<string>(data)) {
+		string const& this_string = std::get<string>(data);
+		string rhs_string = rhs.to_string();
+
+		return this_string < rhs_string;
+	} else if (std::holds_alternative<number>(data)) {
 		auto this_num = to_number();
 		auto rhs_num = rhs.to_number();
 
-		return this_num < rhs_num ? -1 : this_num > rhs_num ? 1 : 0;
+		return this_num < rhs_num;
+	} else {
+		return rhs.to_boolean() && !to_boolean();
 	}
-
-	string const & this_string = std::get<string>(data);
-	string rhs_string = rhs.to_string();
-
-
-	return this_string < rhs_string ? -1 : this_string > rhs_string ? 1 : 0;
-}
-
-bool Literal::operator<(Value const& rhs) const {
-	return cmp(rhs) < 0;
 }
 
 bool Literal::operator>(Value const& rhs) const {
-	return cmp(rhs) > 0;
+	if (std::holds_alternative<string>(data)) {
+		string const& this_string = std::get<string>(data);
+		string rhs_string = rhs.to_string();
+
+		return this_string > rhs_string;
+	} else if (std::holds_alternative<number>(data)) {
+		auto this_num = to_number();
+		auto rhs_num = rhs.to_number();
+
+		return this_num > rhs_num;
+	} else {
+		return !rhs.to_boolean() && to_boolean();
+	}
 }

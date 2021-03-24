@@ -142,11 +142,9 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 	variable = &bucket->variables[bucket->length++];
 	variable->name = identifier;
 
-#ifndef KN_RECKLESS
 	// Create the new variable with an undefined starting value, so that any
 	// attempt to access it will be invalid.
 	variable->value = KN_UNDEFINED;
-#endif /* KN_RECKLESS */
 
 	return variable;
 }

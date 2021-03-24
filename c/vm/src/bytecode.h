@@ -63,5 +63,6 @@ typedef struct _blockptr_t {
 block_t *block_parse(const char **);
 void block_free(block_t *);
 void block_clone(block_t *);
+void block_dump(const block_t *);
 
 #endif

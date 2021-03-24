@@ -126,25 +126,25 @@ Note that `:` is the "no-op" function, and can safely be considered a piece of w
 Implementations may define their own functions, as long as they start with an upper-case letter, or a symbol. 
 
 ## Example
-Here's an example of a simple guessing game and how it should parse:
+here's an example of a simple guessing game and how it should parse:
 ```text
-; = secret RANDOM
-; = guess + 0 PROMPT
-OUTPUT IF (? secret guess) "correct!" "wrong!"
+; = secret random
+; = guess + 0 prompt
+OUTPUT if (? secret guess) "correct!" "wrong!"
 ```
 ```text
 [;]
  ├──[=]
  │   ├──[secret]
- │   └──[RANDOM]
+ │   └──[random]
  └──[;]
      ├──[=]
      │   ├──[guess]
      │   └──[+]
      │       ├──[0]
-     │       └──[PROMPT]
+     │       └──[prompt]
      └──[OUTPUT]
-         └──[IF]
+         └──[if]
              ├──[?]
              │   ├──[secret]
              │   └──[guess]
