@@ -72,7 +72,7 @@ module Kn::Test::Shared
 	end
 
 	def to_boolean(expr)
-		val = eval "I #{expr} TRUE FALSE"
+		val = eval "! ! #{expr}"
 		raise "not a boolean: #{val.inspect}" unless val == true || val == false
 		val
 	end
