@@ -16,10 +16,9 @@ BEGIN {
 
 	if (ARGV[1] == "-e") {
 		source_code = ARGV[2]
-		delete ARGV
-	} else {
-		delete ARGV[1] # but retain ARGV[2], as we'll read from that. 
-	}
+		delete ARGV # just remove the entire argv.
+	} else
+		delete ARGV[1] # but retain ARGV[2], as we'll read from that.
 }
 
 # Collect source code.
@@ -31,12 +30,10 @@ BEGIN {
 END {
 	$0 = source_code
 	srand()
-	ast_value=generate_ast()
 
-	if (ast_value == "")
-		die("no program given")
-	else
-		run(ast_value)
+	if (!(ast_value = generate_ast())) die("no program given")
+
+	run(ast_value)
 }
 
 # used internally to indicate a bug has occured.
@@ -65,8 +62,8 @@ function next_token() {
 		token = "i" substr($0, 1, RLENGTH)
 	else if (match($0, /^("[^"]*"|'[^']*')/))
 		token = "s" substr($0, 2, RLENGTH - 2) # strip out the quotes
-	else if (match($0, /^([[:upper:]]+|[-`+*\/%^<>?&|!;=])/))
-		token = "f" substr($0, 1, 1) # ignore everything but first char for keywords
+	else if (match($0, /^([A-Z][A-Z_]*|[-`+*\/%^<>?&|!;=])/))
+		token = "f" substr($0, 1, 1) # ignore everything but first char for funcs
 	else
 		die("unknown token start '" substr($0, 1, 1) "'")
 
@@ -74,42 +71,37 @@ function next_token() {
 	return token
 }
 
+# Gets the arity of the token, ie how many arguments it takes.
+function arity(token) {
+	if (token ~ /^([^f]|f[TFNPR])/) return 0
+	if (token ~ /f[`OEBCQ!LD]/) return 1
+	if (token ~ /f[-+*\/%^?<>&|;=W]/) return 2
+	if (token == "fG" || token == "fI") return 3
+	if (token == "fS") return 4
+	bug("cant get arity for token '" token "'")
+}
+
 # Generates an AST tree, storing values in the `ast` global variable. Returns
 # the index of the node that was just generated.
 # (The two parameters are simply local variables)
-function generate_ast(node_idx, token) {
+function generate_ast(node_idx, token, token_arity, i) {
+	# if there's nothing left, return
 	if (!(token = next_token()))
 		return
 
 	ast[node_idx = next_node_idx += 1] = token
 
-	if (substr(token, 1, 1) != "f" || token ~ /f[TFNPR]/)
-		return node_idx
-
-	if (!(ast[node_idx, 1] = generate_ast()))
-		die("missing first argument for function '" substr(token, 2, 1) "'")
-	if (token ~ /f[`OEBCQ!LD]/)
-		return node_idx
-
-	if (!(ast[node_idx, 2] = generate_ast()))
-		die("missing second argument for function '" substr(token, 2, 1) "'")
-	if (token !~ /f[IGS]/)
-		return node_idx
-
-	if (!(ast[node_idx, 3] = generate_ast()))
-		die("missing third argument for function '" substr(token, 2, 1) "'")
-	if (token !~ /f[S]/)
-		return node_idx
-
-	if (!(ast[node_idx, 4] = generate_ast()))
-		die("missing fourth argument for function '" substr(token, 2, 1) "'")
+	for(i = 1; i <= arity(token); ++i) {
+		if (!(ast[node_idx, i] = generate_ast()))
+			die("missing argument " i " for function '" substr(token, 2, 1) "'")
+	}
 
 	return node_idx
 }
 
 # converts `input` to a string, `run`ning the value first unless `dontrun` is
 # given.
-function to_string(input, dontrun) {
+function to_str(input, dontrun) {
 	if (!dontrun) input = run(input)
 
 	if (input ~ /^[sn]/) return substr(input, 2)
@@ -117,49 +109,51 @@ function to_string(input, dontrun) {
 	if (input == "fF") return "false"
 	if (input == "fN") return "null"
 
-	bug("bad input for 'to_string': '" input "'")
+	bug("bad input for 'to_str': '" input "'")
 }
 
 # converts `input` to a number, `run`ning the value first unless `dontrun` is
 # given.
-function to_number(input, dontrun) {
+function to_num(input, dontrun) {
 	if (!dontrun) input = run(input)
 
-	if (input ~ /^[sn]/) return int(substr(input, 2))
+	if (match(input, /^[sn][[:blank:]]*[-+]?[0-9]*/))
+		return int(substr(input, 2, RLENGTH))
 	if (input == "fT") return 1
-	if (input ~ /f[FN]/) return 0
-	bug("bad input for 'to_number': '" input "'")
+	if (input == "fF" || input == "fN") return 0
+
+	bug("bad input for 'to_num': '" input "'")
 }
 
 # converts `input` to a boolean, `run`ning the value first unless `dontrun` is
 # given.
-function to_boolean(input, dontrun) {
+function to_bool(input, dontrun) {
 	if (!dontrun) input = run(input)
 
-	if (input ~ /^s/) return length(input) != 1
-	if (input ~ /^n/) return input != "n0"
-	if (input ~ /^f[TFN]/) return input == "fT"
-	bug("bad input for 'to_boolean': '" input "'")
+	return input !~ /^(s|n0|f[FN])$/;
 }
 
+
 # Runs the ast node for `node_idx`, returning the value that's computed.
-# All other variables in the function declaration are actually local variables,
-function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
-	if (!(node_idx in ast))
+# Note that `args` is not a parameter, but simply a local variable.
+function run(node_idx, args, lhs) {
+	if (!(token = ast[node_idx]))
 		bug("token number '" node_idx "' doesn't exist in the ast")
 
-	# if it's a literal, return the token directly.
-	if ((token = ast[node_idx]) ~ /^([sn]|f[TFN])/)
-		return token
-	
+	# return the token itself for literals
+	if (token ~ /^([sn]|f[TFN])/) return token
+
 	# if it's an identifier, evaluate it.
 	if (substr(token, 1, 1) == "i") {
-		if (token in env)
-			return env[token]
-		else
-			die("variable '" substr(token, 2) "' not found!")
+		if (value = env[token]) return value
+
+		die("variable '" substr(token, 2) "' not found!")
 	}
-	
+
+	# assign arguments
+	for(i = 1; i <= arity(token); ++i)
+		args[i] = ast[node_idx, i]
+
 	# alias to make string comparisons slightly faster. 
 	fn = substr(token, 2)
 
@@ -170,168 +164,160 @@ function run(node_idx, token, fn, tmp, arg1, arg2, arg3, arg4) {
 	}
 
 	# Randomly pick an integer from 0 to 0xff_ff_ff_ff
-	if (fn == "R")
-		return "n" int(rand() * 4294967295)
-
-	# At this point, all remaining functions have at least 1 argument.
-	arg1 = ast[node_idx, 1]
+	if (fn == "R") return "n" int(rand() * 4294967295)
 
 	# When creating blocks, simply return the token number of the thing to eval.
-	if (fn == "B")
-		return ast[arg1]
+	if (fn == "B") return args[1]
 
-	# When calling a block, you need to execute the result of running `arg1`.
-	if (fn == "C")
-		return run(run(arg1))
+	# When calling a block, you need to execute the result of running `args[1]`.
+	if (fn == "C") return run(run(args[1]))
 
 	# Evaluates the first argument as Knight code, returning the result of the
 	# evaluation.
 	if (fn == "E") {
-		$0 = to_string(arg1)
+		$0 = to_str(args[1])
 		return run(generate_ast())
 	}
 
 	# The '`' keyword's used to execute shell commands and get the stdout.
 	if (fn == "`") {
-		#to_string(arg1) | getline
-		tmp = ""
+		result = ""
 
-		while (to_string(arg1) | getline arg2)
-			tmp = tmp arg2 "\n"
+		# accumulate the output.
+		while (to_str(args[1]) | getline) result = result $0 "\n"
 
-		return "s" tmp
+		return "s" result
 	}
 
 	# Logical negation. All arguments are converted to booleans first.
-	if (fn == "!")
-		return to_boolean(arg1) ? "fF" : "fT"
+	if (fn == "!") return to_bool(args[1]) ? "fF" : "fT"
 
 	# Quit exits with the status code of its argument.
-	if (fn == "Q") 
-		exit to_number(arg1)
+	if (fn == "Q") exit to_num(args[1])
 
 	# Gets the length of the first argument, in chars.
-	if (fn == "L") 
-		return "n" length(to_string(arg1))
+	if (fn == "L") return "n" length(to_str(args[1]))
 
 	# Dumps a debug representation
 	if (fn == "D") {
-		arg1 = run(arg1)
-		tmp = substr(arg1, 2)
+		value = run(args[1])
 
-		if (arg1 ~ /^s/)
-			printf "%s", "String(" tmp ")" # need `%s` so we escape things
-		else if (arg1 ~ /^n/)
-			printf "Number(" tmp ")"
-		else if (arg1 ~ /^fT/)
-			printf "Boolean(true)"
-		else if (arg1 ~ /^fF/)
-			printf "Boolean(false)"
-		else if (arg1 ~ /^fN/)
-			printf "Null()"
-		else if (arg1 ~ /^i/)
-			printf "Identifier(" tmp ")"
-		else if (arg1 ~ /^f/)
-			printf "%s", "Function(" tmp ")" # need `%s` so we escape things
-		else
-			bug("unknown value '" arg1 "'")
+		if (value ~ /^s/) printf "String(%s)", substr(value, 2)
+		else if (value ~ /^n/) printf "Number(%d)", substr(value, 2)
+		else if (value == "fT") printf "Boolean(true)"
+		else if (value == "fF") printf "Boolean(false)"
+		else if (value == "fN") printf "Null()"
+		else if (value ~ /^[0-9]+/) printf "AstNode(%s)", ast[value]
+		else bug("unknown value '" value "'")
 
-		return arg1
+		return value
 	}
 
 	# Output something to stdout. If the string ends in `\`, a newline won't be
 	# added. We return the evaluated argument.
 	if (fn == "O") {
-		if ((str = to_string(arg1 = run(arg1), 1)) ~ /\\$/)
-			printf "%s", substr(str, 1, length(str) - 1)
-		else
-			print str
+		str = to_str(args[1])
 
-		return arg1
+		if (str ~ /\\$/) printf "%s", substr(str, 1, length(str) - 1)
+		else print str
+
+		return "fN"
 	}
-
-	# At this point, all remaining functions have at least 2 arguments.
-	arg2 = ast[node_idx, 2]
 
 	# The `;` function simply evaluates the LHS then the RHS, returning the RHS.
 	if (fn == ";") {
-		run(arg1)
-		return run(arg2)
+		run(args[1])
+		return run(args[2])
 	}
 
 	# The `=` operator assigns to the global scope then return the assigned val.
-	if (fn == "=")
-		return env[ast[arg1]] = run(arg2)
+	if (fn == "=") return env[ast[args[1]]] = run(args[2])
 
 	# The `+` operator: If the first operand's a string, we do concatenation.
 	# Otherwise, we do numerical addition.
 	if (fn == "+") {
-		if (substr(arg1 = run(arg1), 1, 1) == "s") 
-			return "s" to_string(arg1, 1) to_string(arg2)
-		else
-			return "n" (to_number(arg1, 1) + to_number(arg2))
+		lhs = run(args[1])
+
+		if (lhs ~ /^s/) return "s" to_str(lhs, 1) to_str(args[2])
+		else return "n" (to_num(lhs, 1) + to_num(args[2]))
 	}
 
-	# Normal math ops
-	if (fn == "-")  return "n" (to_number(arg1) -  to_number(arg2))
-	if (fn == "*")  return "n" (to_number(arg1) *  to_number(arg2))
-	if (fn == "/")  return "n" (to_number(arg1) /  to_number(arg2))
-	if (fn == "%")  return "n" (to_number(arg1) %  to_number(arg2))
-	if (fn == "**") return "n" (to_number(arg1) ** to_number(arg2))
+	# The `*` operator: repeats its arguments if its a string, otherwise we do
+	# numeric multiplication
+	if (fn == "*") {
+		lhs = run(args[1])
+
+		if (lhs ~ /^n/) return "n" (to_num(lhs, 1) * to_num(args[2]))
+
+		lhs = to_str(lhs, 1)
+		amnt = to_num(args[2])
+		result = "s"
+
+		while (amnt--) result = result lhs
+
+		return result
+	}
+
+	# Simple math functions
+	if (fn == "-") return "n" (to_num(args[1]) -  to_num(args[2]))
+	if (fn == "/") return "n" (to_num(args[1]) /  to_num(args[2]))
+	if (fn == "%") return "n" (to_num(args[1]) %  to_num(args[2]))
+	if (fn == "^") return "n" (to_num(args[1]) ** to_num(args[2]))
 
 	# Short-circuiting logical operators.
-	if (fn ~ /[&|]/) 
-		return to_boolean(arg1 = run(arg1), 1) == (fn == "&") ? run(arg2) : arg1
+	if (fn ~ /[&|]/) {
+		lhs = run(args[1])
+
+		return (to_bool(lhs, 1) == (fn == "&")) ? run(args[2]) : lhs
+	}
 
 	# Checks for equality without coercion.
-	if (fn == "?")
-		return "f" (run(arg1) == run(arg2) ? "T" : "F")
+	if (fn == "?") return run(args[1]) == run(args[2]) ? "fT" : "fF"
 
 	# Comparison operators. We don't have to do anything fancy for string/numebrs
 	# as awk already does that for us.
-	if (fn ~ /[<>]/) {
-		if (substr(arg1 = run(arg1), 1, 1) == "s")  {
-			arg1 = to_string(arg1, 1)
-			arg2 = to_string(arg2)
-		} else {
-			arg1 = to_number(arg1, 1)
-			arg2 = to_number(arg2)
-		}
+	if (fn == "<") {
+		lhs = run(args[1])
 
-		return (fn == "<" ? arg1 < arg2 : arg1 > arg2) ? "fT" : "fF"
+		if (lhs ~ /^s/) less = to_str(lhs, 1) < to_str(args[2])
+		else if (lhs ~ /^n/) less = to_num(lhs, 1) < to_num(args[2])
+		else less = to_bool(args[2]) && lhs == "fF"
+
+		return less ? "fT" : "fF"
+	}
+
+	if (fn == ">") {
+		lhs = run(args[1])
+
+		if (lhs ~ /^s/) more = to_str(lhs, 1) > to_str(args[2])
+		else if (lhs ~ /^n/) more = to_num(lhs, 1) > to_num(args[2])
+		else more = !to_bool(args[2]) && lhs == "fT"
+
+		return more ? "fT" : "fF"
 	}
 
 	# The while function executes the body until the condition is false. The
 	# return value is `null` if body never runs, otherwise it's the last returned
 	# value from the body.
 	if (fn == "W") {
-		tmp = "fN"
-
-		while (to_boolean(arg1))
-			tmp = run(arg2)
-
-		return tmp
+		while (to_bool(args[1])) run(args[2])
+		return "fN"
 	}
 
-	# At this point, all remaining functions have at least 3 arguments.
-	arg3 = ast[node_idx, 3]
-
 	# Runs either the second or third argument, depending on the first argument.
-	if (fn == "I")
-		return run(to_boolean(arg1) ? arg2 : arg3)
+	if (fn == "I") return run(to_bool(args[1]) ? args[2] : args[3])
 
 	if (fn == "G")
-		return "s" substr(to_string(arg1), to_number(arg2) + 1, to_number(arg3))
-
-	# At this point, all remaining functions have at least 4 arguments.
-	arg4 = ast[node_idx, 4]
+		return "s" substr(to_str(args[1]), to_num(args[2]) + 1, to_num(args[3]))
 
 	if (fn == "S") {
-		arg1 = to_string(arg1)
-		arg2 = to_number(arg2)
-		arg3 = to_number(arg3)
-		arg4 = to_string(arg4)
-		return "s" substr(arg1, 1, arg2) arg4 substr(arg1, arg2 + arg3, length(arg1))
+		args[1] = to_str(args[1])
+		args[2] = to_num(args[2])
+		args[3] = to_num(args[3])
+		args[4] = to_str(args[4])
+
+		return "s" substr(args[1], 1, args[2]) \
+			args[4] substr(args[1], args[2] + args[3], length(args[1]))
 	}
 
 	bug("unknown function to evaluate '" fn "'")

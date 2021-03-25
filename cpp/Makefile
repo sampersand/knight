@@ -9,7 +9,7 @@ override CXXFLAGS+=-F$(SRCDIR)
 ifdef DEBUG
 override CXXFLAGS+=-g -fsanitize=address,undefined
 else
-override CXXFLAGS+=-O3 -DNDEBUG -flto -march=native
+override CXXFLAGS+=-O3 -DNDEBUG -flto -march=native -fno-stack-protector
 endif
 
 objects=$(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.cpp))

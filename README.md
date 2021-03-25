@@ -10,7 +10,7 @@ The following is the list of all languages that I've written it in. All in-progr
 
 | Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
-| [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
+| [AWK](shell/knight.awk) | X | X | X | X | My AWK interpreter segfaults randomly, but after running each test 100x, they all passed. |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
 | [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
 | [C++](cpp) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |

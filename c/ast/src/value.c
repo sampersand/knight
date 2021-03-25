@@ -11,7 +11,6 @@
 #include <stdio.h>    /* printf */
 #include <ctype.h>    /* isspace */
 
-
 /*
  * The layout of `kn_value_t`:
  * 0...00000 - FALSE
@@ -153,13 +152,13 @@ static kn_number_t string_to_number(struct kn_string_t *string) {
 		ptr++;
 
 	bool is_neg = *ptr == '-';
-	unsigned char cur; // be explicit about wraparound.
 
 	// remove leading `-` or `+`s, if they exist.
 	if (is_neg || *ptr == '+')
 		++ptr;
 
 	// only digits are `<= 9` when a literal `0` char is subtracted from them.
+	unsigned char cur; // be explicit about wraparound.
 	while ((cur = *ptr++ - '0') <= 9)
 		ret = ret * 10 + cur;
 
