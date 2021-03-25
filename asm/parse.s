@@ -29,8 +29,8 @@ done_parsing:
 	pop %r12
 	ret
 
-
 .equ whitespace, handle_stream
+/* todo: parse whitespace characters before going back, as consecutive whitespace is likely */
 
 /* parse a comment out */
 comment:
@@ -79,9 +79,9 @@ identifier:
 	dec %rsi
 	call _strndup
 	mov %rax, %rdi
-	lea done_parsing(%rip), %rax
-	push %rax
-	jmp kn_value_new_identifier
+	call kn_env_fetch
+	kn_vl_new_var %rax
+	jmp done_parsing
 
 string:
 	sub $32, %rsp
@@ -190,7 +190,7 @@ decl_kw_function random
 decl_kw_function set
 decl_kw_function while
 
-function_if: // optimization because if is used so often.
+function_if: // optimization because if is used often.
 	lea kn_func_if(%rip), %rdi
 keyword_function:
 	peek %eax

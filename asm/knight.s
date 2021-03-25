@@ -15,17 +15,21 @@ kn_run:
 	pop %rbx
 	ret
 
-.globl kn_initialize
-kn_initialize:
+.globl kn_startup
+kn_startup:
 	sub $8, %rsp
 	xor %edi, %edi
 	call _time
 	mov %eax, %edi
 	call _srand
 	mov $4096, %edi /* amount of identifiers to start with */
-	call kn_env_initialize
+	call kn_env_startup
 	add $8, %rsp
 	ret
+
+.globl kn_shutdown
+kn_shutdown:
+	jmp kn_env_shutdown	
 
 .globl xmalloc
 xmalloc:

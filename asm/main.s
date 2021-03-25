@@ -1,7 +1,7 @@
 .data
 source:
 	/* .asciz "; = a 3 : O + 'a*4=' * a 4" */
-	.asciz "+ 1 2"
+	.asciz "i"
 # 	.asciz "123'abdqw\"
 # '"#\'
 
@@ -12,7 +12,10 @@ _main:
 
 	call process_arguments    // process command line arguments
 	mov %rax, %rbx
-	call kn_initialize        // Start up knight
+	call kn_startup        // Start up knight
+
+	xor %eax, %eax
+	pop %rbx; ret
 
 	lea source(%rip), %rdi
 	call kn_parse

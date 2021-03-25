@@ -41,6 +41,19 @@ X...X0100 = function, x nonzero
     or $KN_STR_BIT, \reg
 .endm
 
+.macro kn_vl_new_var reg:req, clobber=%r15
+    .ifdef KN_DEBUG
+	pushq \clobber
+	movq \reg, \clobber
+	andq $KN_TAG_MASK, \clobber
+	assert cmp, $0, \clobber, je, "clobber isn't zero: %$2lld (\reg).\n"
+	assert cmp, $0, \reg, jne, "register is null (\reg).\n"
+	popq \clobber
+    .endif
+
+    or $KN_VAR_BIT, \reg
+.endm
+
 .macro kn_vl_as_number reg:req
 	assert test, $KN_NUM_BIT, \reg, jnz, "value %2$d is not a number"
 	sar $KN_NUM_SHIFT, \reg

@@ -1,63 +1,93 @@
-.include "debugh.s"
+.include "envh.s"
 
-.bss
-kn_env_data:
-kn_env_capacity:
-	.quad 0
-kn_env_length:
-	.quad 0
-kn_env_keys:
-	.quad 0
-kn_env_vals:
-	.quad 0
-
-.text
 /*
-struct kn_env_t {
-	size_t capacity;
-	size_t length;
-
-	const char **keys;
-	struct kn_value_t *vals;
-};
-
-// The singleton value of `kn_env_t`.
-static struct kn_env_t KN_ENV;
+variable:
+	[8 bytes] value
+	[8 bytes] pointer to name
+bucket:
+	[8 bytes] length
+	[8 bytes] pointer to bucket
 */
 
-.globl kn_env_initialize	
-kn_env_initialize:
+.ifndef KN_ENV_NBUCKETS
+.equ KN_ENV_NBUCKETS, 65536
+.endif
+
+.ifndef KN_ENV_CAPACITY
+.equ KN_ENV_CAPACITY, 256
+.endif
+
+.equ KN_ENV_VAR_SIZE, 16
+.equ KN_ENV_BUCKET_SIZE, 16
+.equ KN_ENV_BUCKET_OFFSET_PTR, 8
+
+.globl kn_env_startup
+kn_env_startup:
+	push %rbx
+
+	;/* load starting and ending positions */
+	lea KN_ENV_NBUCKETS(%rip), %ebx
+	lea , %r12
+0:
+	;/* allocate and assign the bucket's pointer */
+	mov $(KN_ENV_CAPACITY * KN_ENV_VAR_SIZE), %rdi
+	call xmalloc
+	mov %rax, KN_ENV_BUCKET_OFFSET_PTR(%rbx)
+
+	;/* increment the current bucket and allocate the next one */
+	add $KN_ENV_BUCKET_SIZE, %rbx
+	cmp %(KN_ENV_NBUCKETS * KN_ENV_BUCKET_SIZE)(%rbx), %rbx
+	jne 0b
+
+	/* restore the startup and return */
+	pop %rbx
+	ret
+/*
+setup:
+        pushq   %rbx
+        movl    $65536, %ebx
+.L2:
+        movl    $4096, %edi
+        call    malloc
+        movq    %rax, map+8(%rip)
+        subl    $1, %ebx
+        jne     .L2
+        popq    %rbx
+        ret
+map:
+        .zero   1048576
+        */
+
+.globl kn_env_shutdown
+kn_env_shutdown:
+	ret
+
+
+.globl kn_env_fetch
+kn_env_fetch:
 	push %rbx
 	mov %rdi, %rbx
-	movq %rdi, kn_env_capacity(%rip)
-	imul $8, %rbx
-	mov %rbx, %rdi
+	mov $KN_ENV_VAR_SIZE, %rdi
 	call xmalloc
-	mov %rax, kn_env_keys(%rip)
-	mov %rbx, %rdi
-	call xmalloc
-	mov %rax, kn_env_vals(%rip)
-	pop %rbx
-	ret
 
-.globl kn_env_get
-kn_env_get:
-	todo "kn_env_get"
-	// NOTE: if the value does not exist, crash.
+.bss
+kn_env_map:
+	.zero (KN_ENV_BUCKET_SIZE * KN_ENV_NBUCKETS)
 
-.globl kn_env_set
-kn_env_set:
-	push %rbx
-	push %r12
-	push %r13
-	mov %rdi, %r12
-	mov %rsi, %r13
-	xor %ebx, %ebx
+/*
 
-	cmp %ebx, kn_env_length(%rip)
-	
+void kn_env_startup() {
+	// make sure we haven't started, and then set started to true.
+	assert(!kn_env_has_been_started && (kn_env_has_been_started = true));
+	assert(KN_ENV_CAPACITY != 0);
 
-	pop %r13
-	pop %r12
-	pop %rbx
-	ret
+	for (size_t i = 0; i < KN_ENV_NBUCKETS; ++i) {
+		kn_env_map[i] = (struct kn_env_bucket_t) {
+			// technically redundant, b/c it's set to 0 in `kn_env_shutdown`.
+			.length = 0,
+			.capacity = KN_ENV_CAPACITY,
+			.variables = xmalloc(sizeof(struct kn_variable_t [KN_ENV_CAPACITY]))
+		};
+	}
+}
+*/
