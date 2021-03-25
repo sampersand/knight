@@ -88,8 +88,8 @@ KN_FUNCTION_DECLARE(block, 1, 'B') {
 }
 
 KN_FUNCTION_DECLARE(call, 1, 'C') {
-	kn_value_t arg0 = kn_value_run(args[0]);
-	kn_value_t ret = kn_value_run(arg0);
+	kn_value_t arg0 = kn_value_run(args[0], 0);
+	kn_value_t ret = kn_value_run(arg0, 0);
 
 	kn_value_free(arg0);
 
@@ -159,7 +159,7 @@ KN_FUNCTION_DECLARE(length, 1, 'L') {
 }
 
 KN_FUNCTION_DECLARE(dump, 1, 'D') {
-	kn_value_t ret = kn_value_run(args[0]);
+	kn_value_t ret = kn_value_run(args[0], 0);
 
 	kn_value_dump(ret);
 
@@ -251,7 +251,7 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 }
 
 KN_FUNCTION_DECLARE(add, 2, '+') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	// If lhs is a string, convert both to a string and concatenate.
 	if (kn_value_is_string(lhs))
@@ -266,7 +266,7 @@ KN_FUNCTION_DECLARE(add, 2, '+') {
 }
 
 KN_FUNCTION_DECLARE(sub, 2, '-') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	assert_reckless(kn_value_is_number(lhs));
 
@@ -309,7 +309,7 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 }
 
 KN_FUNCTION_DECLARE(mul, 2, '*') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	// If lhs is a string, convert rhs to a number and multiply.
 	if (kn_value_is_string(lhs)) {
@@ -326,7 +326,7 @@ KN_FUNCTION_DECLARE(mul, 2, '*') {
 }
 
 KN_FUNCTION_DECLARE(div, 2, '/') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	assert_reckless(kn_value_is_number(lhs));
 
@@ -342,7 +342,7 @@ KN_FUNCTION_DECLARE(div, 2, '/') {
 }
 
 KN_FUNCTION_DECLARE(mod, 2, '%') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	assert_reckless(kn_value_is_number(lhs));
 
@@ -378,8 +378,8 @@ KN_FUNCTION_DECLARE(pow, 2, '^') {
 }
 
 KN_FUNCTION_DECLARE(eql, 2, '?') {
-	kn_value_t lhs = kn_value_run(args[0]);
-	kn_value_t rhs = kn_value_run(args[1]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
+	kn_value_t rhs = kn_value_run(args[1], 0);
 	bool eql;
 
 	assert(lhs != KN_UNDEFINED);
@@ -406,7 +406,7 @@ free_and_return:
 }
 
 KN_FUNCTION_DECLARE(lth, 2, '<') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 	bool less;
 
 	if (kn_value_is_string(lhs)) {
@@ -429,7 +429,7 @@ KN_FUNCTION_DECLARE(lth, 2, '<') {
 }
 
 KN_FUNCTION_DECLARE(gth, 2, '>') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 	bool more;
 
 	if (kn_value_is_string(lhs)) {
@@ -452,32 +452,32 @@ KN_FUNCTION_DECLARE(gth, 2, '>') {
 }
 
 KN_FUNCTION_DECLARE(and, 2, '&') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	// return the lhs if its falsey.
 	if (!kn_value_to_boolean(lhs))
 		return lhs;
 
 	kn_value_free(lhs);
-	return kn_value_run(args[1]);
+	return kn_value_run(args[1], 0);
 }
 
 KN_FUNCTION_DECLARE(or, 2, '|') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value_t lhs = kn_value_run(args[0], 0);
 
 	// return the lhs if its truthy.
 	if (kn_value_to_boolean(lhs))
 		return lhs;
 
 	kn_value_free(lhs);
-	return kn_value_run(args[1]);
+	return kn_value_run(args[1], 0);
 }
 
 KN_FUNCTION_DECLARE(then, 2, ';') {
 #ifndef KN_DYNMAIC_ARGC
-	kn_value_free(kn_value_run(args[0]));
+	kn_value_free(kn_value_run(args[0], 0));
 
-	return kn_value_run(args[1]);
+	return kn_value_run(args[1], 0);
 #else
 	kn_value_t ret;
 	unsigned i = 0;
@@ -487,7 +487,7 @@ KN_FUNCTION_DECLARE(then, 2, ';') {
 	do {
 		kn_value_free(ret);
 	inner:
-		ret = kn_value_run(args[i]);
+		ret = kn_value_run(args[i], 0);
 	} while (args[++i] != KN_UNDEFINED);
 
 	return ret;
@@ -504,7 +504,7 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 #endif /* KN_EXT_EQL_INTERPOLATE */
 
 	variable = kn_value_as_variable(args[0]);
-	ret = kn_value_run(args[1]);
+	ret = kn_value_run(args[1], 0);
 
 #ifdef KN_EXT_EQL_INTERPOLATE
 	} else {
@@ -512,7 +512,7 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 		// and then use that as the variable.
 		variable =
 			kn_env_fetch(kn_string_deref(kn_value_to_string(args[0])), false);
-		ret = kn_value_run(args[1]);
+		ret = kn_value_run(args[1], 0);
 	}
 #endif /* KN_EXT_EQL_INTERPOLATE */
 
@@ -529,7 +529,7 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 
 KN_FUNCTION_DECLARE(while, 2, 'W') {
 	while (kn_value_to_boolean(args[0]))
-		kn_value_free(kn_value_run(args[1]));
+		kn_value_free(kn_value_run(args[1], 0));
 
 	return KN_NULL;
 }
@@ -537,7 +537,7 @@ KN_FUNCTION_DECLARE(while, 2, 'W') {
 KN_FUNCTION_DECLARE(if, 3, 'I') {
 	bool idx = kn_value_to_boolean(args[0]);
 
-	return kn_value_run(args[1 + !idx]);
+	return kn_value_run(args[1 + !idx], 0);
 }
 
 KN_FUNCTION_DECLARE(get, 3, 'G') {
