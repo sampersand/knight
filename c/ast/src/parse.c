@@ -3,11 +3,12 @@
 #include <ctype.h>  /* isspace, isdigit, islower, isupper */
 #include <string.h> /* strndup */
 
-#include "parse.h"    /* prototypes, kn_value_t, kn_number_t, kn_ast_t,
+#include "parse.h"    /* prototypes, kn_value_t, kn_number_t, 
                          kn_value_new_number, kn_value_new_variable, 
                          kn_value_new_string, kn_value_new_ast, kn_string_empty,
-                         kn_string_new, KN_UNDEFINED, KN_TRUE, KN_FALSE, KN_NULL
-                         */
+                         kn_string_alloc, KN_UNDEFINED, KN_TRUE, KN_FALSE,
+                         KN_NULL */
+#include "ast.h"      /* kn_ast_t, kn_ast_alloc */
 #include "shared.h"   /* xmalloc, xrealloc, die */
 #include "function.h" /* kn_function_t, <all the function definitions> */
 #include "env.h"      /* kn_env_fetch */
@@ -318,8 +319,7 @@ parse_kw_function:
 parse_function:
 {
 	size_t arity = function->arity;
-	struct kn_ast_t *ast =
-		xmalloc(sizeof(struct kn_ast_t) + sizeof(kn_value_t [arity]));
+	struct kn_ast_t *ast = kn_ast_alloc(arity);
 
 	ast->func = function;
 	ast->refcount = 1;

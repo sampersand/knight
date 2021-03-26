@@ -1,6 +1,7 @@
 #include "function.h" /* prototypes */
 #include "knight.h"   /* kn_run */
-#include "env.h"      /* kn_env_fetch, kn_variable_t */
+#include "env.h"      /* kn_env_fetch, kn_variable_t, kn_variable_run,
+                         kn_variable_assign */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
 #include "string.h"   /* kn_string_t, kn_string_new, kn_string_alloc,
                          kn_string_free, kn_string_empty, kn_string_deref,
@@ -88,12 +89,12 @@ KN_FUNCTION_DECLARE(block, 1, 'B') {
 }
 
 KN_FUNCTION_DECLARE(call, 1, 'C') {
-	kn_value_t arg0 = kn_value_run(args[0]);
-	kn_value_t ret = kn_value_run(arg0);
+	kn_value_t ran = kn_value_run(args[0]);
+	kn_value_t result = kn_value_run(ran);
 
-	kn_value_free(arg0);
+	kn_value_free(ran);
 
-	return ret;
+	return result;
 }
 
 KN_FUNCTION_DECLARE(system, 1, '`') {
@@ -204,13 +205,7 @@ KN_FUNCTION_DECLARE(value, 1, 'V') {
 		kn_env_fetch(kn_string_deref(string), false);
 
 	kn_string_free(string);
-
-#ifndef KN_RECKLESS
-	if (variable->value == KN_UNDEFINED)
-		die("undefined variable '%s'", variable->str);
-#endif /* KN_RECKLESS */
-
-	return kn_value_clone(variable->value);
+	return kn_var_run(variable);
 }
 #endif /* KN_EXT_VALUE */
 
@@ -516,14 +511,9 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 	}
 #endif /* KN_EXT_EQL_INTERPOLATE */
 
-	// since it's new variables are undefined, we shouldn't free its old value
-	// if we haven't assigned to it yet.
-	if (variable->value != KN_UNDEFINED)
-		kn_value_free(variable->value);
+	kn_variable_assign(variable, kn_value_clone(ret));
 
-	variable->value = ret;
-
-	return kn_value_clone(ret);
+	return ret;
 }
 
 

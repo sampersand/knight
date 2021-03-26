@@ -4,7 +4,6 @@
 #include "string.h"  /* kn_string_t */
 #include <stdint.h>  /* uint64_t, int64_t */
 #include <stdbool.h> /* bool */
-
 /*
  * The type that represents values within Knight.
  *
@@ -36,36 +35,7 @@ typedef bool kn_boolean_t;
 // Forward declarations.
 struct kn_function_t;
 struct kn_variable_t;
-
-/*
- * The type that represents a function and its arguments in Knight.
- *
- * Note that this struct itself is
- */
-struct kn_ast_t {
-	/*
-	 * The function associated with this ast.
-	 */
-	const struct kn_function_t *func;
-
-	/*
-	 * How many references to this object exist.
-	 */
-	unsigned refcount;
-
-#ifdef KN_DYNMAIC_ARGC
-	/*
-	 * One of the extensions allows us to have a dynamic argc (ie collapse
-	 * adjacent calls to the same function).
-	 */
-	unsigned const argc;
-#endif /* KN_DYNMAIC_ARGC */
-
-	/*
-	 * The arguments to this struct.
-	 */
-	kn_value_t args[];
-};
+struct kn_ast_t;
 
 /*
  * The false value within Knight.

@@ -27,6 +27,5 @@ kn_value_t kn_run(const char *stream) {
 
 	kn_value_t ret = kn_value_run(parsed);
 	kn_value_free(parsed);
-
 	return ret;
 }

@@ -19,6 +19,21 @@
 #include "env.h"     /* prototypes, size_t, kn_variable_t, kn_value_free */
 #include "shared.h"  /* xmalloc, xrealloc, die */
 
+struct kn_variable_t {
+	/*
+	 * The value associated with this variable.
+	 *
+	 * When a variable is first fetched, this is set to `KN_UNDEFINED`, and
+	 * should be overwritten before being used.
+	 */
+	kn_value_t value;
+
+	/*
+	 * The name of this variable.
+	 */
+	const char *name;
+};
+
 /*
  * The amount of buckets that the `kn_env_map` will have.
  *
@@ -147,4 +162,24 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 	variable->value = KN_UNDEFINED;
 
 	return variable;
+}
+
+void kn_variable_assign(struct kn_variable_t *variable, kn_value_t value) {
+	if (variable->value != KN_UNDEFINED)
+		kn_value_free(variable->value);
+
+	variable->value = value;
+}
+
+const char *kn_variable_name(const struct kn_variable_t *variable) {
+	return variable->name;
+}
+
+kn_value_t kn_variable_run(struct kn_variable_t *variable) {
+#ifndef KN_RECKLESS
+	if (variable->value == KN_UNDEFINED)
+		die("undefined variable '%s'", kn_variable_name(variable));
+#endif /* KN_RECKLESS */
+
+	return kn_value_clone(variable->value);
 }
