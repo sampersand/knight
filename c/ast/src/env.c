@@ -148,3 +148,16 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 
 	return variable;
 }
+
+kn_value_t kn_var_run(struct kn_variable_t *variable) {
+#ifndef KN_RECKLESS
+	if (variable->value == KN_UNDEFINED)
+		die("undefined variable '%s'", variable->name);
+#endif /* KN_RECKLESS */
+
+	return kn_value_clone(variable->value);
+}
+
+const char *kn_var_name(struct kn_variable_t *variable) {
+	return variable->name;
+}

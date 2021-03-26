@@ -340,18 +340,12 @@ kn_value_t kn_value_run(kn_value_t value) {
 	if (kn_value_is_literal(value))
 		return value;
 
+	if (KN_TAG(value) == KN_TAG_VARIABLE)
+		return kn_var_run(kn_value_as_variable(value));
+
 	// we need to create a new string, as it needs to be unique from `value`.
 	if (KN_TAG(value) == KN_TAG_STRING)
 		return kn_value_new_string(kn_string_clone(kn_value_as_string(value)));
-
-	if (KN_TAG(value) == KN_TAG_VARIABLE) {
-		struct kn_variable_t *variable = kn_value_as_variable(value);
-
-		if (variable->value == KN_UNDEFINED)
-			die("undefined variable '%s'", variable->name);
-
-		return kn_value_clone(variable->value);
-	}
 
 	return kn_ast_run(kn_value_as_ast(value));
 }
@@ -384,4 +378,11 @@ void kn_value_free(kn_value_t value) {
 	}
 
 	kn_ast_free(kn_value_as_ast(value));
+}
+
+kn_value_t kn_value_run_owned(kn_value_t value) {
+	kn_value_t ret = kn_value_run(value);
+	kn_value_free(value);
+
+	return ret;
 }

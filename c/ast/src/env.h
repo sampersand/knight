@@ -55,4 +55,7 @@ void kn_env_shutdown(void);
  */
 struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned);
 
+kn_value_t kn_var_run(struct kn_variable_t *variable);
+const char *kn_var_name(struct kn_variable_t *variable);
+
 #endif /* KN_ENV_H */

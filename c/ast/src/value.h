@@ -205,4 +205,6 @@ kn_value_t kn_value_clone(kn_value_t value);
  */
 void kn_value_free(kn_value_t value);
 
+kn_value_t kn_value_run_owned(kn_value_t value);
+
 #endif /* KN_VALUE_H */
