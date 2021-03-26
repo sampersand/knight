@@ -3,7 +3,7 @@
 
 struct list {
 	unsigned length, capacity;
-	kn_value_t *data;
+	kn_value *data;
 };
 
 struct list empty()

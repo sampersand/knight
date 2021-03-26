@@ -3,14 +3,13 @@
 #include <ctype.h>  /* isspace, isdigit, islower, isupper */
 #include <string.h> /* strndup */
 
-#include "parse.h"    /* prototypes, kn_value_t, kn_number_t, 
-                         kn_value_new_number, kn_value_new_variable, 
-                         kn_value_new_string, kn_value_new_ast, kn_string_empty,
-                         kn_string_alloc, KN_UNDEFINED, KN_TRUE, KN_FALSE,
-                         KN_NULL */
-#include "ast.h"      /* kn_ast_t, kn_ast_alloc */
+#include "parse.h"    /* prototypes, kn_value, kn_number, kn_value_new_number,
+                         kn_value_new_variable, kn_value_new_string,
+                         kn_value_new_ast, kn_string_empty, kn_string_alloc,
+                         KN_UNDEFINED, KN_TRUE, KN_FALSE, KN_NULL */
+#include "ast.h"      /* kn_ast, kn_ast_alloc */
 #include "shared.h"   /* xmalloc, xrealloc, die */
-#include "function.h" /* kn_function_t, <all the function definitions> */
+#include "function.h" /* kn_function, <all the function definitions> */
 #include "env.h"      /* kn_env_fetch */
 
 // Check to see if the character is considered whitespace to Knight.
@@ -78,7 +77,7 @@ static int isident(char c) {
 	function = &kn_fn_##name; \
 	goto parse_kw_function
 
-kn_value_t kn_parse(register const char **stream) {
+kn_value kn_parse(register const char **stream) {
 
 // the global lookup table, which is used for the slightly-more-efficient, ut
 // mnon-standard computed gotos version of the parser.
@@ -141,7 +140,13 @@ kn_value_t kn_parse(register const char **stream) {
 # endif /* KN_EXT_VALUE */
 
 		['W']  = &&function_while,
+
+#ifdef KN_EXT_FUNCTION
 		['X']  = &&function_extension,
+#else
+		['X']  = &&invalid,
+#endif /* KN_EXT_FUNCTION */
+
 		['Y']  = &&invalid,
 		['Z']  = &&invalid,
 		['[']  = &&whitespace,
@@ -156,7 +161,7 @@ kn_value_t kn_parse(register const char **stream) {
 		['}']  = &&whitespace,
 
 #ifdef KN_EXT_NEGATE
-		['~']  = &&negate,
+		['~']  = &&function_negate,
 #else
 		['~']  = &&invalid,
 #endif /* KN_EXT_NEGATE */
@@ -166,7 +171,7 @@ kn_value_t kn_parse(register const char **stream) {
 #endif /* KN_COMPUTED_GOTOS */
 
 	char c;
-	const struct kn_function_t *function;
+	const struct kn_function *function;
 
 	assert(stream != NULL);
 	assert(*stream != NULL);
@@ -205,7 +210,7 @@ CASES7('(', ')', '[', ']', '{', '}', ':')
 LABEL(number)
 CASES10('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 {
-	kn_number_t number = (c - '0');
+	kn_number number = (c - '0');
 
 	while (isdigit(c = ADVANCE_PEEK()))
 		number = number * 10 + (c - '0');
@@ -223,8 +228,8 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 	while (isident(ADVANCE_PEEK()));
 
 	char *identifier = strndup(start, *stream - start);
-	struct kn_variable_t *variable = kn_env_fetch(identifier, true);
-	kn_value_t v = kn_value_new_variable(variable);
+	struct kn_variable *variable = kn_env_fetch(identifier, true);
+	kn_value v = kn_value_new_variable(variable);
 	return v;
 }
 
@@ -250,7 +255,7 @@ CASES2('\'', '\"')
 	if (!length)
 		return kn_value_new_string(&kn_string_empty);
 
-	struct kn_string_t *string = kn_string_alloc(length);
+	struct kn_string *string = kn_string_alloc(length);
 	memcpy(kn_string_deref(string), start, length);
 
 	kn_string_deref(string)[length] = '\0';
@@ -305,7 +310,10 @@ WORD_FUNC(quit, 'Q');
 WORD_FUNC(random, 'R');
 WORD_FUNC(substitute, 'S');
 WORD_FUNC(while, 'W');
+
+#ifdef KN_EXT_FUNCTION
 WORD_FUNC(extension, 'X');
+#endif /* KN_EXT_FUNCTION */
 
 #ifdef KN_EXT_VALUE
 WORD_FUNC(value, 'V');
@@ -319,7 +327,7 @@ parse_kw_function:
 parse_function:
 {
 	size_t arity = function->arity;
-	struct kn_ast_t *ast = kn_ast_alloc(arity);
+	struct kn_ast *ast = kn_ast_alloc(arity);
 
 	ast->func = function;
 	ast->refcount = 1;
@@ -383,12 +391,12 @@ parse_function:
 
 		if (ast->argc == cap)  {
 			ast = xrealloc(ast,
-				sizeof(struct kn_ast_t) + sizeof(kn_value_t [cap *= 2]));
+				sizeof(struct kn_ast) + sizeof(kn_value [cap *= 2]));
 		}
 	} while (1);
 
 	ast = xrealloc(ast,
-		sizeof(struct kn_ast_t) + sizeof(kn_value_t [ast->argc + 1]));
+		sizeof(struct kn_ast) + sizeof(kn_value [ast->argc + 1]));
 
 	ast->args[ast->argc] = KN_UNDEFINED;
 

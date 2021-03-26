@@ -19,8 +19,8 @@ MAP_ANONYMOUS, perror
 # define KN_NUM_PAGES (4096*4)
 #endif /* !KN_NUM_PAGES */
 
-static struct kn_string_t *string_arena_start, *string_arena_next;
-const struct kn_string_t *string_arena_end;
+static struct kn_string *string_arena_start, *string_arena_next;
+const struct kn_string *string_arena_end;
 
 #define ARENASIZE (KN_NUM_PAGES * getpagesize())
 
@@ -43,7 +43,7 @@ void kn_string_shutdown() {
 }
 
 static void free_strings() {
-	struct kn_string_t *curr;
+	struct kn_string *curr;
 	string_arena_next = NULL;
 
 	for (curr = string_arena_start; curr != string_arena_end; ++curr) {
@@ -64,8 +64,8 @@ static void free_strings() {
 		die("Memory error: not enough strings left.");
 }
 
-static inline struct kn_string_t *allocate_string() {
-	struct kn_string_t *string;
+static inline struct kn_string *allocate_string() {
+	struct kn_string *string;
 
 	do {
 		if (string_arena_next == string_arena_end)
@@ -86,8 +86,8 @@ void kn_string_startup() { }
 void kn_string_shutdown() { }
 
 /* Simply `xmalloc` non-arena-allocated strings. */
-static inline struct kn_string_t *allocate_string() {
-	return xmalloc(sizeof(struct kn_string_t));
+static inline struct kn_string *allocate_string() {
+	return xmalloc(sizeof(struct kn_string));
 }
 #endif /* KN_ARENA_ALLOCATE */
 
@@ -99,10 +99,10 @@ static inline struct kn_string_t *allocate_string() {
 #  define KN_STRING_CACHE_LINESIZE (1<<14)
 # endif /* !KN_STRING_CACHE_LINESIZE */
 
-static struct kn_string_t *string_cache[
+static struct kn_string *string_cache[
 	KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
 
-static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
+static struct kn_string **get_cache_slot(const char *str, size_t length) {
 	assert(length != 0);
 
 	unsigned long hash = kn_hash(str);
@@ -112,25 +112,25 @@ static struct kn_string_t **get_cache_slot(const char *str, size_t length) {
 #endif /* KN_STRING_CACHE */
 
 // The empty string.
-struct kn_string_t kn_string_empty = KN_STRING_NEW_EMBED("");
+struct kn_string kn_string_empty = KN_STRING_NEW_EMBED("");
 
-size_t kn_string_length(const struct kn_string_t *string) {
+size_t kn_string_length(const struct kn_string *string) {
 	return string->flags & KN_STRING_FL_EMBED
 		? (size_t) string->embed.length
 		: string->alloc.length;
 }
 
-char *kn_string_deref(struct kn_string_t *string) {
+char *kn_string_deref(struct kn_string *string) {
 	return string->flags & KN_STRING_FL_EMBED
 		? string->embed.data
 		: string->alloc.str;
 }
 
-struct kn_string_t *kn_string_alloc(size_t length) {
+struct kn_string *kn_string_alloc(size_t length) {
 	if (length == 0) 
 		return &kn_string_empty;
 
-	struct kn_string_t *string = allocate_string();
+	struct kn_string *string = allocate_string();
 	string->flags = KN_STRING_FL_STRUCT_ALLOC;
 	string->refcount = 1;
 
@@ -145,12 +145,12 @@ struct kn_string_t *kn_string_alloc(size_t length) {
 	return string;
 }
 
-// Allocate a `kn_string_t` and populate it for the given `str`.
-static struct kn_string_t *create_string(char *str, size_t length) {
+// Allocate a `kn_string` and populate it for the given `str`.
+static struct kn_string *create_string(char *str, size_t length) {
 	assert(strlen(str) == length);
 	assert(length != 0); // should have already been checked before.
 
-	struct kn_string_t *string = allocate_string();
+	struct kn_string *string = allocate_string();
 
 	string->flags = KN_STRING_FL_STRUCT_ALLOC;
 	string->refcount = 1;
@@ -160,7 +160,7 @@ static struct kn_string_t *create_string(char *str, size_t length) {
 	return string;
 }
 
-struct kn_string_t *kn_string_new(char *str, size_t length) {
+struct kn_string *kn_string_new(char *str, size_t length) {
 	// sanity check for inputs.
 	assert(0 <= (ssize_t) length);
 	assert(str != NULL);
@@ -179,8 +179,8 @@ struct kn_string_t *kn_string_new(char *str, size_t length) {
 	if (KN_STRING_CACHE_MAXLEN < length)
 		return create_string(str, length);
 
-	struct kn_string_t **cacheline = get_cache_slot(str, length);
-	struct kn_string_t *string;
+	struct kn_string **cacheline = get_cache_slot(str, length);
+	struct kn_string *string;
 
 	if (*cacheline == NULL || strcmp((string = *cacheline)->alloc.str, str))
 		return *cacheline = create_string(str, length);
@@ -195,7 +195,7 @@ struct kn_string_t *kn_string_new(char *str, size_t length) {
 
 }
 
-void kn_string_free(struct kn_string_t *string) {
+void kn_string_free(struct kn_string *string) {
 	assert(string != NULL);
 
 	// if we didn't allocate the struct, simply return.
@@ -226,7 +226,7 @@ void kn_string_free(struct kn_string_t *string) {
 
 }
 
-struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
+struct kn_string *kn_string_clone(struct kn_string *string) {
 	assert(string != NULL);
 	assert(!(string->flags & KN_STRING_FL_STATIC));
 
@@ -235,12 +235,12 @@ struct kn_string_t *kn_string_clone(struct kn_string_t *string) {
 	return string;
 }
 
-struct kn_string_t *kn_string_clone_static(struct kn_string_t *string) {
+struct kn_string *kn_string_clone_static(struct kn_string *string) {
 	if (!(string->flags & KN_STRING_FL_STATIC))
 		return string;
 
 	size_t length = string->alloc.length;
-	struct kn_string_t *result = kn_string_alloc(length);
+	struct kn_string *result = kn_string_alloc(length);
 
 	memcpy(kn_string_deref(result), string->alloc.str, length + 1);
 

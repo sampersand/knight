@@ -1,12 +1,12 @@
 #include "function.h" /* prototypes */
 #include "knight.h"   /* kn_run */
-#include "env.h"      /* kn_env_fetch, kn_variable_t, kn_variable_run,
+#include "env.h"      /* kn_env_fetch, kn_variable, kn_variable_run,
                          kn_variable_assign */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
-#include "string.h"   /* kn_string_t, kn_string_new, kn_string_alloc,
+#include "string.h"   /* kn_string, kn_string_new, kn_string_alloc,
                          kn_string_free, kn_string_empty, kn_string_deref,
                          kn_string_length, kn_string_clone_static, */
-#include "value.h"    /* kn_value_t, kn_number_t, KN_TRUE, KN_FALSE, KN_NULL,
+#include "value.h"    /* kn_value, kn_number, KN_TRUE, KN_FALSE, KN_NULL,
                          KN_UNDEFINED, kn_value_new_number, kn_value_new_string,
                          kn_value_new_boolean, kn_value_clone, kn_value_free,
                          kn_value_dump, kn_value_is_number, kn_value_is_boolean,
@@ -64,12 +64,12 @@ KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 KN_FUNCTION_DECLARE(random, 0, 'R') {
 	(void) args;
 
-	return kn_value_new_number((kn_number_t) rand());
+	return kn_value_new_number((kn_number) rand());
 }
 
 KN_FUNCTION_DECLARE(eval, 1, 'E') {
-	struct kn_string_t *string = kn_value_to_string(args[0]);
-	kn_value_t ret = kn_run(kn_string_deref(string));
+	struct kn_string *string = kn_value_to_string(args[0]);
+	kn_value ret = kn_run(kn_string_deref(string));
 
 	kn_string_free(string);
 
@@ -81,8 +81,8 @@ KN_FUNCTION_DECLARE(block, 1, 'B') {
 }
 
 KN_FUNCTION_DECLARE(call, 1, 'C') {
-	kn_value_t ran = kn_value_run(args[0]);
-	kn_value_t result = kn_value_run(ran);
+	kn_value ran = kn_value_run(args[0]);
+	kn_value result = kn_value_run(ran);
 
 	kn_value_free(ran);
 
@@ -90,7 +90,7 @@ KN_FUNCTION_DECLARE(call, 1, 'C') {
 }
 
 KN_FUNCTION_DECLARE(system, 1, '`') {
-	struct kn_string_t *command = kn_value_to_string(args[0]);
+	struct kn_string *command = kn_value_to_string(args[0]);
 	const char *str = kn_string_deref(command);
 	FILE *stream = popen(str, "r");
 
@@ -143,16 +143,16 @@ KN_FUNCTION_DECLARE(not, 1, '!') {
 }
 
 KN_FUNCTION_DECLARE(length, 1, 'L') {
-	struct kn_string_t *string = kn_value_to_string(args[0]);
+	struct kn_string *string = kn_value_to_string(args[0]);
 	size_t length = kn_string_length(string);
 
 	kn_string_free(string);
 
-	return kn_value_new_number((kn_number_t) length);
+	return kn_value_new_number((kn_number) length);
 }
 
 KN_FUNCTION_DECLARE(dump, 1, 'D') {
-	kn_value_t ret = kn_value_run(args[0]);
+	kn_value ret = kn_value_run(args[0]);
 
 	kn_value_dump(ret);
 
@@ -160,7 +160,7 @@ KN_FUNCTION_DECLARE(dump, 1, 'D') {
 }
 
 KN_FUNCTION_DECLARE(output, 1, 'O') {
-	struct kn_string_t *string = kn_value_to_string(args[0]);
+	struct kn_string *string = kn_value_to_string(args[0]);
 	size_t length = kn_string_length(string);
 	char *str = kn_string_deref(string);
 	char *penult;
@@ -192,9 +192,8 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 
 #ifdef KN_EXT_VALUE
 KN_FUNCTION_DECLARE(value, 1, 'V') {
-	struct kn_string_t *string = kn_value_to_string(args[0]);
-	struct kn_variable_t *variable =
-		kn_env_fetch(kn_string_deref(string), false);
+	struct kn_string *string = kn_value_to_string(args[0]);
+	struct kn_variable *variable = kn_env_fetch(kn_string_deref(string), false);
 
 	kn_string_free(string);
 	return kn_variable_run(variable);
@@ -207,7 +206,7 @@ KN_FUNCTION_DECLARE(negate, 1, '~') {
 }
 #endif /* KN_EXT_NEGATE */
 
-static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
+static kn_value add_string(struct kn_string *lhs, struct kn_string *rhs) {
 	size_t lhslen, rhslen;
 
 	// return early if either 
@@ -224,7 +223,7 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 	}
 
 	size_t length = lhslen + rhslen;
-	struct kn_string_t *string = kn_string_alloc(length);
+	struct kn_string *string = kn_string_alloc(length);
 	char *str = kn_string_deref(string);
 
 	memcpy(str, kn_string_deref(lhs), lhslen);
@@ -238,7 +237,7 @@ static kn_value_t add_string(struct kn_string_t *lhs, struct kn_string_t *rhs) {
 }
 
 KN_FUNCTION_DECLARE(add, 2, '+') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	// If lhs is a string, convert both to a string and concatenate.
 	if (kn_value_is_string(lhs))
@@ -246,24 +245,24 @@ KN_FUNCTION_DECLARE(add, 2, '+') {
 
 	assert_reckless(kn_value_is_number(lhs));
 
-	kn_number_t lhs_num = kn_value_as_number(lhs);
-	kn_number_t rhs_num = kn_value_to_number(args[1]);
+	kn_number lhs_num = kn_value_as_number(lhs);
+	kn_number rhs_num = kn_value_to_number(args[1]);
 
 	return kn_value_new_number(lhs_num + rhs_num);
 }
 
 KN_FUNCTION_DECLARE(sub, 2, '-') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	assert_reckless(kn_value_is_number(lhs));
 
-	kn_number_t lhs_num = kn_value_as_number(lhs);
-	kn_number_t rhs_num = kn_value_to_number(args[1]);
+	kn_number lhs_num = kn_value_as_number(lhs);
+	kn_number rhs_num = kn_value_to_number(args[1]);
 
 	return kn_value_new_number(lhs_num - rhs_num);
 }
 
-static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
+static kn_value mul_string(struct kn_string *lhs, size_t times) {
 	size_t lhslen = kn_string_length(lhs);
 
 	if (lhslen == 0 || times == 0) {
@@ -282,7 +281,7 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 		return kn_value_new_string(lhs);
 
 	size_t length = lhslen * times;
-	struct kn_string_t *string = kn_string_alloc(length);
+	struct kn_string *string = kn_string_alloc(length);
 	char *str = kn_string_deref(string);
 
 	for (char *ptr = str; times != 0; --times, ptr += lhslen)
@@ -296,7 +295,7 @@ static kn_value_t mul_string(struct kn_string_t *lhs, size_t times) {
 }
 
 KN_FUNCTION_DECLARE(mul, 2, '*') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	// If lhs is a string, convert rhs to a number and multiply.
 	if (kn_value_is_string(lhs)) {
@@ -306,19 +305,19 @@ KN_FUNCTION_DECLARE(mul, 2, '*') {
 	
 	assert_reckless(kn_value_is_number(lhs));
 
-	kn_number_t lhs_num = kn_value_as_number(lhs);
-	kn_number_t rhs_num = kn_value_to_number(args[1]);
+	kn_number lhs_num = kn_value_as_number(lhs);
+	kn_number rhs_num = kn_value_to_number(args[1]);
 
 	return kn_value_new_number(lhs_num * rhs_num);
 }
 
 KN_FUNCTION_DECLARE(div, 2, '/') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	assert_reckless(kn_value_is_number(lhs));
 
-	kn_number_t dividend = kn_value_as_number(lhs);
-	kn_number_t divisor = kn_value_to_number(args[1]);
+	kn_number dividend = kn_value_as_number(lhs);
+	kn_number divisor = kn_value_to_number(args[1]);
 
 #ifndef KN_RECKLESS
 	if (divisor == 0)
@@ -329,12 +328,12 @@ KN_FUNCTION_DECLARE(div, 2, '/') {
 }
 
 KN_FUNCTION_DECLARE(mod, 2, '%') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	assert_reckless(kn_value_is_number(lhs));
 
-	kn_number_t number = kn_value_as_number(lhs);
-	kn_number_t base = kn_value_to_number(args[1]);
+	kn_number number = kn_value_as_number(lhs);
+	kn_number base = kn_value_to_number(args[1]);
 
 #ifndef KN_RECKLESS
 	if (base == 0)
@@ -345,9 +344,9 @@ KN_FUNCTION_DECLARE(mod, 2, '%') {
 }
 
 KN_FUNCTION_DECLARE(pow, 2, '^') {
-	kn_number_t result;
-	kn_number_t base = kn_value_to_number(args[0]);
-	kn_number_t exponent = kn_value_to_number(args[1]);
+	kn_number result;
+	kn_number base = kn_value_to_number(args[0]);
+	kn_number exponent = kn_value_to_number(args[1]);
 
 	// there's no builtin way to do integer exponentiation, so we have to
 	// do it manually.
@@ -365,8 +364,8 @@ KN_FUNCTION_DECLARE(pow, 2, '^') {
 }
 
 KN_FUNCTION_DECLARE(eql, 2, '?') {
-	kn_value_t lhs = kn_value_run(args[0]);
-	kn_value_t rhs = kn_value_run(args[1]);
+	kn_value lhs = kn_value_run(args[0]);
+	kn_value rhs = kn_value_run(args[1]);
 	bool eql;
 
 	assert(lhs != KN_UNDEFINED);
@@ -378,8 +377,8 @@ KN_FUNCTION_DECLARE(eql, 2, '?') {
 	if (!(eql = (kn_value_is_string(lhs) && kn_value_is_string(rhs))))
 		goto free_and_return;
 
-	struct kn_string_t *lstr = kn_value_as_string(lhs);
-	struct kn_string_t *rstr = kn_value_as_string(rhs);
+	struct kn_string *lstr = kn_value_as_string(lhs);
+	struct kn_string *rstr = kn_value_as_string(rhs);
 
 	eql = kn_string_length(lstr) == kn_string_length(rstr) && 
 		!strcmp(kn_string_deref(lstr), kn_string_deref(rstr));
@@ -393,12 +392,12 @@ free_and_return:
 }
 
 KN_FUNCTION_DECLARE(lth, 2, '<') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 	bool less;
 
 	if (kn_value_is_string(lhs)) {
-		struct kn_string_t *lstr = kn_value_as_string(lhs);
-		struct kn_string_t *rstr = kn_value_to_string(args[1]);
+		struct kn_string *lstr = kn_value_as_string(lhs);
+		struct kn_string *rstr = kn_value_to_string(args[1]);
 
 		less = strcmp(kn_string_deref(lstr), kn_string_deref(rstr)) < 0;
 
@@ -416,12 +415,12 @@ KN_FUNCTION_DECLARE(lth, 2, '<') {
 }
 
 KN_FUNCTION_DECLARE(gth, 2, '>') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 	bool more;
 
 	if (kn_value_is_string(lhs)) {
-		struct kn_string_t *lstr = kn_value_as_string(lhs);
-		struct kn_string_t *rstr = kn_value_to_string(args[1]);
+		struct kn_string *lstr = kn_value_as_string(lhs);
+		struct kn_string *rstr = kn_value_to_string(args[1]);
 
 		more = strcmp(kn_string_deref(lstr), kn_string_deref(rstr)) > 0;
 
@@ -439,7 +438,7 @@ KN_FUNCTION_DECLARE(gth, 2, '>') {
 }
 
 KN_FUNCTION_DECLARE(and, 2, '&') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	// return the lhs if its falsey.
 	if (!kn_value_to_boolean(lhs))
@@ -450,7 +449,7 @@ KN_FUNCTION_DECLARE(and, 2, '&') {
 }
 
 KN_FUNCTION_DECLARE(or, 2, '|') {
-	kn_value_t lhs = kn_value_run(args[0]);
+	kn_value lhs = kn_value_run(args[0]);
 
 	// return the lhs if its truthy.
 	if (kn_value_to_boolean(lhs))
@@ -466,7 +465,7 @@ KN_FUNCTION_DECLARE(then, 2, ';') {
 
 	return kn_value_run(args[1]);
 #else
-	kn_value_t ret;
+	kn_value ret;
 	unsigned i = 0;
 
 	goto inner;
@@ -482,8 +481,8 @@ KN_FUNCTION_DECLARE(then, 2, ';') {
 }
 
 KN_FUNCTION_DECLARE(assign, 2, '=') {
-	struct kn_variable_t *variable;
-	kn_value_t ret;
+	struct kn_variable *variable;
+	kn_value ret;
 
 #ifdef KN_EXT_EQL_INTERPOLATE
 	// if it's an identifier, special-case it where we don't evaluate it.
@@ -522,7 +521,7 @@ KN_FUNCTION_DECLARE(if, 3, 'I') {
 }
 
 KN_FUNCTION_DECLARE(get, 3, 'G') {
-	struct kn_string_t *string, *substring;
+	struct kn_string *string, *substring;
 	size_t start, length, stringlen;
 
 	string = kn_value_to_string(args[0]);
@@ -556,7 +555,7 @@ free_and_return:
 }
 
 KN_FUNCTION_DECLARE(substitute, 4, 'S') {
-	struct kn_string_t *string, *substring, *result;
+	struct kn_string *string, *substring, *result;
 	size_t start, amnt, length, stringlength, substringlength;
 
 	string = kn_value_to_string(args[0]);

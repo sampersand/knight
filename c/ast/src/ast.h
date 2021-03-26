@@ -1,8 +1,8 @@
 #ifndef KN_AST_H
 #define KN_AST_H
 
-#include "function.h" /* kn_function_t */
-#include "value.h"    /* kn_value_t */
+#include "function.h" /* kn_function */
+#include "value.h"    /* kn_value */
 #include <stdbool.h>  /* bool */
 
 #ifdef KN_DYNMAIC_ARGC
@@ -17,11 +17,11 @@
  * Note that this struct should be passed to `kn_ast_free` to release its
  * resources.
  */
-struct kn_ast_t {
+struct kn_ast {
 	/*
 	 * The function associated with this ast.
 	 */
-	const struct kn_function_t *func;
+	const struct kn_function *func;
 
 	/*
 	 * How many references to this object exist.
@@ -39,28 +39,28 @@ struct kn_ast_t {
 	/*
 	 * The arguments to this struct.
 	 */
-	kn_value_t args[];
+	kn_value args[];
 };
 
 /*
- * Allocates a new `kn_ast_t` with the given number of arguments.
+ * Allocates a new `kn_ast` with the given number of arguments.
  */
-struct kn_ast_t *kn_ast_alloc(unsigned argc);
+struct kn_ast *kn_ast_alloc(unsigned argc);
 
 /*
  * Duplicates the ast, returning a new value that must be `kn_ast_free`d
  * independently from the passed `ast`.
  */
-struct kn_ast_t *kn_ast_clone(struct kn_ast_t *ast);
+struct kn_ast *kn_ast_clone(struct kn_ast *ast);
 
 /*
  * Releases the memory resources associated with this struct.
  */
-void kn_ast_free(struct kn_ast_t *ast);
+void kn_ast_free(struct kn_ast *ast);
 
 /*
- * Executes a `kn_ast_t`, returning the value associated with its execution.
+ * Executes a `kn_ast`, returning the value associated with its execution.
  */
-kn_value_t kn_ast_run(struct kn_ast_t *ast);
+kn_value kn_ast_run(struct kn_ast *ast);
 
 #endif /* !KN_AST_H */

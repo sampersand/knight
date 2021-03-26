@@ -5,9 +5,9 @@
 
 /*
  * These flags are used to record information about how the memory of a 
- * `kn_string_t` should be managed.
+ * `kn_string` should be managed.
  */
-enum kn_string_flags_t {
+enum kn_string_flags {
 	/*
 	 * Indicates that the struct itself was allocated.
 	 *
@@ -58,9 +58,9 @@ enum kn_string_flags_t {
  * Regardless of the type of string, it should be passed to `kn_string_free` to
  * properly dispose of its resources when you're finished with it.
  */
-struct kn_string_t {
+struct kn_string {
 	/* The flags that dictate how to manage this struct's memory. */
-	enum kn_string_flags_t flags;
+	enum kn_string_flags flags;
 
 	/*
 	 * The amount of references to this string.
@@ -106,7 +106,7 @@ struct kn_string_t {
 /*
  * The empty string.
  */
-extern struct kn_string_t kn_string_empty;
+extern struct kn_string kn_string_empty;
 
 /*
  * Initializes the string allocations.
@@ -136,12 +136,12 @@ void kn_string_shutdown(void);
 	}
 
 /*
- * Allocates a new `kn_string_t` that can hold at least the given length.
+ * Allocates a new `kn_string` that can hold at least the given length.
  */
-struct kn_string_t *kn_string_alloc(size_t length);
+struct kn_string *kn_string_alloc(size_t length);
 
 /*
- * Creates a new `kn_string_t` of the given length, and then initializes it to
+ * Creates a new `kn_string` of the given length, and then initializes it to
  * `str`; the `str`'s ownership should be given given to this function.
  *
  * Note that `length` should equal `strlen(str)`.
@@ -150,17 +150,17 @@ struct kn_string_t *kn_string_alloc(size_t length);
  * (After all, a pointer's already allocated, which is what embedding is trying
  * to avoid.)
  */
-struct kn_string_t *kn_string_new(char *str, size_t length);
+struct kn_string *kn_string_new(char *str, size_t length);
 
 /*
  * Returns the length of the string, in bytes.
  */
-size_t kn_string_length(const struct kn_string_t *string);
+size_t kn_string_length(const struct kn_string *string);
 
 /*
  * Dereferences the string, returning a mutable pointer to its data.
  */
-char *kn_string_deref(struct kn_string_t *string);
+char *kn_string_deref(struct kn_string *string);
 
 /*
  * Duplicates this string, returning another copy of it.
@@ -168,7 +168,7 @@ char *kn_string_deref(struct kn_string_t *string);
  * Each copy must be `kn_string_free`d separately after use to ensure that no
  * memory errors occur.
  */
-struct kn_string_t *kn_string_clone(struct kn_string_t *string);
+struct kn_string *kn_string_clone(struct kn_string *string);
 
 /*
  * Duplicates `KN_STRING_FL_STATIC` strings, simply returns all others.
@@ -178,7 +178,7 @@ struct kn_string_t *kn_string_clone(struct kn_string_t *string);
  * if an entire new string is needed, this is used to ensure that the returned
  * string won't change if the original static one does.
  */
-struct kn_string_t *kn_string_clone_static(struct kn_string_t *string);
+struct kn_string *kn_string_clone_static(struct kn_string *string);
 
 /* 
  * Indicates that the caller is done using this string.
@@ -191,6 +191,6 @@ struct kn_string_t *kn_string_clone_static(struct kn_string_t *string);
  * will be freed. (This is not the case when the `refcount` of an non-embedded
  * struct is not zero.)
  */
-void kn_string_free(struct kn_string_t *string);
+void kn_string_free(struct kn_string *string);
 
 #endif /* !KN_STRING_H */

@@ -7,13 +7,13 @@ struct hello_world {
 };
 #define HW(custom) ((struct hello_world *) (custom)->data)
 
-struct kn_custom_t *hw_clone(struct kn_custom_t *custom) {
+struct kn_custom *hw_clone(struct kn_custom *custom) {
 	++HW(custom)->rc;
 
 	return custom;
 }
 
-void hw_free(struct kn_custom_t *custom) {
+void hw_free(struct kn_custom *custom) {
 	if (--HW(custom)->rc) return;
 	free(HW(custom)->name);
 	free(HW(custom)->greeting);
@@ -21,12 +21,12 @@ void hw_free(struct kn_custom_t *custom) {
 	free(custom);
 }
 
-void hw_dump(struct kn_custom_t *custom) {
+void hw_dump(struct kn_custom *custom) {
 	printf("HelloWorld(\"%s\", \"%s\")", HW(custom)->greeting, HW(custom)->name);
 }
 
-struct kn_string_t *hw_string(struct kn_custom_t *custom) {
-	struct kn_string_t *string = kn_string_alloc(
+struct kn_string *hw_string(struct kn_custom *custom) {
+	struct kn_string *string = kn_string_alloc(
 		strlen(HW(custom)->name) + strlen(HW(custom)->greeting) + 3
 	);
 
@@ -38,7 +38,7 @@ struct kn_string_t *hw_string(struct kn_custom_t *custom) {
 	return string;
 }
 
-kn_value_t hw_run(struct kn_custom_t *custom) {
+kn_value_t hw_run(struct kn_custom *custom) {
 	return kn_value_new_string(hw_string(custom));
 }
 
@@ -53,9 +53,9 @@ static struct kn_custom_vtable_t hw_vtable = {
 };
 
 KN_FUNCTION_DECLARE(extension, 1, 'X') {
-	struct kn_custom_t *custom = xmalloc(sizeof(struct kn_custom_t));
+	struct kn_custom *custom = xmalloc(sizeof(struct kn_custom));
 	struct hello_world *data = xmalloc(sizeof(struct hello_world));
-	struct kn_string_t *name = kn_value_to_string(args[0]);
+	struct kn_string *name = kn_value_to_string(args[0]);
 
 	data->name = strdup(kn_string_deref(name));
 	kn_string_free(name);
