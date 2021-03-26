@@ -18,12 +18,12 @@ module Kn::Test::Shared
 
 	def parse(expr)
 		case expr
-		when /\ANull\(\)\z/ then :null
-		when /\AString\((.*?)\)\z/m then $1
-		when /\ABoolean\((true|false)\)\z/ then $1 == 'true'
-		when /\ANumber\(((?:-(?!0\)))?\d+)\)\z/ then $1.to_i # `-0` is invalid.
-		when /\AFunction\((.*?)\)\z/m then Kn::Test::Function.new $1
-		when /\AIdentifier\(([_a-z][_a-z0-9]*)\)\z/ then Kn::Test::Variable.new $1
+		when /\ANull\(\)\Z/ then :null
+		when /\AString\((.*?)\)\Z/m then $1
+		when /\ABoolean\((true|false)\)\Z/ then $1 == 'true'
+		when /\ANumber\(((?:-(?!0\)))?\d+)\)\Z/ then $1.to_i # `-0` is invalid.
+		when /\AFunction\((.*?)\)\Z/m then Kn::Test::Function.new $1
+		when /\AIdentifier\(([_a-z][_a-z0-9]*)\)\Z/ then Kn::Test::Variable.new $1
 		else fail "bad expression: #{expr.inspect}"
 		end
 	end
