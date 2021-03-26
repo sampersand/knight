@@ -4,26 +4,32 @@ use std::fmt::{self, Display, Formatter};
 /// The error type used to indicate an error whilst parsing Knight source code.
 #[derive(Debug)]
 pub enum ParseError {
-	/// Indicates the entire stream was simply whitespace and comments
+	/// Indicates that the end of stream was reached before a value could be parsed.
 	NothingToParse,
+
 	/// Indicates that an invalid character was encountered.
 	UnknownTokenStart {
 		/// The invalid character that.
 		chr: char,
+
 		/// The line that the invalid character occurred on.
 		lineno: usize
 	},
+
 	/// A starting quote was found without an associated ending quote.
 	UnterminatedQuote {
 		/// The line number the string started on.
 		linestart: usize
 	},
+
 	/// A function was parsed, but one of its arguments was not able to be parsed.
 	MissingFunctionArgument {
 		/// The function whose argument is missing.
 		func: char,
+
 		/// The argument number.
 		number: usize,
+
 		/// The line number the function started on.
 		lineno: usize
 	}
@@ -37,20 +43,25 @@ pub enum RuntimeError {
 		/// Whether or not its a modulus error.
 		modulo: bool
 	},
+
 	/// An unknown identifier was attempted to be dereferenced.
 	UnknownIdentifier {
 		/// The identifier at fault.
 		identifier: &'static str
 	},
+
 	/// A function was executed with an invalid operand.
 	InvalidOperand {
 		/// The function that was attempted.
 		func: char,
+
 		/// The type of the operand.
 		operand: &'static str
 	},
-	/// An error occurred whilst parsing (i.e. `EVAL` failed.)
+
+	/// An error occurred whilst parsing (i.e. `EVAL` failed).
 	Parse(ParseError),
+
 	/// An i/o error occurred (i.e. `` ` `` or `PROMPT` failed).
 	Io(io::Error)
 }

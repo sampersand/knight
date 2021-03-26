@@ -1,41 +1,26 @@
-use std::rc::Rc;
+//! Types relating to the [`RcStr`].
+
+use std::sync::Arc;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+/// The string type within Knight.
 #[derive(Clone)]
-pub struct RcStr(Inner);
-
-#[derive(Debug, Clone)]
-enum Inner {
-	Literal(&'static [u8]),
-	Shared(Rc<str>)
-}
+pub struct RcStr(Arc<str>);
 
 impl Default for RcStr {
 	fn default() -> Self {
-		unsafe {
-			RcStr::new_literal_unchecked(b"")
-		}
+		use once_cell::sync::OnceCell;
+
+		static EMPTY: OnceCell<RcStr> = OnceCell::new();
+
+		EMPTY.get_or_init(|| Self(Arc::from(""))).clone()
 	}
 }
 
 impl Debug for RcStr {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		if !f.alternate() {
-			return Debug::fmt(self.as_str(), f);
-		}
-
-		match &self.0 {
-			Inner::Literal(literal) =>
-				f.debug_tuple("RcStr::Literal")
-					.field(&literal)
-					.finish(),
-
-			Inner::Shared(shared) =>
-				f.debug_tuple("RcStr::Shared")
-					.field(&shared)
-					.finish()
-		}
+		Debug::fmt(self.as_str(), f)
 	}
 }
 
@@ -70,74 +55,91 @@ impl Ord for RcStr {
 	}
 }
 
+/// An error that indicates a character within a Knight string wasn't valid.
 #[derive(Debug, PartialEq, Eq)]
-pub struct InvalidLiteral {
-	pub byte: u8,
+pub struct InvalidChar {
+	/// The byte that was invalid.
+	pub chr: char,
+
+	/// The index of the invalid byte in the given string.
 	pub idx: usize
 }
 
-impl Display for InvalidLiteral {
+impl Display for InvalidChar {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		write!(f, "invalid byte '\\x{:02x}' found at position {}", self.byte, self.idx)
+		write!(f, "invalid byte '{:?}' found at position {}", self.chr, self.idx)
 	}
 }
 
-impl std::error::Error for InvalidLiteral {}
+impl std::error::Error for InvalidChar {}
 
-fn validate_string(data: &[u8]) -> Result<(), InvalidLiteral> {
-	for (idx, &byte) in data.iter().enumerate() {
-		if !matches!(byte, b'\r' | b'\n' | b' '..=b'~') {
-			return Err(InvalidLiteral { byte, idx });
+/// Checks to see if `chr` is a valid knight character.
+pub fn is_valid_char(chr: char) -> bool {
+	return matches!(chr, '\r' | '\n' | ' '..='~');
+}
+
+fn validate_string(data: &str) -> Result<(), InvalidChar> {
+	for (idx, chr) in data.chars().enumerate() {
+		if !is_valid_char(chr) {
+			return Err(InvalidChar { chr, idx });
 		}
 	}
 
 	Ok(())
 }
 
-
 impl RcStr {
-	#[inline]
-	pub fn new_literal(literal: &'static [u8]) -> Result<Self, InvalidLiteral> {
-		validate_string(literal)
-			.map(|_| unsafe { Self::new_literal_unchecked(literal) })
-	}
+	/// Creates a new `RcStr` with the given input string.
+	///
+	/// # Errors
+	/// If `string` contains any characters which aren't valid in Knight source code, an `InvalidChar` is returned.
+	///
+	/// # See Also
+	/// - [`RcStr::new_unchecked`] For a version which doesn't verify `string`.
+	pub fn new<T: AsRef<str> + Into<Arc<str>>>(string: T) -> Result<Self, InvalidChar> {
+		validate_string(string.as_ref())?;
 
-	pub unsafe fn new_literal_unchecked(literal: &'static [u8]) -> Self {
-		debug_assert_eq!(validate_string(literal), Ok(()), "invalid literal encountered: {:?}", literal);
-
-		Self(Inner::Literal(literal))
-	}
-
-	pub fn new_shared(string: impl ToString) -> Self {
-		Self(Inner::Shared(string.to_string().into()))
-	}
-
-	pub fn as_str(&self) -> &str {
-		match &self.0 {
-			Inner::Literal(literal) => unsafe { std::str::from_utf8_unchecked(literal) },
-			Inner::Shared(shared) => &*shared
+		unsafe {
+			Ok(Self::new_unchecked(string))
 		}
 	}
-}
 
-impl From<&'static str> for RcStr {
+	/// Creates a new `RcStr`, without verifying that the string is valid.
+	///
+	/// # Safety
+	/// All characters within the string must be valid for Knight strings. See the specs for what exactly this entails.
+	pub unsafe fn new_unchecked<T: AsRef<str> + Into<Arc<str>>>(string: T) -> Self {
+		debug_assert_eq!(validate_string(string.as_ref()), Ok(()), "invalid string encountered: {:?}",string.as_ref());
+
+		Self(string.into())
+	}
+
+	/// Gets a reference to the contained string.
 	#[inline]
-	fn from(literal: &'static str) -> Self {
-		Self::new_literal(literal.as_bytes()).unwrap()
+	pub fn as_str(&self) -> &str {
+		self.0.as_ref()
 	}
 }
 
-impl From<Rc<str>> for RcStr {
+impl From<&str> for RcStr {
+	/// Creates a new `RcStr` from the given `string`.
+	///
+	/// # Panics
+	/// Panics if the given string is not valid.
 	#[inline]
-	fn from(shared: Rc<str>) -> Self {
-		Self(Inner::Shared(shared))
+	fn from(string: &str) -> Self {
+		Self::new(string).expect("invalid string given")
 	}
 }
 
 impl From<String> for RcStr {
+	/// Creates a new `RcStr` from the given `string`.
+	///
+	/// # Panics
+	/// Panics if the given string is not valid.
 	#[inline]
 	fn from(string: String) -> Self {
-		Self::new_shared(string)
+		Self::new(string).expect("invalid string given")
 	}
 }
 
