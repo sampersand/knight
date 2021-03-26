@@ -58,4 +58,4 @@ kn_value_t kn_variable_run(struct kn_variable_t *variable);
  */
 const char *kn_variable_name(const struct kn_variable_t *variable);
 
-#endif /* KN_ENV_H */
+#endif /* !KN_ENV_H */

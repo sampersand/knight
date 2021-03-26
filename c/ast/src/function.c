@@ -55,7 +55,7 @@ KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 		// if we're not at eof, abort.
 		if (!feof(stdin)) 
 			perror("unable to read line");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 		return kn_value_new_string(&kn_string_empty);
 	}
@@ -105,7 +105,7 @@ KN_FUNCTION_DECLARE(system, 1, '`') {
 #ifndef KN_RECKLESS
 	if (stream == NULL)
 		die("unable to execute command '%s'.", str);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	kn_string_free(command);
 
@@ -128,7 +128,7 @@ KN_FUNCTION_DECLARE(system, 1, '`') {
 	// Abort if `stream` had an error.
 	if (ferror(stream))
 		die("unable to read command stream");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	result = xrealloc(result, len + 1);
 	result[len] = '\0';
@@ -137,7 +137,7 @@ KN_FUNCTION_DECLARE(system, 1, '`') {
 	// Abort if we cant close stream.
 	if (pclose(stream) == -1)
 		die("unable to close command stream.");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return kn_value_new_string(kn_string_new(result, len));
 }
@@ -175,7 +175,7 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 
 #ifndef KN_RECKLESS
 	clearerr(stdout);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	if (length == 0) {
 		putc('\n', stdout);
@@ -191,7 +191,7 @@ KN_FUNCTION_DECLARE(output, 1, 'O') {
 #ifndef KN_RECKLESS
 	if (ferror(stdout))
 		die("unable to write to stdout");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	kn_string_free(string);
 
@@ -331,7 +331,7 @@ KN_FUNCTION_DECLARE(div, 2, '/') {
 #ifndef KN_RECKLESS
 	if (divisor == 0)
 		die("attempted to divide by zero");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return kn_value_new_number(dividend / divisor);
 }
@@ -347,7 +347,7 @@ KN_FUNCTION_DECLARE(mod, 2, '%') {
 #ifndef KN_RECKLESS
 	if (base == 0)
 		die("attempted to modulo by zero");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return kn_value_new_number(number % base);
 }
@@ -486,7 +486,7 @@ KN_FUNCTION_DECLARE(then, 2, ';') {
 	} while (args[++i] != KN_UNDEFINED);
 
 	return ret;
-#endif
+#endif /* !KN_DYNMAIC_ARGC */
 }
 
 KN_FUNCTION_DECLARE(assign, 2, '=') {
@@ -515,7 +515,6 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 
 	return ret;
 }
-
 
 KN_FUNCTION_DECLARE(while, 2, 'W') {
 	while (kn_value_to_boolean(args[0]))
@@ -551,7 +550,6 @@ KN_FUNCTION_DECLARE(get, 3, 'G') {
 	if (stringlen <= start + length)
 		length = stringlen - start;
 
-
 	substring = kn_string_alloc(length);
 	char *substr = kn_string_deref(substring);
 
@@ -581,7 +579,7 @@ KN_FUNCTION_DECLARE(substitute, 4, 'S') {
 	if (stringlength < start)
 		die("index '%zu' out of bounds (length=%zu)", start,
 			stringlength);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	if (stringlength <= start + amnt)
 		amnt = stringlength - start;

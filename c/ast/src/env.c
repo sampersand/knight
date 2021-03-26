@@ -40,8 +40,8 @@ struct kn_variable_t {
  * The greater the number, the fewer cache collisions, but the more memory used.
  */
 #ifndef KN_ENV_NBUCKETS
-#define KN_ENV_NBUCKETS 65536
-#endif /* KN_ENV_NBUCKETS */
+# define KN_ENV_NBUCKETS 65536
+#endif /* !KN_ENV_NBUCKETS */
 
 /*
  * The capacity of each bucket.
@@ -50,8 +50,8 @@ struct kn_variable_t {
  * reallocate those buckets.
  */
 #ifndef KN_ENV_CAPACITY
-#define KN_ENV_CAPACITY 256
-#endif /* KN_ENV_CAPACITY */
+# define KN_ENV_CAPACITY 256
+#endif /* !KN_ENV_CAPACITY */
 
 /*
  * The buckets of the environment hashmap.
@@ -70,7 +70,7 @@ static struct kn_env_bucket_t kn_env_map[KN_ENV_NBUCKETS];
 #ifndef NDEBUG
 /* A sanity check to ensure the environment has been setup. */
 static bool kn_env_has_been_started = false;
-#endif /* NDEBUG */
+#endif /* !NDEBUG */
 
 void kn_env_startup() {
 	// make sure we haven't started, and then set started to true.
@@ -179,7 +179,7 @@ kn_value_t kn_variable_run(struct kn_variable_t *variable) {
 #ifndef KN_RECKLESS
 	if (variable->value == KN_UNDEFINED)
 		die("undefined variable '%s'", kn_variable_name(variable));
-#endif /* KN_RECKLESS */
+#endif /*! KN_RECKLESS */
 
 	return kn_value_clone(variable->value);
 }

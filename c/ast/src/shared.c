@@ -41,7 +41,7 @@ void *xmalloc(size_t size) {
 #ifndef KN_RECKLESS
 	if (ptr == NULL)
 		die("malloc failure for size %zd", size);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return ptr;
 }
@@ -54,7 +54,7 @@ void *xrealloc(void *ptr, size_t size) {
 #ifndef KN_RECKLESS
 	if (ptr == NULL)
 		die("realloc failure for size %zd", size);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return ptr;
 }

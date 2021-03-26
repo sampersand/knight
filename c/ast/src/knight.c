@@ -23,7 +23,7 @@ kn_value_t kn_run(const char *stream) {
 #ifndef KN_RECKLESS
 	if (parsed == KN_UNDEFINED)
 		die("unable to parse stream");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	kn_value_t ret = kn_value_run(parsed);
 	kn_value_free(parsed);

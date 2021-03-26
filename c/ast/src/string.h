@@ -35,8 +35,8 @@ enum kn_string_flags_t {
  * embedded, but the more memory used.
  */
 #ifndef KN_STRING_PADDING_LENGTH
-#define KN_STRING_PADDING_LENGTH 8
-#endif
+# define KN_STRING_PADDING_LENGTH 8
+#endif /* !KN_STRING_PADDING_LENGTH */
 
 /*
  * The length of the embedded segment of the string.
@@ -193,4 +193,4 @@ struct kn_string_t *kn_string_clone_static(struct kn_string_t *string);
  */
 void kn_string_free(struct kn_string_t *string);
 
-#endif /* KN_STRING_H */
+#endif /* !KN_STRING_H */

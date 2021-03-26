@@ -11,4 +11,4 @@
  */
 kn_value_t kn_parse(const char **stream);
 
-#endif /* KN_PARSE_H */
+#endif /* !KN_PARSE_H */

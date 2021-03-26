@@ -16,8 +16,8 @@ MAP_ANONYMOUS, perror
 #include <stdio.h>
 
 #ifndef KN_NUM_PAGES
-#define KN_NUM_PAGES (4096*4)
-#endif /* KN_NUM_PAGES */
+# define KN_NUM_PAGES (4096*4)
+#endif /* !KN_NUM_PAGES */
 
 static struct kn_string_t *string_arena_start, *string_arena_next;
 const struct kn_string_t *string_arena_end;
@@ -53,11 +53,8 @@ static void free_strings() {
 		if (curr->refcount)
 			continue;
 
-		if (!(curr->flags & KN_STRING_FL_EMBED
-			|| curr->flags & KN_STRING_FL_STATIC))
-		{
+		if (!(curr->flags & (KN_STRING_FL_EMBED | KN_STRING_FL_STATIC)))
 			free(curr->alloc.str);
-		}
 
 		if (string_arena_next == NULL)
 			string_arena_next = curr;
@@ -80,7 +77,7 @@ static inline struct kn_string_t *allocate_string() {
 	return string;
 }
 
-#else /* KN_ARENA_ALLOCATE */
+#else
 
 /* Do nothing at startup for non-arena-allocated strings. */
 void kn_string_startup() { }
@@ -94,15 +91,13 @@ static inline struct kn_string_t *allocate_string() {
 }
 #endif /* KN_ARENA_ALLOCATE */
 
-
 #ifdef KN_STRING_CACHE
-#ifndef KN_STRING_CACHE_MAXLEN
-#define KN_STRING_CACHE_MAXLEN 32
-#endif /* KN_STRING_CACHE_MAXLEN */
-
-#ifndef KN_STRING_CACHE_LINESIZE
-#define KN_STRING_CACHE_LINESIZE (1<<14)
-#endif /* KN_STRING_CACHE_LINESIZE */
+# ifndef KN_STRING_CACHE_MAXLEN
+#  define KN_STRING_CACHE_MAXLEN 32
+# endif /* !KN_STRING_CACHE_MAXLEN */
+# ifndef KN_STRING_CACHE_LINESIZE
+#  define KN_STRING_CACHE_LINESIZE (1<<14)
+# endif /* !KN_STRING_CACHE_LINESIZE */
 
 static struct kn_string_t *string_cache[
 	KN_STRING_CACHE_MAXLEN][KN_STRING_CACHE_LINESIZE];
@@ -196,7 +191,7 @@ struct kn_string_t *kn_string_new(char *str, size_t length) {
 	++string->refcount;
 
 	return string;
-#endif /* KN_STRING_CACHE */
+#endif /* !KN_STRING_CACHE */
 
 }
 
@@ -227,7 +222,7 @@ void kn_string_free(struct kn_string_t *string) {
 		free(string->alloc.str);
 
 	free(string);
-#endif /* KN_ARENA_ALLOCATE */
+#endif /* !KN_ARENA_ALLOCATE */
 
 }
 

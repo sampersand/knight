@@ -173,4 +173,4 @@ extern const struct kn_function_t kn_fn_get;
 /* 4.5.1 SUBSTITUTE */
 extern const struct kn_function_t kn_fn_substitute;
 	
-#endif
+#endif /* !KN_FUNCTION_H */

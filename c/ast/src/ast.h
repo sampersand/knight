@@ -6,9 +6,9 @@
 #include <stdbool.h>  /* bool */
 
 #ifdef KN_DYNMAIC_ARGC
-#define KN_AST_ARITY(ast) ((ast)->argc)
+# define KN_AST_ARITY(ast) ((ast)->argc)
 #else
-#define KN_AST_ARITY(ast) ((ast)->func->arity)
+# define KN_AST_ARITY(ast) ((ast)->func->arity)
 #endif /* KN_DYNMAIC_ARGC */
 
 /*
@@ -63,4 +63,4 @@ void kn_ast_free(struct kn_ast_t *ast);
  */
 kn_value_t kn_ast_run(struct kn_ast_t *ast);
 
-#endif /* KN_AST_H */
+#endif /* !KN_AST_H */

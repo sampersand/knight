@@ -12,7 +12,7 @@ static char *read_file(const char *filename) {
 #ifndef KN_RECKLESS
 	if (file == NULL)
 		die("unable to read file '%s': %s", filename, strerror(errno));
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	size_t length = 0;
 	size_t capacity = 2048;
@@ -26,7 +26,7 @@ static char *read_file(const char *filename) {
 #ifndef KN_RECKLESS
 		if (!feof(stdin))
 			die("unable to line in file '%s': %s'", filename, strerror(errno));
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 			break;
 		}
@@ -43,13 +43,12 @@ static char *read_file(const char *filename) {
 
 #ifndef KN_RECKLESS
 		perror("couldn't close input file");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	}
 
 	return xrealloc(contents, length);
 }
-
 
 static void usage(char *program) {
 	die("usage: %s (-e 'expr' | -f file)", program);

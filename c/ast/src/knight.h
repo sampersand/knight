@@ -33,4 +33,4 @@ void kn_shutdown(void);
  */
 kn_value_t kn_run(const char *stream);
 
-#endif /* KN_KNIGHT_H */
+#endif /* !KN_KNIGHT_H */
