@@ -379,10 +379,3 @@ void kn_value_free(kn_value_t value) {
 
 	kn_ast_free(kn_value_as_ast(value));
 }
-
-kn_value_t kn_value_run_owned(kn_value_t value) {
-	kn_value_t ret = kn_value_run(value);
-	kn_value_free(value);
-
-	return ret;
-}

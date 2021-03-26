@@ -89,7 +89,12 @@ KN_FUNCTION_DECLARE(block, 1, 'B') {
 }
 
 KN_FUNCTION_DECLARE(call, 1, 'C') {
-	return kn_value_run_owned(kn_value_run(args[0]));
+	kn_value_t ran = kn_value_run(args[0]);
+	kn_value_t result = kn_value_run(ran);
+
+	kn_value_free(ran);
+
+	return result;
 }
 
 KN_FUNCTION_DECLARE(system, 1, '`') {
