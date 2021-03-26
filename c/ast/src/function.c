@@ -205,7 +205,7 @@ KN_FUNCTION_DECLARE(value, 1, 'V') {
 		kn_env_fetch(kn_string_deref(string), false);
 
 	kn_string_free(string);
-	return kn_var_run(variable);
+	return kn_variable_run(variable);
 }
 #endif /* KN_EXT_VALUE */
 
