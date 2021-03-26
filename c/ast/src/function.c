@@ -1,6 +1,7 @@
 #include "function.h" /* prototypes */
 #include "knight.h"   /* kn_run */
-#include "env.h"      /* kn_env_fetch, kn_variable_t, kn_var_run */
+#include "env.h"      /* kn_env_fetch, kn_variable_t, kn_variable_run,
+                         kn_variable_assign */
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
 #include "string.h"   /* kn_string_t, kn_string_new, kn_string_alloc,
                          kn_string_free, kn_string_empty, kn_string_deref,
@@ -505,14 +506,9 @@ KN_FUNCTION_DECLARE(assign, 2, '=') {
 	}
 #endif /* KN_EXT_EQL_INTERPOLATE */
 
-	// since it's new variables are undefined, we shouldn't free its old value
-	// if we haven't assigned to it yet.
-	if (variable->value != KN_UNDEFINED)
-		kn_value_free(variable->value);
+	kn_variable_assign(variable, kn_value_clone(ret));
 
-	variable->value = ret;
-
-	return kn_value_clone(ret);
+	return ret;
 }
 
 

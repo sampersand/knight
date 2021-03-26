@@ -10,23 +10,10 @@
  * A variable within Knight.
  *
  * This struct is only returned via `kn_env_fetch`, and lives for the remainder
- * of the program's lifetime. (Or, at least until `kn_env_free` is called.)
- * As such, there is no need to free it.
+ * of the program's lifetime. (Or, at least until `kn_env_free` is called.) As
+ * such, there is no need to free it.
  */
-struct kn_variable_t {
-	/*
-	 * The value associated with this variable.
-	 *
-	 * When a variable is first fetched, this is set to `KN_UNDEFINED`, and
-	 * should be overwritten before being used.
-	 */
-	kn_value_t value;
-
-	/*
-	 * The name of this variable.
-	 */
-	const char *name;
-};
+struct kn_variable_t;
 
 /*
  * Initializes the global Knight environment with the given starting capacity.
@@ -51,11 +38,24 @@ void kn_env_shutdown(void);
  * `false`.
  *
  * This will always return a `kn_variable_t`, which may have been newly created.
- * All newly created variables will have an initial value of `KN_UNDEFINED`.
  */
 struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned);
 
-kn_value_t kn_var_run(struct kn_variable_t *variable);
-const char *kn_var_name(struct kn_variable_t *variable);
+/*
+ * Assigns a value to this variable, overwriting whatever was there previously.
+ */
+void kn_variable_assign(struct kn_variable_t *variable, kn_value_t);
+
+/*
+ * Runs the given variable, returning the value associated with it.
+ *
+ * If the variable has not been assigned to yet, this will abort the program.
+ */
+kn_value_t kn_variable_run(struct kn_variable_t *variable);
+
+/*
+ * Fetches the name of the variable.
+ */
+const char *kn_variable_name(const struct kn_variable_t *variable);
 
 #endif /* KN_ENV_H */
