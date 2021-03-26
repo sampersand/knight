@@ -33,7 +33,7 @@ struct kn_ast_t {
 	 * One of the extensions allows us to have a dynamic argc (ie collapse
 	 * adjacent calls to the same function).
 	 */
-	unsigned const argc;
+	unsigned argc;
 #endif /* KN_DYNMAIC_ARGC */
 
 	/*
