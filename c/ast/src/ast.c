@@ -29,11 +29,6 @@ void kn_ast_free(struct kn_ast_t *ast) {
 	free(ast);
 }
 
-kn_value_t kn_ast_run(struct kn_ast_t *ast, bool owned) {
-	kn_value_t ret = (ast->func->func)(ast->args);
-
-	if (owned)
-		kn_ast_free(ast);
-
-	return ret;
+kn_value_t kn_ast_run(struct kn_ast_t *ast) {
+	return (ast->func->func)(ast->args);
 }

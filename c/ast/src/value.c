@@ -179,7 +179,7 @@ kn_number_t kn_value_to_number(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 
 	// simply execute the value and call this function again.
-	kn_value_t ran = kn_value_run(value, 0);
+	kn_value_t ran = kn_value_run(value);
 	kn_number_t ret = kn_value_to_number(ran);
 	kn_value_free(ran);
 
@@ -212,7 +212,7 @@ kn_boolean_t kn_value_to_boolean(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 
 	// simply execute the value and call this function again.
-	kn_value_t ran = kn_value_run(value, 0);
+	kn_value_t ran = kn_value_run(value);
 	kn_boolean_t ret = kn_value_to_boolean(ran);
 	kn_value_free(ran);
 
@@ -273,7 +273,7 @@ struct kn_string_t *kn_value_to_string(kn_value_t value) {
 	assert(kn_value_is_variable(value) || kn_value_is_ast(value));
 
 	// simply execute the value and call this function again.
-	kn_value_t ran = kn_value_run(value, 0);
+	kn_value_t ran = kn_value_run(value);
 	struct kn_string_t *ret = kn_value_to_string(ran);
 	kn_value_free(ran);
 
@@ -333,21 +333,16 @@ void kn_value_dump(kn_value_t value) {
 	}
 }
 
-kn_value_t kn_value_run(kn_value_t value, bool owned) {
+kn_value_t kn_value_run(kn_value_t value) {
 	assert(value != KN_UNDEFINED);
 
 	// the whole point of literals is they dont do anything when evaluated.
 	if (kn_value_is_literal(value))
 		return value;
 
-	// we need to clone the string, as the return value must be independent of
-	// `value`.
-	if (KN_TAG(value) == KN_TAG_STRING) {
-		if (owned)
-			return value;
-
+	// we need to create a new string, as it needs to be unique from `value`.
+	if (KN_TAG(value) == KN_TAG_STRING)
 		return kn_value_new_string(kn_string_clone(kn_value_as_string(value)));
-	}
 
 	if (KN_TAG(value) == KN_TAG_VARIABLE) {
 		struct kn_variable_t *variable = kn_value_as_variable(value);
@@ -355,10 +350,10 @@ kn_value_t kn_value_run(kn_value_t value, bool owned) {
 		if (variable->value == KN_UNDEFINED)
 			die("undefined variable '%s'", variable->name);
 
-		return owned ? variable->value : kn_value_clone(variable->value);
+		return kn_value_clone(variable->value);
 	}
 
-	return kn_ast_run(kn_value_as_ast(value), owned);
+	return kn_ast_run(kn_value_as_ast(value));
 }
 
 kn_value_t kn_value_clone(kn_value_t value) {

@@ -25,5 +25,7 @@ kn_value_t kn_run(const char *stream) {
 		die("unable to parse stream");
 #endif /* KN_RECKLESS */
 
-	return kn_value_run(parsed, 1);
+	kn_value_t ret = kn_value_run(parsed);
+	kn_value_free(parsed);
+	return ret;
 }

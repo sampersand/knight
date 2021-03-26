@@ -4,7 +4,6 @@
 #include "string.h"  /* kn_string_t */
 #include <stdint.h>  /* uint64_t, int64_t */
 #include <stdbool.h> /* bool */
-
 /*
  * The type that represents values within Knight.
  *
@@ -188,7 +187,7 @@ void kn_value_dump(kn_value_t value);
  *
  * The returned value must be passed to `kn_value_free` to prevent memory leaks.
  */
-kn_value_t kn_value_run(kn_value_t value, bool owned);
+kn_value_t kn_value_run(kn_value_t value);
 
 /*
  * Returns a copy of `value`.

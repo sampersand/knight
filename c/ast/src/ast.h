@@ -61,7 +61,6 @@ void kn_ast_free(struct kn_ast_t *ast);
 /*
  * Executes a `kn_ast_t`, returning the value associated with its execution.
  */
-kn_value_t kn_ast_run(struct kn_ast_t *ast, bool owned);
-
+kn_value_t kn_ast_run(struct kn_ast_t *ast);
 
 #endif /* KN_AST_H */
