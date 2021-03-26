@@ -30,6 +30,19 @@ struct kn_function_t {
  */
 void kn_function_startup(void);
 
+/*
+ * Declares a function with the given function name, arity, and char name.
+ */
+#define KN_FUNCTION_DECLARE(func_, arity_, name_) \
+	static kn_value_t kn_fn_##func_##_function(const kn_value_t *); \
+	const struct kn_function_t kn_fn_##func_ = { \
+		.func = kn_fn_##func_##_function, \
+		.arity = arity_, \
+		.name = name_ \
+	}; \
+	static kn_value_t kn_fn_##func_##_function(const kn_value_t *args)
+
+
 /******************************************************************************
  * The following are all of the different types of functions within Knight.   *
  * For details on what each function does, see the specs---these all conform. *
@@ -172,5 +185,7 @@ extern const struct kn_function_t kn_fn_get;
 
 /* 4.5.1 SUBSTITUTE */
 extern const struct kn_function_t kn_fn_substitute;
+
+extern const struct kn_function_t kn_fn_extension;
 	
 #endif /* !KN_FUNCTION_H */

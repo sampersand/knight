@@ -28,15 +28,6 @@ void kn_function_startup(void) {
 	srand(time(NULL));
 }
 
-#define KN_FUNCTION_DECLARE(func_, arity_, name_) \
-	static kn_value_t kn_fn_##func_##_function(const kn_value_t *); \
-	const struct kn_function_t kn_fn_##func_ = { \
-		.func = kn_fn_##func_##_function, \
-		.arity = arity_, \
-		.name = name_ \
-	}; \
-	static kn_value_t kn_fn_##func_##_function(const kn_value_t *args)
-
 KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 	(void) args;
 
@@ -68,6 +59,7 @@ KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 
 	return kn_value_new_string(kn_string_new(ret, len));
 }
+
 
 KN_FUNCTION_DECLARE(random, 0, 'R') {
 	(void) args;

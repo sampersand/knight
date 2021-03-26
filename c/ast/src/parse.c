@@ -141,7 +141,7 @@ kn_value_t kn_parse(register const char **stream) {
 # endif /* KN_EXT_VALUE */
 
 		['W']  = &&function_while,
-		['X']  = &&invalid,
+		['X']  = &&function_extension,
 		['Y']  = &&invalid,
 		['Z']  = &&invalid,
 		['[']  = &&whitespace,
@@ -305,6 +305,7 @@ WORD_FUNC(quit, 'Q');
 WORD_FUNC(random, 'R');
 WORD_FUNC(substitute, 'S');
 WORD_FUNC(while, 'W');
+WORD_FUNC(extension, 'X');
 
 #ifdef KN_EXT_VALUE
 WORD_FUNC(value, 'V');

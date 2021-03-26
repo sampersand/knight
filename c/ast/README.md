@@ -22,3 +22,4 @@ These are experiments I tried out out see if I could make this implementation fa
 - `KN_EXT_VALUE`: Enables the use of the `VALUE` function, which looks up a variable indirectly based on its argument.
 - `KN_EXT_NEGATE`: Enables the use of the `~` function, which simply converts its argument to a number and negates it.
 - `KN_EXT_EQL_INTERPOLATE`: Allows the use of non-identifiers on the LHS of `=`, which will be coerced to an identifier.
+- `KN_EXT_CUSTOM_TYPES`

@@ -4,6 +4,7 @@
 #include "string.h"  /* kn_string_t */
 #include <stdint.h>  /* uint64_t, int64_t */
 #include <stdbool.h> /* bool */
+
 /*
  * The type that represents values within Knight.
  *
@@ -36,6 +37,10 @@ typedef bool kn_boolean_t;
 struct kn_function_t;
 struct kn_variable_t;
 struct kn_ast_t;
+
+#ifdef KN_EXT_CUSTOM_TYPES
+struct kn_custom_t;
+#endif /* KN_EXT_CUSTOM_TYPES */
 
 /*
  * The false value within Knight.
@@ -98,6 +103,15 @@ kn_value_t kn_value_new_variable(struct kn_variable_t *variable);
  */
 kn_value_t kn_value_new_ast(struct kn_ast_t *ast);
 
+#ifdef KN_EXT_CUSTOM_TYPES
+/*
+ * Creates a new custom value.
+ *
+ * Ownership of the `custom` is passed to this function.
+ */
+kn_value_t kn_value_new_custom(struct kn_custom_t *custom);
+#endif /* KN_EXT_CUSTOM_TYPES */
+
 /*
  * Checks to see if `value` is a `kn_number_t`.
  */
@@ -124,6 +138,13 @@ bool kn_value_is_variable(kn_value_t value);
  * Checks to see if `value` is a `kn_ast_t`.
  */
 bool kn_value_is_ast(kn_value_t value);
+
+#ifdef KN_EXT_CUSTOM_TYPES
+/*
+ * Checks to see if `value` is a `kn_custom_t`.
+ */
+bool kn_value_is_custom(kn_value_t value);
+#endif /* KN_EXT_CUSTOM_TYPES */
 
 /*
  * Retrieves the `kn_number_t` associated with `value`.
@@ -159,6 +180,15 @@ struct kn_variable_t *kn_value_as_variable(kn_value_t value);
  * This should only be called on ast values.
  */
 struct kn_ast_t *kn_value_as_ast(kn_value_t value);
+
+#ifdef KN_EXT_CUSTOM_TYPES
+/*
+ * Retrieves the `kn_custom_t` associated with `value`.
+ *
+ * This should only be called on custom values.
+ */
+struct kn_custom_t *kn_value_as_custom(kn_value_t value);
+#endif /* KN_EXT_CUSTOM_TYPES */
 
 /*
  * Converts the `value` to a `kn_number_t`, coercing it if need be.
