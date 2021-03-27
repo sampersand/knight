@@ -460,9 +460,9 @@ kn_value kn_value_clone(kn_value value) {
 	if (kn_value_is_custom(value)) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		assert(custom->vtable->clone != NULL);
+		++custom->refcount;
 
-		return kn_value_new_custom(custom->vtable->clone(custom));
+		return value;
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */
 	
@@ -478,7 +478,6 @@ void kn_value_free(kn_value value) {
 
 	if (KN_TAG(value) == KN_TAG_STRING) {
 		kn_string_free(kn_value_as_string(value));
-
 		return;
 	}
 
@@ -486,9 +485,12 @@ void kn_value_free(kn_value value) {
 	if (KN_TAG(value) == KN_TAG_CUSTOM) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		assert(custom->vtable->free != NULL);
+		if (--custom->refcount)
+			return;
 
-		custom->vtable->free(custom);
+		assert(custom->vtable->free != NULL);
+		custom->vtable->free(custom->data);
+		free(custom);
 		return;
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */

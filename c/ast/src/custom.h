@@ -4,18 +4,34 @@
 
 #include "value.h" /* kn_value, kn_number, kn_boolean, kn_string */
 
+/*
+ * The virtual table for custom types.
+ *
+ * There should generally only be one of these per type.
+ */
 struct kn_custom_vtable {
-	struct kn_custom *(*clone)(struct kn_custom *);
-	void (*free)(struct kn_custom *);
-	void (*dump)(struct kn_custom *);
-	kn_value (*run)(struct kn_custom *);
-	kn_number (*to_number)(struct kn_custom *);
-	kn_boolean (*to_boolean)(struct kn_custom *);
-	struct kn_string *(*to_string)(struct kn_custom *);
+	/*
+	 * Releases the resources associated with `data`.
+	 */
+	void (*free)(void *data);
+
+	/*
+	 * Dumps debugging info for `data`.
+	 */
+	void (*dump)(void *data);
+
+	/*
+	 * Executes the given `custom`, 
+	 */
+	kn_value (*run)(struct kn_custom_t *);
+	kn_number (*to_number)(void *data);
+	kn_boolean (*to_boolean)(void *data);
+	struct kn_string *(*to_string)(struct kn_custom *custom);
 };
 
 struct kn_custom {
 	void *data;
+	unsigned refcount;
 	const struct kn_custom_vtable *vtable;
 };
 
