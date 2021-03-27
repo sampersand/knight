@@ -329,7 +329,6 @@ struct kn_string *kn_value_to_string(kn_value value) {
 	if (kn_value_is_string(value))
 		return kn_string_clone(kn_value_as_string(value));
 
-
 	#ifdef KN_EXT_CUSTOM_TYPES
 	if (kn_value_is_custom(value)) {
 		struct kn_custom *custom = kn_value_as_custom(value);
@@ -401,8 +400,11 @@ void kn_value_dump(kn_value value) {
 	case KN_TAG_CUSTOM: {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		assert(cusotm->vtable->dump != NULL);
-		custom->vtable->dump(custom);
+		if (custom->vtable->dump == NULL)
+			printf("Custom(%p, %p)", custom->data, (void *) custom->vtable);
+		else
+			custom->vtable->dump(custom);
+
 		break;
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */
@@ -436,7 +438,8 @@ kn_value kn_value_run(kn_value value) {
 	if (kn_value_is_custom(value)) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		assert(cusotm->vtable->run != NULL);
+		if (custom->vtable->run == NULL)
+			return kn_value_new_custom(custom->vtable->clone(custom));
 
 		return custom->vtable->run(custom);
 	}
@@ -460,9 +463,9 @@ kn_value kn_value_clone(kn_value value) {
 	if (kn_value_is_custom(value)) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		++custom->refcount;
+		assert(custom->vtable->clone != NULL);
 
-		return value;
+		return kn_value_new_custom(custom->vtable->clone(custom));
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */
 	
@@ -485,12 +488,13 @@ void kn_value_free(kn_value value) {
 	if (KN_TAG(value) == KN_TAG_CUSTOM) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		if (--custom->refcount)
-			return;
+		if (custom->vtable->free == NULL) {
+			free(custom->data);
+			free(custom);
+		} else {
+			custom->vtable->free(custom);
+		}
 
-		assert(custom->vtable->free != NULL);
-		custom->vtable->free(custom->data);
-		free(custom);
 		return;
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */

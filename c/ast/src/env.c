@@ -19,21 +19,6 @@
 #include "env.h"     /* prototypes, size_t, kn_value_free , kn_value*/
 #include "shared.h"  /* xmalloc, xrealloc, die */
 
-struct kn_variable {
-	/*
-	 * The value associated with this variable.
-	 *
-	 * When a variable is first fetched, this is set to `KN_UNDEFINED`, and
-	 * should be overwritten before being used.
-	 */
-	kn_value value;
-
-	/*
-	 * The name of this variable.
-	 */
-	const char *name;
-};
-
 /*
  * The amount of buckets that the `kn_env_map` will have.
  *

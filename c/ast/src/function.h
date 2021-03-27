@@ -186,8 +186,4 @@ extern const struct kn_function kn_fn_get;
 /* 4.5.1 SUBSTITUTE */
 extern const struct kn_function kn_fn_substitute;
 
-#ifdef KN_EXT_FUNCTION
-extern const struct kn_function kn_fn_extension;
-#endif /* KN_EXT_FUNCTION */
-	
 #endif /* !KN_FUNCTION_H */

@@ -4,7 +4,7 @@ EXE?=knight
 
 CC?=gcc
 CFLAGS+=-Wall -Wextra -Wpedantic
-override CFLAGS+=-F$(SRCDIR) -DKN_EXT_CUSTOM_TYPES
+override CFLAGS+=-F$(SRCDIR)
 
 ifdef DEBUG
 override CFLAGS+=-g -fsanitize=address,undefined

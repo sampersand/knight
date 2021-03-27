@@ -311,10 +311,6 @@ WORD_FUNC(random, 'R');
 WORD_FUNC(substitute, 'S');
 WORD_FUNC(while, 'W');
 
-#ifdef KN_EXT_FUNCTION
-WORD_FUNC(extension, 'X');
-#endif /* KN_EXT_FUNCTION */
-
 #ifdef KN_EXT_VALUE
 WORD_FUNC(value, 'V');
 #endif /* KN_EXT_VALUE */
@@ -405,6 +401,13 @@ parse_function_end:
 
 	return kn_value_new_ast(ast);
 }
+
+#ifdef KN_EXT_FUNCTION
+LABEL(extension)
+CASES1('X')
+	ADVANCE();
+	return kn_parse_extension(stream);
+#endif /* KN_EXT_FUNCTION */
 
 expected_token:
 CASES1('\0')
