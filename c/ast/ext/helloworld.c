@@ -8,7 +8,7 @@ struct hello_world {
 #define HW(custom) ((struct hello_world *) (custom)->data)
 
 struct kn_custom *hw_clone(struct kn_custom *custom) {
-	++HW(custom)->rc;
+	++((struct hello_world *) (custom)->data)->rc;
 
 	return custom;
 }

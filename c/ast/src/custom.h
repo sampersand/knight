@@ -1,6 +1,7 @@
 #ifndef KN_CUSTOM_H
 #define KN_CUSTOM_H
 #ifdef KN_EXT_CUSTOM_TYPES
+
 #include "value.h" /* kn_value, kn_number, kn_boolean, kn_string */
 
 struct kn_custom_vtable {

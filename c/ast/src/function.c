@@ -590,6 +590,6 @@ KN_FUNCTION_DECLARE(substitute, 4, 'S') {
 
 	kn_string_free(string);
 	kn_string_free(substring);
-
 	return kn_value_new_string(result);
 }
+
