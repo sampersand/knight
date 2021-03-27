@@ -99,6 +99,7 @@ impl RcStr {
 	pub fn new<T: AsRef<str> + Into<Arc<str>>>(string: T) -> Result<Self, InvalidChar> {
 		validate_string(string.as_ref())?;
 
+		// SAFETY: we just validated the string.
 		unsafe {
 			Ok(Self::new_unchecked(string))
 		}

@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 
+/// The variable type within Knight.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Variable(&'static Inner);
