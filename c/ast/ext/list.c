@@ -144,7 +144,6 @@ KN_FUNCTION_DECLARE(car, 1, 'A') {
 
 	// kn_value_dump(ret);
 	// exit(0);
-
 	return ret;
 }
 
