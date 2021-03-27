@@ -1,7 +1,7 @@
 #include "shared.h"   /* die */
 #include "env.h"      /* kn_variable, kn_variable_run, kn_variable_name */
 #include "ast.h"      /* kn_ast, kn_ast_free, kn_ast_clone */
-#include "custom.h"   /* kn_custom */
+#include "custom.h"   /* kn_custom, kn_custom_vtable */
 #include "value.h"    /* prototypes, kn_number, kn_boolean, kn_string, uint64_t,
                          int64_t, KN_NULL, KN_UNDEFINED, KN_TRUE, KN_FALSE,
                          kn_string_deref, kn_string_clone, KN_STRING_FL_STATIC,
@@ -146,11 +146,19 @@ kn_value kn_value_new_ast(struct kn_ast *ast) {
 }
 
 #ifdef KN_EXT_CUSTOM_TYPES
-kn_value kn_value_new_custom(struct kn_custom *custom) {
-	assert(custom != NULL);
+kn_value kn_value_new_custom(
+	void *data,
+	const struct kn_custom_vtable *vtable
+) {
+	assert(data != NULL);
+	assert(vtable != NULL);
+	struct kn_custom *custom = xmalloc(sizeof(struct kn_custom));
 
  	// a nonzero tag indicates a misaligned pointer
 	assert(KN_TAG((uint64_t) custom) == 0);
+
+	custom->data = data;
+	custom->vtable = vtable;
 
 	return ((uint64_t) custom) | KN_TAG_CUSTOM;
 }
@@ -209,7 +217,7 @@ kn_number kn_value_to_number(kn_value value) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
 		if (custom->vtable->to_number != NULL)
-			return custom->vtable->to_number(custom);
+			return custom->vtable->to_number(custom->data);
 		// if we don't have a custom `to_number`, run the custom type and
 		// convert its return type to a number.
 	} else {
@@ -258,7 +266,7 @@ kn_boolean kn_value_to_boolean(kn_value value) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
 		if (custom->vtable->to_boolean != NULL)
-			return custom->vtable->to_boolean(custom);
+			return custom->vtable->to_boolean(custom->data);
 		// if we don't have a custom `to_boolean`, run the custom type and
 		// convert its return type to a boolean.
 	} else {
@@ -334,7 +342,7 @@ struct kn_string *kn_value_to_string(kn_value value) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
 		if (custom->vtable->to_string != NULL)
-			return custom->vtable->to_string(custom);
+			return custom->vtable->to_string(custom->data);
 		// if we don't have a custom `to_string`, run the custom type and
 		// convert its return type to a string.
 	} else {
@@ -403,7 +411,7 @@ void kn_value_dump(kn_value value) {
 		if (custom->vtable->dump == NULL)
 			printf("Custom(%p, %p)", custom->data, (void *) custom->vtable);
 		else
-			custom->vtable->dump(custom);
+			custom->vtable->dump(custom->data);
 
 		break;
 	}
@@ -439,9 +447,9 @@ kn_value kn_value_run(kn_value value) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
 		if (custom->vtable->run == NULL)
-			return kn_value_new_custom(custom->vtable->clone(custom));
+			return kn_value_clone(value);
 
-		return custom->vtable->run(custom);
+		return custom->vtable->run(custom->data);
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */
 
@@ -465,7 +473,10 @@ kn_value kn_value_clone(kn_value value) {
 
 		assert(custom->vtable->clone != NULL);
 
-		return kn_value_new_custom(custom->vtable->clone(custom));
+		return kn_value_new_custom(
+			custom->vtable->clone(custom->data),
+			custom->vtable
+		);
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */
 	
@@ -488,13 +499,12 @@ void kn_value_free(kn_value value) {
 	if (KN_TAG(value) == KN_TAG_CUSTOM) {
 		struct kn_custom *custom = kn_value_as_custom(value);
 
-		if (custom->vtable->free == NULL) {
+		if (custom->vtable->free == NULL)
 			free(custom->data);
-			free(custom);
-		} else {
-			custom->vtable->free(custom);
-		}
+		else
+			custom->vtable->free(custom->data);
 
+		free(custom);
 		return;
 	}
 #endif /* KN_EXT_CUSTOM_TYPES */

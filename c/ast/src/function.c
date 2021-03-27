@@ -156,6 +156,8 @@ KN_FUNCTION_DECLARE(dump, 1, 'D') {
 
 	kn_value_dump(ret);
 
+	putc('\n', stdout);
+
 	return ret;
 }
 

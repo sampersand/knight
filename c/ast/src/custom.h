@@ -17,57 +17,58 @@
  */
 struct kn_custom_vtable {
 	/*
-	 * Duplicates `custom`.
+	 * Duplicates `data`, returning a new instance of it.
 	 *
-	 * The return value must be passed to `free` separately from `custom`.
-	 *
-	 * This function is required and does not have a default value.
+	 * The return will be passed to `free` in addition to `data`. This function
+	 * is required and does not have a default value.
 	 */
-	struct kn_custom *(*clone)(struct kn_custom *custom);
+	void *(*clone)(void *data);
 
 	/*
 	 * Releases the resources associated with `data`.
 	 *
-	 * Note that this function is responsible for calling `free` on the `custom`
-	 * pointer too when releasing resources.
+	 * The default implementation simply calls the stdlib's `free`.
 	 */
-	void (*free)(struct kn_custom *custom);
+	void (*free)(void *data);
 
 	/*
 	 * Dumps debugging info for `data`.
 	 *
-	 * The default implementation simply prints out
-	 * `Custom(<data ptr>, <vtable ptr>)`.
+	 * The default implementation writes `Custom(<data ptr>, <vtable ptr>)` to
+	 * stdout.
 	 */
-	void (*dump)(struct kn_custom *custom);
+	void (*dump)(void *data);
 
 	/*
-	 * Executes the given `custom`, returning the value associated with it.
+	 * Executes the given `data`, returning the value associated with it.
 	 *
-	 * This is the only function that accepts a `kn_custom`, as you may want
-	 * to somehow return the custom itself.
-	 *
-	 * The default implementation simply duplicates `custom`.
+	 * The default implementation simply calls `clone` and duplicates it.
 	 */
-	kn_value (*run)(struct kn_custom *custom);
+	kn_value (*run)(void *data);
 
 	/*
 	 * Converts the `data` to a number.
 	 *
-	 * The default implementation will `run` the associated `custom`, and then
-	 * convert its result to a string.
+	 * The default implementation will call `run`, and then convert the result
+	 * to a number.
 	 */
-	kn_number (*to_number)(struct kn_custom *custom);
+	kn_number (*to_number)(void *data);
 
 	/*
 	 * Converts the `data` to a boolean.
+	 *
+	 * The default implementation will call `run`, and then convert the result
+	 * to a boolean.
 	 */
-	kn_boolean (*to_boolean)(struct kn_custom *custom);
+	kn_boolean (*to_boolean)(void *data);
 
 	/*
 	 * Converts the `data` to a string.
+	 *
+	 * The default implementation will call `run`, and then convert the result
+	 * to a string.
 	 */
-	struct kn_string *(*to_string)(struct kn_custom *custom);
+	struct kn_string *(*to_string)(void *data);
 };
 
 struct kn_custom {
