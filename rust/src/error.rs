@@ -47,7 +47,7 @@ pub enum RuntimeError {
 	/// An unknown identifier was attempted to be dereferenced.
 	UnknownIdentifier {
 		/// The identifier at fault.
-		identifier: &'static str
+		identifier: Box<str>
 	},
 
 	/// A function was executed with an invalid operand.

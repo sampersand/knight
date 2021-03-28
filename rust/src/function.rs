@@ -6,13 +6,13 @@ use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
 use parking_lot::Mutex;
 
+// An alias to make life easier.
 type FuncPtr = fn(&[Value]) -> Result<Value, RuntimeError>;
 
-/// The function type within Knight.
-///
-/// This struct is used to keep track of the arity and name of the function, as well as a pointer to it.
+/// The type that represents functions themselves (eg `PROMPT`, `+`, `=`, etc.) within Knight.
 /// 
-/// `Function` cannot be created directly; you must use the [`Function::register`] and [`Function::fetch`] functions.
+/// Note that [`Function`]s cannot be created directly---you must [`fetch`](Function::fetch) them. New functions can be
+/// [`register`](Function::register)ed if so desired.
 #[derive(Clone, Copy)]
 pub struct Function {
 	func: FuncPtr,
@@ -49,10 +49,11 @@ impl PartialEq for Function {
 	fn eq(&self, rhs: &Self) -> bool {
 		let func_eql = (self.func as usize) == (rhs.func as usize);
 
-		debug_assert_eq!(func_eql, self.name == rhs.name,
-			"name and functions don't match up\nself={:?}\nrhs={:?}", self, rhs);
+		if cfg!(debug_assertions) && func_eql {
+			debug_assert_eq!(self.name, rhs.name, "`name` and `func` mismatch\nself={:#?}\nrhs={:#?}", self, rhs);
+		}
 
-		return func_eql;
+		return self.name == rhs.name;
 	}
 }
 
@@ -64,6 +65,15 @@ impl Hash for Function {
 
 impl Function {
 	/// Gets the function pointer associated with `self`.
+	///
+	/// # Examples
+	/// ```rust
+	/// # use knight::{Function, Value, RuntimeError};
+	/// fn foo(var: &[Value]) -> Result<Value, RuntimeError> { Ok(args[0].clone()) }
+	/// Function::register('F', 1, foo);
+	/// 
+	/// assert_eq!(Function::fetch('F').unwrap().func(), foo);
+	/// ```
 	#[inline]
 	pub fn func(&self) -> FuncPtr {
 		self.func

@@ -86,6 +86,7 @@ dependencies = [
 name = "knight"
 version = "0.1.5"
 dependencies = [
+ "cfg-if 1.0.0",
  "clap",
  "lazy_static",
  "once_cell",

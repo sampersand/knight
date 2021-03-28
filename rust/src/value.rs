@@ -157,7 +157,7 @@ impl Value {
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),
 			Self::Number(number) => Ok(Self::Number(*number)),
 			Self::String(rcstr) => Ok(Self::String(rcstr.clone())),
-			Self::Variable(variable) => variable.run(),
+			Self::Variable(variable) => variable.fetch().ok_or_else(|| RuntimeError::UnknownIdentifier(variable.name().into())),
 			Self::Function(func, args) => (func.func())(&args),
 		}
 	}

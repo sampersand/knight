@@ -1,9 +1,12 @@
+#[macro_use]
+extern crate cfg_if;
+
 pub mod function;
 pub mod rcstr;
 mod value;
 mod error;
 mod stream;
-mod variable;
+pub mod env;
 
 /// The number type within Knight.
 pub type Number = i64;
@@ -14,8 +17,8 @@ pub use rcstr::RcStr;
 #[doc(inline)]
 pub use function::Function;
 
+pub use env::{Environment, Variable};
 pub use value::Value;
-pub use variable::Variable;
 pub use error::{ParseError, RuntimeError};
 
 /// Runs the given string as Knight code, returning the result of its execution.
