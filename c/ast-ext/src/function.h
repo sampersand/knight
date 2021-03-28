@@ -64,7 +64,7 @@ extern const struct kn_function kn_fn_random;
 /**
  * 4.2 Arity 1
  *
- * Note that the 4.2.1 (`:`) is treated as whitespace, and as such has no
+ * Note that the 4.2.1 (`:`) is treated as whitespace, and as such has no 
  * associated function.
  **/
 
