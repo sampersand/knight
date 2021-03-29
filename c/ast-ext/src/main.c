@@ -1,9 +1,9 @@
 #include "knight.h" /* kn_startup, kn_run, kn_value_free, kn_shutdown */
 #include "shared.h" /* die, xmalloc, xrealloc */
 
-#include <stdlib.h> /* free, NULL, size_t */
-#include <stdio.h>  /* FILE, fopen, strerror, feof, fread, fclose, perror, stdin
-                       EOF, */
+#include <string.h> /* strlen */
+#include <stdlib.h> /* free */
+#include <stdio.h>  /* FILE, fopen, sterror, feof, fread, fclose */
 #include <errno.h>  /* errno */
 
 static char *read_file(const char *filename) {
@@ -57,7 +57,7 @@ static void usage(char *program) {
 int main(int argc, char **argv) {
 	char *str;
 
-	if (argc != 3 || argv[1][0] != '-' || argv[1][1] != 2 || argv[1][0] != '-')
+	if (argc != 3 || strlen(argv[1]) != 2 || argv[1][0] != '-')
 		usage(argv[0]);
 
 	switch (argv[1][1]) {

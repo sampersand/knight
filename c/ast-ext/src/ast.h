@@ -3,6 +3,13 @@
 
 #include "function.h" /* kn_function */
 #include "value.h"    /* kn_value */
+#include <stdbool.h>  /* bool */
+
+#ifdef KN_DYNMAIC_ARGC
+# define KN_AST_ARITY(ast) ((ast)->argc)
+#else
+# define KN_AST_ARITY(ast) ((ast)->func->arity)
+#endif /* KN_DYNMAIC_ARGC */
 
 /*
  * The type that represents a function and its arguments in Knight.
@@ -21,8 +28,16 @@ struct kn_ast {
 	 */
 	unsigned refcount;
 
+#ifdef KN_DYNMAIC_ARGC
 	/*
-	 * The arguments of this ast.
+	 * One of the extensions allows us to have a dynamic argc (ie collapse
+	 * adjacent calls to the same function).
+	 */
+	unsigned argc;
+#endif /* KN_DYNMAIC_ARGC */
+
+	/*
+	 * The arguments to this struct.
 	 */
 	kn_value args[];
 };

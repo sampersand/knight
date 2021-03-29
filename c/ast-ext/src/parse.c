@@ -1,17 +1,16 @@
 #include <assert.h> /* assert */
 #include <stddef.h> /* size_t */
 #include <ctype.h>  /* isspace, isdigit, islower, isupper */
-#include <string.h> /* strndup, memcpy */
+#include <string.h> /* strndup */
 
 #include "parse.h"    /* prototypes, kn_value, kn_number, kn_value_new_number,
                          kn_value_new_variable, kn_value_new_string,
-                         kn_value_new_ast, kn_string_alloc, KN_UNDEFINED,
-                         KN_TRUE, KN_FALSE, KN_NULL */
-#include "string.h"   /* kn_string, kn_string_empty, kn_string_deref */
+                         kn_value_new_ast, kn_string_empty, kn_string_alloc,
+                         KN_UNDEFINED, KN_TRUE, KN_FALSE, KN_NULL */
 #include "ast.h"      /* kn_ast, kn_ast_alloc */
-#include "shared.h"   /* die */
+#include "shared.h"   /* xmalloc, xrealloc, die */
 #include "function.h" /* kn_function, <all the function definitions> */
-#include "env.h"      /* kn_variable, kn_env_fetch */
+#include "env.h"      /* kn_env_fetch */
 
 // Check to see if the character is considered whitespace to Knight.
 static int iswhitespace(char c) {
@@ -141,6 +140,13 @@ kn_value kn_parse(register const char **stream) {
 # endif /* KN_EXT_VALUE */
 
 		['W']  = &&function_while,
+
+#ifdef KN_EXT_FUNCTION
+		['X']  = &&function_extension,
+#else
+		['X']  = &&invalid,
+#endif /* KN_EXT_FUNCTION */
+
 		['Y']  = &&invalid,
 		['Z']  = &&invalid,
 		['[']  = &&whitespace,
@@ -223,7 +229,8 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 
 	char *identifier = strndup(start, *stream - start);
 	struct kn_variable *variable = kn_env_fetch(identifier, true);
-	return kn_value_new_variable(variable);
+	kn_value v = kn_value_new_variable(variable);
+	return v;
 }
 
 LABEL(string)
@@ -238,7 +245,7 @@ CASES2('\'', '\"')
 #ifndef KN_RECKLESS
 		if (c == '\0')
 			die("unterminated quote encountered: '%s'", start);
-#endif /* !KN_RECKLESS */
+#endif /* !KN_RECKLESS */ 
 
 	}
 
@@ -321,19 +328,86 @@ parse_function:
 	ast->func = function;
 	ast->refcount = 1;
 
+#ifdef KN_DYNMAIC_ARGC
+	if (function != &kn_fn_then && 0) {
+
+	ast->argc = arity;
+#endif /* KN_DYNMAIC_ARGC */
 
 	for (size_t i = 0; i < arity; ++i) {
-		ast->args[i] = kn_parse(stream);
-
-#ifndef KN_RECKLESS
-		if (ast->args[i] == KN_UNDEFINED)
+		if ((ast->args[i] = kn_parse(stream)) == KN_UNDEFINED) {
 			die("unable to parse argument %d for function '%c'",
 				i, function->name);
-#endif /* !KN_RECKLESS */
+		}
 	}
+
+#ifdef KN_DYNMAIC_ARGC
+	goto parse_function_end;
+	}
+
+	ast->argc = 0;
+
+	if (arity == 0)
+		goto parse_function_end;
+
+	if ((ast->args[ast->argc++] = kn_parse(stream)) == KN_UNDEFINED)
+		die("unable to parse argument 0 for function '%c'", function->name);
+
+	unsigned cap = arity;
+	do {
+		c = PEEK();
+
+		// strip comments
+		if (c == '#') {
+			while ((c = ADVANCE_PEEK()) != '\n')
+				if (c == '\0')
+					break;
+			continue;
+		}
+
+		// strip whitespace
+		if (isspace(c)) {
+			while (iswhitespace(ADVANCE_PEEK()));
+			continue;
+		}
+
+		if (PEEK() != function->name) {
+			ast->args[ast->argc] = kn_parse(stream);
+
+			if (ast->args[ast->argc++] == KN_UNDEFINED) {
+				die("unable to parse arg %d for function '%c'",
+					ast->argc - 1, function->name);
+			}
+
+			break;
+		}
+
+		ADVANCE();
+		ast->args[ast->argc++] = kn_parse(stream);
+
+		if (ast->argc == cap)  {
+			ast = xrealloc(ast,
+				sizeof(struct kn_ast) + sizeof(kn_value [cap *= 2]));
+		}
+	} while (1);
+
+	ast = xrealloc(ast,
+		sizeof(struct kn_ast) + sizeof(kn_value [ast->argc + 1]));
+
+	ast->args[ast->argc] = KN_UNDEFINED;
+
+parse_function_end:
+#endif /* KN_DYNMAIC_ARGC */
 
 	return kn_value_new_ast(ast);
 }
+
+#ifdef KN_EXT_FUNCTION
+LABEL(extension)
+CASES1('X')
+	ADVANCE();
+	return kn_parse_extension(stream);
+#endif /* KN_EXT_FUNCTION */
 
 expected_token:
 CASES1('\0')

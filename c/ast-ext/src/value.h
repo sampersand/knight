@@ -1,6 +1,7 @@
 #ifndef KN_VALUE_H
 #define KN_VALUE_H
 
+#include "string.h"  /* kn_string */
 #include <stdint.h>  /* uint64_t, int64_t */
 #include <stdbool.h> /* bool */
 
@@ -33,9 +34,13 @@ typedef int64_t kn_number;
 typedef bool kn_boolean;
 
 // Forward declarations.
-struct kn_ast;
-struct kn_string;
 struct kn_variable;
+struct kn_ast;
+
+#ifdef KN_EXT_CUSTOM_TYPES
+struct kn_custom;
+struct kn_custom_vtable;
+#endif /* KN_EXT_CUSTOM_TYPES */
 
 /*
  * The false value within Knight.
@@ -73,7 +78,7 @@ kn_value kn_value_new_number(kn_number number);
  * Creates a new boolean value.
  *
  * If you know the value of `boolean` ahead of time, you should simply use
- * `KN_TRUE` or `KN_FALSE`.
+ * `KN_TRUE` or `KN_FALSE`. 
  */
 kn_value kn_value_new_boolean(kn_boolean boolean);
 
@@ -98,6 +103,15 @@ kn_value kn_value_new_variable(struct kn_variable *variable);
  */
 kn_value kn_value_new_ast(struct kn_ast *ast);
 
+#ifdef KN_EXT_CUSTOM_TYPES
+/*
+ * Creates a new custom value.
+ *
+ * Ownership of the `custom` is passed to this function.
+ */
+kn_value kn_value_new_custom(void *data, const struct kn_custom_vtable *vtable);
+#endif /* KN_EXT_CUSTOM_TYPES */
+
 /*
  * Checks to see if `value` is a `kn_number`.
  */
@@ -108,9 +122,7 @@ bool kn_value_is_number(kn_value value);
  */
 bool kn_value_is_boolean(kn_value value);
 
-/*
- * Note there's no `kn_value_is_null`, as you can simply do `value == KN_NULL`.
- */
+/* Note there's no `kn_value_is_null`, as you can simply do `== KN_NULL`. */
 
 /*
  * Checks to see if `value` is a `kn_string`.
@@ -126,6 +138,13 @@ bool kn_value_is_variable(kn_value value);
  * Checks to see if `value` is a `kn_ast`.
  */
 bool kn_value_is_ast(kn_value value);
+
+#ifdef KN_EXT_CUSTOM_TYPES
+/*
+ * Checks to see if `value` is a `kn_custom`.
+ */
+bool kn_value_is_custom(kn_value value);
+#endif /* KN_EXT_CUSTOM_TYPES */
 
 /*
  * Retrieves the `kn_number` associated with `value`.
@@ -162,6 +181,15 @@ struct kn_variable *kn_value_as_variable(kn_value value);
  */
 struct kn_ast *kn_value_as_ast(kn_value value);
 
+#ifdef KN_EXT_CUSTOM_TYPES
+/*
+ * Retrieves the `kn_custom` associated with `value`.
+ *
+ * This should only be called on custom values.
+ */
+struct kn_custom *kn_value_as_custom(kn_value value);
+#endif /* KN_EXT_CUSTOM_TYPES */
+
 /*
  * Converts the `value` to a `kn_number`, coercing it if need be.
  */
@@ -180,8 +208,7 @@ kn_boolean kn_value_to_boolean(kn_value value);
 struct kn_string *kn_value_to_string(kn_value value);
 
 /*
- * Dumps the debugging representation of `value` to stdout, without a trailing
- * newline.
+ * Dumps the debugging representation of `value` to stdout.
  */
 void kn_value_dump(kn_value value);
 
