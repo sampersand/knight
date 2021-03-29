@@ -2,7 +2,7 @@ use knight::{RuntimeError, Environment};
 use clap::{App, Arg, ArgMatches};
 
 fn run(matches: ArgMatches) -> Result<(), RuntimeError> {
-	let env = Environment::new();
+	let env = Environment::default();
 
 	if let Some(expr) = matches.value_of("expr") {
 		knight::run_str(&expr, &env)?;

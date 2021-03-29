@@ -6,6 +6,7 @@ pub mod rcstr;
 mod value;
 mod error;
 mod stream;
+mod variable;
 pub mod env;
 
 /// The number type within Knight.
@@ -17,7 +18,8 @@ pub use rcstr::RcStr;
 #[doc(inline)]
 pub use function::Function;
 
-pub use env::{Environment, Variable};
+pub use env::Environment;
+pub use variable::Variable;
 pub use value::Value;
 pub use error::{ParseError, RuntimeError};
 

@@ -6,9 +6,10 @@ edition = "2018"
 description = "The Knight programming language, in Rust"
 
 [features]
-default = []
+default = ["embedded"]
 embedded = [] # remove functions that need to access the file system.
 multithreaded = []
+checked-overflow = []
 
 [dependencies]
 rand = "0.8.0"
@@ -17,3 +18,6 @@ lazy_static = "1.4"
 parking_lot = "0.11"
 clap = "2.33"
 cfg-if = "1.0"
+
+[profile.release]
+debug = true

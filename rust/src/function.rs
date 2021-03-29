@@ -117,17 +117,22 @@ lazy_static::lazy_static! {
 			};
 		}
 
+		#[cfg(not(feature = "embedded"))]
 		insert!('P', 0, prompt);
 		insert!('R', 0, random);
 
 		insert!('E', 1, eval);
 		insert!('B', 1, block);
 		insert!('C', 1, call);
+		#[cfg(not(feature = "embedded"))]
 		insert!('`', 1, system);
+		#[cfg(not(feature = "embedded"))]
 		insert!('Q', 1, quit);
 		insert!('!', 1, not);
 		insert!('L', 1, length);
+		#[cfg(not(feature = "embedded"))]
 		insert!('D', 1, dump);
+		#[cfg(not(feature = "embedded"))]
 		insert!('O', 1, output);
 
 		insert!('+', 2, add);
@@ -153,16 +158,14 @@ lazy_static::lazy_static! {
 	});
 }
 
-use std::io::{self, Write};
+use std::io::{self, Write, BufRead};
 use std::process;
 
 // arity zero
-
-#[cfg(not(feature = "embedded"))]
-pub fn prompt(_: &[Value], _: &Environment) -> Result<Value, RuntimeError> {
+pub fn prompt(_: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	let mut buf = String::new();
 
-	io::stdin().read_line(&mut buf)?;
+	env.read_line(&mut buf)?;
 
 	RcStr::try_from(buf).map(From::from).map_err(From::from)
 }
@@ -239,23 +242,63 @@ pub fn output(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> 
 
 pub fn add(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	match args[0].run(env)? {
-		Value::Number(lhs) => Ok(Value::Number(lhs + args[1].run(env)?.to_number()?)),
-		// both `rcstr.to_string()` is a valid rcstr, so adding it to `to_rcstr` is valid.
-		Value::String(lhs) => Ok(Value::String((lhs.to_string() + &args[1].run(env)?.to_rcstr()?).try_into().unwrap())),
+		Value::Number(lhs) => {
+			let rhs = args[1].run(env)?.to_number()?;
+
+			cfg_if! {
+				if #[cfg(feature = "checked-overflow")] {
+					lhs.checked_add(rhs)
+						.map(Value::Number)
+						.ok_or_else(|| RuntimeError::Overflow { func: '+', lhs, rhs })
+				} else {
+					Ok(Value::Number(lhs + rhs))
+				}
+			}
+		},
+		Value::String(lhs) => {
+			let rhs = args[1].run(env)?.to_rcstr()?;
+
+			// both `rcstr.to_string()` is a valid rcstr, so adding it to `to_rcstr` is valid.
+			Ok(Value::String(RcStr::try_from(lhs.to_string() + &rhs).unwrap()))
+		},
 		other => Err(RuntimeError::InvalidOperand { func: '+', operand: other.typename() })
 	}
 }
 
 pub fn subtract(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	match args[0].run(env)? {
-		Value::Number(lhs) => Ok(Value::Number(lhs - args[1].run(env)?.to_number()?)),
+		Value::Number(lhs) => {
+			let rhs = args[1].run(env)?.to_number()?;
+
+			cfg_if! {
+				if #[cfg(feature = "checked-overflow")] {
+					lhs.checked_sub(rhs)
+						.map(Value::Number)
+						.ok_or_else(|| RuntimeError::Overflow { func: '-', lhs, rhs })
+				} else {
+					Ok(Value::Number(lhs - rhs))
+				}
+			}
+		},
 		other => Err(RuntimeError::InvalidOperand { func: '-', operand: other.typename() })
 	}
 }
 
 pub fn multiply(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	match args[0].run(env)? {
-		Value::Number(lhs) => Ok(Value::Number(lhs * args[1].run(env)?.to_number()?)),
+		Value::Number(lhs) => {
+			let rhs = args[1].run(env)?.to_number()?;
+
+			cfg_if! {
+				if #[cfg(feature = "checked-overflow")] {
+					lhs.checked_mul(rhs)
+						.map(Value::Number)
+						.ok_or_else(|| RuntimeError::Overflow { func: '*', lhs, rhs })
+				} else {
+					Ok(Value::Number(lhs * rhs))
+				}
+			}
+		}
 		Value::String(lhs) =>
 			RcStr::try_from(args[1].run(env)?
 				.to_number()
@@ -264,16 +307,14 @@ pub fn multiply(args: &[Value], env: &Environment) -> Result<Value, RuntimeError
 				.map(Value::String),
 		other => Err(RuntimeError::InvalidOperand { func: '*', operand: other.typename() })
 	}
-
 }
 
 pub fn divide(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	match args[0].run(env)? {
 		Value::Number(lhs) =>
-			match args[1].run(env)?.to_number()? { // todo: checked div?
-				0 => Err(RuntimeError::DivisionByZero { modulo: false }),
-				rhs => Ok(Value::Number(lhs / rhs))
-			},
+			lhs.checked_div(args[1].run(env)?.to_number()?)
+				.map(Value::from)
+				.ok_or(RuntimeError::DivisionByZero { modulo: false }),
 		other => Err(RuntimeError::InvalidOperand { func: '/', operand: other.typename() })
 	}
 }
@@ -281,14 +322,14 @@ pub fn divide(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> 
 pub fn modulo(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	match args[0].run(env)? {
 		Value::Number(lhs) =>
-			match args[1].run(env)?.to_number()? { // todo: checked div?
-				0 => Err(RuntimeError::DivisionByZero { modulo: true }),
-				rhs => Ok(Value::Number(lhs % rhs))
-			},
+			lhs.checked_rem(args[1].run(env)?.to_number()?)
+				.map(Value::from)
+				.ok_or(RuntimeError::DivisionByZero { modulo: true }),
 		other => Err(RuntimeError::InvalidOperand { func: '%', operand: other.typename() })
 	}
 }
 
+// TODO: checked-overflow for this function.
 pub fn power(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	let base = 
 		match args[0].run(env)? {

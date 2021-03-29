@@ -74,8 +74,17 @@ pub enum RuntimeError {
 		kind: &'static str
 	},
 
-	OverflowError {
-		func: char
+	/// A checked operation failed.
+	#[cfg(feature = "checked-overflow")]
+	Overflow {
+		/// Which function overflowed.
+		func: char,
+
+		/// The left-hand-side of the function.
+		lhs: crate::Number,
+
+		/// The right-hand-side of the function.
+		rhs: crate::Number,
 	},
 
 	/// An error occurred whilst parsing (i.e. `EVAL` failed).
@@ -139,6 +148,8 @@ impl Display for RuntimeError {
 			Self::UnknownIdentifier { identifier } => write!(f, "identifier {:?} is undefined.", identifier),
 			Self::InvalidOperand { func, operand } => write!(f, "invalid operand kind {:?} for function {:?}.", operand, func),
 			Self::UndefinedConversion { kind, into } => write!(f, "invalid conversion into {:?} for kind {:?}.", kind, into),
+			#[cfg(feature = "checked-overflow")]
+			Self::Overflow { func, lhs, rhs } => write!(f, "Expression '{} {} {}' overflowed", lhs, func, rhs),
 			Self::Parse(err) => Display::fmt(err, f),
 			Self::InvalidString(err) => Display::fmt(err, f),
 			Self::Io(err) => write!(f, "i/o error: {}", err)
