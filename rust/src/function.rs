@@ -1,13 +1,14 @@
 //! The functions within Knight.
 
-use crate::{Value, RuntimeError, Number};
+use crate::{Value, RuntimeError, Number, Environment, RcStr};
 use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
 use parking_lot::Mutex;
+use std::convert::{TryInto, TryFrom};
 
 // An alias to make life easier.
-type FuncPtr = fn(&[Value]) -> Result<Value, RuntimeError>;
+type FuncPtr = fn(&[Value], &Environment) -> Result<Value, RuntimeError>;
 
 /// The type that represents functions themselves (eg `PROMPT`, `+`, `=`, etc.) within Knight.
 /// 
@@ -68,8 +69,8 @@ impl Function {
 	///
 	/// # Examples
 	/// ```rust
-	/// # use knight::{Function, Value, RuntimeError};
-	/// fn foo(var: &[Value]) -> Result<Value, RuntimeError> { Ok(args[0].clone()) }
+	/// # use knight::{Function, Value, RuntimeError, Environment};
+	/// fn foo(var: &[Value], _: &Environment) -> Result<Value, RuntimeError> { Ok(args[0].clone()) }
 	/// Function::register('F', 1, foo);
 	/// 
 	/// assert_eq!(Function::fetch('F').unwrap().func(), foo);
@@ -79,6 +80,9 @@ impl Function {
 		self.func
 	}
 
+	pub fn run(&self, args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+		(self.func)(args, env)
+	}
 
 	/// Gets the arity of this function.
 	#[inline]
@@ -155,61 +159,61 @@ use std::process;
 // arity zero
 
 #[cfg(not(feature = "embedded"))]
-pub fn prompt(_: &[Value]) -> Result<Value, RuntimeError> {
+pub fn prompt(_: &[Value], _: &Environment) -> Result<Value, RuntimeError> {
 	let mut buf = String::new();
 
 	io::stdin().read_line(&mut buf)?;
 
-	Ok(buf.into())
+	RcStr::try_from(buf).map(From::from).map_err(From::from)
 }
 
-pub fn random(_: &[Value]) -> Result<Value, RuntimeError> {
+pub fn random(_: &[Value], _: &Environment) -> Result<Value, RuntimeError> {
 	Ok(rand::random::<Number>().into())
 }
 
 // arity one
 
-pub fn eval(args: &[Value]) -> Result<Value, RuntimeError> {
-	crate::run_str(&args[0].to_rcstr()?)
+pub fn eval(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	crate::run_str(&args[0].run(env)?.to_rcstr()?, env)
 }
 
-pub fn block(args: &[Value]) -> Result<Value, RuntimeError> {
+pub fn block(args: &[Value], _: &Environment) -> Result<Value, RuntimeError> {
 	Ok(args[0].clone())
 }
 
-pub fn call(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.run()
+pub fn call(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	args[0].run(env)?.run(env)
 }
 
 #[cfg(not(feature = "embedded"))]
-pub fn system(args: &[Value]) -> Result<Value, RuntimeError> {
-	process::Command::new("sh")
+pub fn system(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	RcStr::try_from(process::Command::new("sh")
 		.arg("-c")
-		.arg(&*args[0].to_rcstr()?)
+		.arg(&*args[0].run(env)?.to_rcstr()?)
 		.output()
-		.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())
+		.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())?)
 		.map_err(From::from)
-		.map(Value::from)
+		.map(From::from)
 }
 
 #[cfg(not(feature = "embedded"))]
-pub fn quit(args: &[Value]) -> Result<Value, RuntimeError> {
-	process::exit(args[0].to_number()? as i32);
+pub fn quit(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	process::exit(args[0].run(env)?.to_number()? as i32);
 }
 
-pub fn not(args: &[Value]) -> Result<Value, RuntimeError> {
-	Ok((!args[0].to_boolean()?).into())
+pub fn not(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	Ok((!args[0].run(env)?.to_boolean()?).into())
 }
 
-pub fn length(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].to_rcstr()
+pub fn length(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	args[0].run(env)?.to_rcstr()
 		.map(|rcstr| rcstr.len() as Number)
 		.map(Value::from)
 }
 
 #[cfg(not(feature = "embedded"))]
-pub fn dump(args: &[Value]) -> Result<Value, RuntimeError> {
-	let ret = args[0].run()?;
+pub fn dump(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let ret = args[0].run(env)?;
 
 	println!("{:?}", ret);
 
@@ -217,8 +221,8 @@ pub fn dump(args: &[Value]) -> Result<Value, RuntimeError> {
 }
 
 #[cfg(not(feature = "embedded"))]
-pub fn output(args: &[Value]) -> Result<Value, RuntimeError> {
-	let text = args[0].to_rcstr()?;
+pub fn output(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let text = args[0].run(env)?.to_rcstr()?;
 
 	if let Some(stripped) = text.strip_suffix('\\') {
 		print!("{}", stripped);
@@ -228,127 +232,197 @@ pub fn output(args: &[Value]) -> Result<Value, RuntimeError> {
 		println!("{}", text);
 	}
 
-	Ok(Value::default())
+	Ok(Default::default())
 }
 
 // arity two
 
-pub fn add(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_add(&args[1].run()?)
+pub fn add(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) => Ok(Value::Number(lhs + args[1].run(env)?.to_number()?)),
+		// both `rcstr.to_string()` is a valid rcstr, so adding it to `to_rcstr` is valid.
+		Value::String(lhs) => Ok(Value::String((lhs.to_string() + &args[1].run(env)?.to_rcstr()?).try_into().unwrap())),
+		other => Err(RuntimeError::InvalidOperand { func: '+', operand: other.typename() })
+	}
 }
 
-pub fn subtract(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_sub(&args[1].run()?)
+pub fn subtract(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) => Ok(Value::Number(lhs - args[1].run(env)?.to_number()?)),
+		other => Err(RuntimeError::InvalidOperand { func: '-', operand: other.typename() })
+	}
 }
 
-pub fn multiply(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_mul(&args[1].run()?)
+pub fn multiply(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) => Ok(Value::Number(lhs * args[1].run(env)?.to_number()?)),
+		Value::String(lhs) =>
+			RcStr::try_from(args[1].run(env)?
+				.to_number()
+				.map(|rhs| (0..rhs).map(|_| lhs.as_str()).collect::<String>())?)
+				.map_err(From::from)
+				.map(Value::String),
+		other => Err(RuntimeError::InvalidOperand { func: '*', operand: other.typename() })
+	}
+
 }
 
-pub fn divide(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_div(&args[1].run()?)
+pub fn divide(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) =>
+			match args[1].run(env)?.to_number()? { // todo: checked div?
+				0 => Err(RuntimeError::DivisionByZero { modulo: false }),
+				rhs => Ok(Value::Number(lhs / rhs))
+			},
+		other => Err(RuntimeError::InvalidOperand { func: '/', operand: other.typename() })
+	}
 }
 
-pub fn modulo(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_rem(&args[1].run()?)
+pub fn modulo(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) =>
+			match args[1].run(env)?.to_number()? { // todo: checked div?
+				0 => Err(RuntimeError::DivisionByZero { modulo: true }),
+				rhs => Ok(Value::Number(lhs % rhs))
+			},
+		other => Err(RuntimeError::InvalidOperand { func: '%', operand: other.typename() })
+	}
 }
 
-pub fn power(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_pow(&args[1].run()?)
+pub fn power(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let base = 
+		match args[0].run(env)? {
+			Value::Number(lhs) => lhs,
+			other => return Err(RuntimeError::InvalidOperand { func: '^', operand: other.typename() })
+		};
+
+	let exponent = args[1].run(env)?.to_number()?;
+
+	Ok(Value::Number(
+		if base == 1 {
+			1
+		} else if base == -1 {
+			if exponent & 1 == 1 {
+				-1
+			} else {
+				1
+			}
+		} else {
+			match exponent {
+				1 => base,
+				0 => 1,
+				_ if exponent < 0 => 0,
+				_ => base.pow(exponent as u32)
+			}
+		}
+	))
 }
 
-pub fn equals(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_eql(&args[1].run()?).map(Value::from)
+pub fn equals(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	return Ok((args[0].run(env)? == args[1].run(env)?).into())
 }
 
-pub fn less_than(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_lth(&args[1].run()?).map(Value::from)
+pub fn less_than(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) => Ok((lhs < args[1].run(env)?.to_number()?).into()),
+		Value::Boolean(lhs) => Ok((lhs < args[1].run(env)?.to_boolean()?).into()),
+		Value::String(lhs) => Ok((lhs.as_str() < args[1].run(env)?.to_rcstr()?.as_str()).into()),
+		other => Err(RuntimeError::InvalidOperand { func: '<', operand: other.typename() })
+	}
 }
 
-pub fn greater_than(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?.try_gth(&args[1].run()?).map(Value::from)
+pub fn greater_than(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	match args[0].run(env)? {
+		Value::Number(lhs) => Ok((lhs > args[1].run(env)?.to_number()?).into()),
+		Value::Boolean(lhs) => Ok((lhs > args[1].run(env)?.to_boolean()?).into()),
+		Value::String(lhs) => Ok((lhs.as_str() > args[1].run(env)?.to_rcstr()?.as_str()).into()),
+		other => Err(RuntimeError::InvalidOperand { func: '>', operand: other.typename() })
+	}
 }
 
-pub fn and(args: &[Value]) -> Result<Value, RuntimeError> {
-	let lhs = args[0].run()?;
+pub fn and(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let lhs = args[0].run(env)?;
 
 	if lhs.to_boolean()? {
-		args[1].run()
+		args[1].run(env)
 	} else {
 		Ok(lhs)
 	}
 }
 
-pub fn or(args: &[Value]) -> Result<Value, RuntimeError> {
-	let lhs = args[0].run()?;
+pub fn or(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let lhs = args[0].run(env)?;
 
 	if lhs.to_boolean()? {
 		Ok(lhs)
 	} else {
-		args[1].run()
+		args[1].run(env)
 	}
 }
 
-pub fn then(args: &[Value]) -> Result<Value, RuntimeError> {
-	args[0].run()?;
-	args[1].run()
+pub fn then(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	args[0].run(env)?;
+	args[1].run(env)
 }
 
-pub fn assign(args: &[Value]) -> Result<Value, RuntimeError> {
+pub fn assign(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
 	let variable = 
 		if let Value::Variable(ref variable) = args[0] {
 			variable
-		} else {
+		} else /* if cfg!(feature = "assign-to-anything") */ {
 			return Err(RuntimeError::InvalidOperand { func: '?', operand: args[0].typename() });
 		};
 
-	let rhs = args[1].run()?;
+	let rhs = args[1].run(env)?;
 
 	variable.assign(rhs.clone());
 
 	Ok(rhs)
 }
 
-pub fn r#while(args: &[Value]) -> Result<Value, RuntimeError> {
-	while args[0].to_boolean()? {
-		args[1].run()?;
+pub fn r#while(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	while args[0].run(env)?.to_boolean()? {
+		let _ = args[1].run(env)?;
 	}
 
-	Ok(Value::Null)
+	Ok(Default::default())
 }
 
 // arity three
 
-pub fn r#if(args: &[Value]) -> Result<Value, RuntimeError> {
-	if args[0].to_boolean()? {
-		args[1].run()
+pub fn r#if(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	if args[0].run(env)?.to_boolean()? {
+		args[1].run(env)
 	} else {
-		args[2].run()
+		args[2].run(env)
 	}
 }
 
-pub fn get(args: &[Value]) -> Result<Value, RuntimeError> {
-	Ok(Value::String(
+pub fn get(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let substr =
 		args[0]
+			.run(env)?
 			.to_rcstr()?
 			.chars()
-			.skip(args[1].to_number()? as usize)
-			.take(args[2].to_number()? as usize)
+			.skip(args[1].run(env)?.to_number()? as usize)
+			.take(args[2].run(env)?.to_number()? as usize)
 			.collect::<String>()
-			.into()
-	))
+			.try_into()
+			.unwrap(); // we know the substring is valid, as the source string was valid.
+
+	Ok(Value::String(substr))
 }
 
 // arity four
 
-pub fn substitute(args: &[Value]) -> Result<Value, RuntimeError> {
-	let s = args[0].to_rcstr()?;
-	let start = args[1].to_number()? as usize;
-	let stop = start + args[2].to_number()? as usize;
+pub fn substitute(args: &[Value], env: &Environment) -> Result<Value, RuntimeError> {
+	let source = args[0].run(env)?.to_rcstr()?;
+	let start = args[1].run(env)?.to_number()? as usize;
+	let stop = start + args[2].run(env)?.to_number()? as usize;
 
-	let mut x = s.chars().take(start).collect::<String>();
-	x.push_str(&args[3].to_rcstr()?);
-	x.extend(s.chars().skip(stop));
+	let mut x = source.chars().take(start).collect::<String>();
+	x.push_str(&args[3].run(env)?.to_rcstr()?);
+	x.extend(source.chars().skip(stop));
 
-	Ok(Value::String(x.into()))
+	Ok(Value::String(x.try_into().unwrap())) // we know the replacement is valid, as both sources were valid.
 }

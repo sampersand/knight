@@ -1,11 +1,12 @@
-use crate::{Value, Number, Function, ParseError};
+use crate::{Value, Number, Function, ParseError, Environment, RcStr};
 use std::iter::Peekable;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 struct Stream<I: Iterator<Item=char>> {
 	iter: Peekable<I>,
 	cache: Option<char>,
-	lineno: usize,
+	line: usize,
 }
 
 impl<I: Iterator<Item=char>> Iterator for Stream<I> {
@@ -15,7 +16,7 @@ impl<I: Iterator<Item=char>> Iterator for Stream<I> {
 		let next = self.iter.next();
 
 		if let Some('\n') = next {
-			self.lineno += 1;
+			self.line += 1;
 		}
 
 		next
@@ -69,7 +70,7 @@ fn number(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 	Value::Number(num)
 }
 
-fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
+fn identifier(stream: &mut Stream<impl Iterator<Item=char>>, env: &Environment) -> Value {
 	let mut ident = String::new();
 
 	while let Some(&chr) = stream.iter.peek() {
@@ -81,11 +82,11 @@ fn identifier(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 		}
 	}
 
-	Value::Variable(crate::Variable::from(ident))
+	Value::Variable(env.get(ident))
 }
 
 fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
-	let linestart = stream.lineno;
+	let line = stream.line;
 
 	let quote = stream.next().unwrap();
 	let mut string = String::new();
@@ -93,28 +94,30 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 
 	while let Some(chr) = stream.next() {
 		if chr == quote {
-			return Ok(Value::String(string.into()));
+			return RcStr::try_from(string).map(Value::String).map_err(|err| ParseError::InvalidString { line, err });
 		} else {
 			string.push(chr);
 		}
 	}
 
-	Err(ParseError::UnterminatedQuote { linestart })
+	Err(ParseError::UnterminatedQuote { line })
 }
 
-fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
+fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>, env: &Environment)
+	-> Result<Value, ParseError>
+{
 	let mut args = Vec::with_capacity(func.arity());
-	let lineno = stream.lineno;
+	let line = stream.line;
 
 	if stream.next().unwrap().is_ascii_uppercase() {
 		strip_word(stream);
 	}
 
 	for number in 0..func.arity() {
-		match Value::parse_inner(stream) {
+		match Value::parse_inner(stream, env) {
 			Ok(value) => args.push(value),
 			Err(ParseError::NothingToParse) =>
-				return Err(ParseError::MissingFunctionArgument { func: func.name(), number, lineno }),
+				return Err(ParseError::MissingFunctionArgument { func: func.name(), number, line }),
 			Err(other) => return Err(other)
 		}
 	}
@@ -129,30 +132,30 @@ fn strip_word(stream: &mut Stream<impl Iterator<Item=char>>) {
 }
 
 impl Value {
-	pub fn parse_str<S: AsRef<str>>(input: S) -> Result<Self, ParseError> {
-		Self::parse(input.as_ref().chars())
+	pub fn parse_str<S: AsRef<str>>(input: S, env: &Environment) -> Result<Self, ParseError> {
+		Self::parse(input.as_ref().chars(), env)
 	}
 
-	pub fn parse<S: IntoIterator<Item=char>>(input: S) -> Result<Self, ParseError> {
-		Self::parse_inner(&mut Stream { iter: input.into_iter().peekable(), lineno: 0, cache: None })
+	pub fn parse<S: IntoIterator<Item=char>>(input: S, env: &Environment) -> Result<Self, ParseError> {
+		Self::parse_inner(&mut Stream { iter: input.into_iter().peekable(), line: 0, cache: None }, env)
 	}
 
-	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Self, ParseError> {
+	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>, env: &Environment) -> Result<Self, ParseError> {
 		match *stream.iter.peek().ok_or(ParseError::NothingToParse)? {
 			// note that this is ascii whitespace, as non-ascii characters are invalid.
-			chr if chr.is_ascii_whitespace() => { whitespace(stream); Self::parse_inner(stream) },
+			' ' | '\n' | '\r' | '\t' => { whitespace(stream); Self::parse_inner(stream, env) },
 
 			// strip comments until eol.
-			'#' => { comment(stream); Self::parse_inner(stream) },
+			'#' => { comment(stream); Self::parse_inner(stream, env) },
 
 			// ignore parens; consecutive ones aren't common, so dont deserve a function.
-			'(' | ')' | '[' | ']' | '{' | '}' | ':' => { stream.iter.next(); Self::parse_inner(stream) },
+			'(' | ')' | '[' | ']' | '{' | '}' | ':' => { stream.iter.next(); Self::parse_inner(stream, env) },
 
 			// only ascii digits and `~` may start number, where `~` is unary minus for literals
 			'0'..='9' | '~' => Ok(number(stream)),
 
 			// identifiers start only with lower-case digits or `_`.
-			'a'..='z' | '_' => Ok(identifier(stream)),
+			'a'..='z' | '_' => Ok(identifier(stream, env)),
 
 			chr @ 'T' | chr @ 'F' => { strip_word(stream); Ok(Value::Boolean(chr == 'T')) },
 
@@ -163,9 +166,9 @@ impl Value {
 
 			chr =>
 				if let Some(func) = Function::fetch(chr) {
-					function(func, stream)
+					function(func, stream, env)
 				} else {
-					Err(ParseError::UnknownTokenStart { chr, lineno: stream.lineno })
+					Err(ParseError::UnknownTokenStart { chr, line: stream.line })
 				}
 		}
 	}

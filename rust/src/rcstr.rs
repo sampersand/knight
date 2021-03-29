@@ -3,6 +3,7 @@
 use std::sync::Arc;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::convert::TryFrom;
 
 /// The string type within Knight.
 #[derive(Clone)]
@@ -67,7 +68,7 @@ pub struct InvalidChar {
 
 impl Display for InvalidChar {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		write!(f, "invalid byte '{:?}' found at position {}", self.chr, self.idx)
+		write!(f, "invalid byte {:?} found at position {}", self.chr, self.idx)
 	}
 }
 
@@ -75,7 +76,7 @@ impl std::error::Error for InvalidChar {}
 
 /// Checks to see if `chr` is a valid knight character.
 pub fn is_valid_char(chr: char) -> bool {
-	return matches!(chr, '\r' | '\n' | ' '..='~');
+	return matches!(chr, '\r' | '\n' | '\t' | ' '..='~');
 }
 
 fn validate_string(data: &str) -> Result<(), InvalidChar> {
@@ -96,8 +97,9 @@ impl RcStr {
 	///
 	/// # See Also
 	/// - [`RcStr::new_unchecked`] For a version which doesn't verify `string`.
-	pub fn new<T: AsRef<str> + Into<Arc<str>>>(string: T) -> Result<Self, InvalidChar> {
-		validate_string(string.as_ref())?;
+	pub fn new<T: ToString>(string: T) -> Result<Self, InvalidChar> {
+		let string = string.to_string();
+		validate_string(&string)?;
 
 		// SAFETY: we just validated the string.
 		unsafe {
@@ -109,8 +111,10 @@ impl RcStr {
 	///
 	/// # Safety
 	/// All characters within the string must be valid for Knight strings. See the specs for what exactly this entails.
-	pub unsafe fn new_unchecked<T: AsRef<str> + Into<Arc<str>>>(string: T) -> Self {
-		debug_assert_eq!(validate_string(string.as_ref()), Ok(()), "invalid string encountered: {:?}",string.as_ref());
+	pub unsafe fn new_unchecked<T: ToString>(string: T) -> Self {
+		let string = string.to_string();
+
+		debug_assert_eq!(validate_string(&string), Ok(()), "invalid string encountered: {:?}", &string);
 
 		Self(string.into())
 	}
@@ -122,25 +126,21 @@ impl RcStr {
 	}
 }
 
-impl From<&str> for RcStr {
-	/// Creates a new `RcStr` from the given `string`.
-	///
-	/// # Panics
-	/// Panics if the given string is not valid.
+impl TryFrom<&str> for RcStr {
+	type Error = InvalidChar;
+
 	#[inline]
-	fn from(string: &str) -> Self {
-		Self::new(string).expect("invalid string given")
+	fn try_from(string: &str) -> Result<Self, Self::Error> {
+		Self::new(string)
 	}
 }
 
-impl From<String> for RcStr {
-	/// Creates a new `RcStr` from the given `string`.
-	///
-	/// # Panics
-	/// Panics if the given string is not valid.
+impl TryFrom<String> for RcStr {
+	type Error = InvalidChar;
+
 	#[inline]
-	fn from(string: String) -> Self {
-		Self::new(string).expect("invalid string given")
+	fn try_from(string: String) -> Result<Self, Self::Error> {
+		Self::new(string)
 	}
 }
 
@@ -154,6 +154,7 @@ impl AsRef<str> for RcStr {
 impl std::ops::Deref for RcStr {
 	type Target = str;
 
+	#[inline]
 	fn deref(&self) -> &Self::Target {
 		self.as_str()
 	}

@@ -1,4 +1,4 @@
-use crate::{Function, Number, RcStr, Variable, RuntimeError};
+use crate::{Function, Number, RcStr, Variable, RuntimeError, Environment};
 use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
 use std::convert::TryFrom;
@@ -61,12 +61,6 @@ impl From<Number> for Value {
 	}
 }
 
-impl From<String> for Value {
-	fn from(string: String) -> Self {
-		Self::String(string.into())
-	}
-}
-
 impl From<RcStr> for Value {
 	fn from(string: RcStr) -> Self {
 		Self::String(string)
@@ -89,7 +83,7 @@ impl TryFrom<&Value> for bool {
 			Value::Boolean(boolean) => Ok(*boolean),
 			Value::Number(number) => Ok(*number != 0),
 			Value::String(string) => Ok(!string.is_empty()),
-			_ => value.run().and_then(|value| TryFrom::try_from(&value))
+			_ => Err(RuntimeError::UndefinedConversion { into: "bool", kind: value.typename() })
 		}
 	}
 }
@@ -105,7 +99,7 @@ impl TryFrom<&Value> for RcStr {
 			Value::Number(0) => Ok(unsafe { RcStr::new_unchecked("0") }),
 			Value::Number(number) => Ok(RcStr::new(number.to_string()).unwrap()),
 			Value::String(string) => Ok(string.clone()),
-			_ => value.run().and_then(|value| TryFrom::try_from(&value))
+			_ => Err(RuntimeError::UndefinedConversion { into: "bool", kind: value.typename() })
 		}
 	}
 }
@@ -134,7 +128,7 @@ impl TryFrom<&Value> for Number {
 					None => string.parse().unwrap()
 				}
 			}),
-			_ => value.run().and_then(|value| TryFrom::try_from(&value))
+			_ => Err(RuntimeError::UndefinedConversion { into: "bool", kind: value.typename() })
 		}
 	}
 }
@@ -151,14 +145,15 @@ impl Value {
 		}
 	}
 
-	pub fn run(&self) -> Result<Self, RuntimeError> {
+	pub fn run(&self, env: &Environment) -> Result<Self, RuntimeError> {
 		match self {
 			Self::Null => Ok(Self::Null),
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),
 			Self::Number(number) => Ok(Self::Number(*number)),
 			Self::String(rcstr) => Ok(Self::String(rcstr.clone())),
-			Self::Variable(variable) => variable.fetch().ok_or_else(|| RuntimeError::UnknownIdentifier(variable.name().into())),
-			Self::Function(func, args) => (func.func())(&args),
+			Self::Variable(variable) => variable.fetch()
+				.ok_or_else(|| RuntimeError::UnknownIdentifier { identifier: variable.name().into() }),
+			Self::Function(func, args) => func.run(&args, env),
 		}
 	}
 
@@ -172,122 +167,5 @@ impl Value {
 
 	pub fn to_rcstr(&self) -> Result<RcStr, RuntimeError> {
 		TryFrom::try_from(self)
-	}
-}
-
-impl Value {
-	pub fn try_add(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		match self {
-			Self::Number(lhs) => Ok(Self::Number(lhs + rhs.to_number()?)),
-			Self::String(lhs) => Ok(Self::String((lhs.to_string() + &rhs.to_rcstr()?).into())),
-			_ => Err(RuntimeError::InvalidOperand { func: '+', operand: self.typename() })
-		}
-	}
-
-	pub fn try_sub(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		if let Self::Number(lhs) = self {
-			Ok(Self::Number(lhs - rhs.to_number()?))
-		} else {
-			Err(RuntimeError::InvalidOperand { func: '-', operand: self.typename() })
-		}
-	}
-
-	pub fn try_mul(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		match self {
-			Self::Number(lhs) => Ok(Self::Number(lhs * rhs.to_number()?)),
-			Self::String(lhs) =>
-				rhs.to_number()
-					.map(|rhs| (0..rhs).map(|_| lhs.as_str()).collect::<String>())
-					.map(From::from)
-					.map(Self::String),
-
-			_ => Err(RuntimeError::InvalidOperand { func: '*', operand: self.typename() })
-		}
-	}
-
-	pub fn try_div(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		let lhs = 
-			if let Self::Number(lhs) =self {
-				lhs
-			} else {
-				return Err(RuntimeError::InvalidOperand { func: '/', operand: self.typename() });
-			};
-
-		let rhs = rhs.to_number()?;
-
-		if rhs == 0 {
-			Err(RuntimeError::DivisionByZero { modulo: false })
-		} else {
-			Ok(Self::Number(lhs / rhs))
-		}
-	}
-
-	pub fn try_rem(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		let lhs = 
-			if let Self::Number(lhs) =self {
-				lhs
-			} else {
-				return Err(RuntimeError::InvalidOperand { func: '%', operand: self.typename() });
-			};
-
-		let rhs = rhs.to_number()?;
-
-		if rhs == 0 {
-			Err(RuntimeError::DivisionByZero { modulo: true })
-		} else {
-			Ok(Self::Number(lhs % rhs))
-		}
-	}
-
-	pub fn try_pow(&self, rhs: &Self) -> Result<Self, RuntimeError> {
-		let base = 
-			if let Self::Number(lhs) = self {
-				*lhs
-			} else {
-				return Err(RuntimeError::InvalidOperand { func: '^', operand: self.typename() });
-			};
-
-		let exponent = Number::try_from(rhs)?;
-
-		Ok(Self::Number(
-			if base == 1 {
-				1
-			} else if base == -1 {
-				if exponent & 1 == 1 {
-					-1
-				} else {
-					1
-				}
-			} else {
-				match exponent {
-					1 => base,
-					0 => 1,
-					_ if exponent < 0 => 0,
-					_ => base.pow(exponent as u32)
-				}
-			}
-		))
-	}
-
-	pub fn try_lth(&self, rhs: &Self) -> Result<bool, RuntimeError> {
-		match self {
-			Self::Number(lhs) => rhs.to_number().map(|rhs| *lhs < rhs),
-			Self::Boolean(lhs) => rhs.to_boolean().map(|rhs| !lhs && rhs),
-			Self::String(lhs) => rhs.to_rcstr().map(|rhs| lhs.as_str() < rhs.as_str()),
-			_ => Err(RuntimeError::InvalidOperand { func: '<', operand: self.typename() })
-		}
-	}
-
-	pub fn try_gth(&self, rhs: &Self) -> Result<bool, RuntimeError> {
-		match self {
-			Self::Number(lhs) => rhs.to_number().map(|rhs| *lhs > rhs),
-			Self::Boolean(lhs) => rhs.to_boolean().map(|rhs| *lhs && !rhs),
-			Self::String(lhs) => rhs.to_rcstr().map(|rhs| lhs.as_str() > rhs.as_str()),
-			_ => Err(RuntimeError::InvalidOperand { func: '>', operand: self.typename() })
-		}
-	}
-
-	pub fn try_eql(&self, rhs: &Self) -> Result<bool, RuntimeError> {
-		Ok(self == rhs)
 	}
 }
