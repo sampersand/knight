@@ -1,6 +1,7 @@
 use std::io;
 use std::fmt::{self, Display, Formatter};
-use crate::rcstr::InvalidChar;
+use crate::rcstring::InvalidChar;
+use std::error::Error;
 
 /// The error type used to indicate an error whilst parsing Knight source code.
 #[derive(Debug)]
@@ -35,7 +36,7 @@ pub enum ParseError {
 		line: usize
 	},
 
-	/// An invalid character was encountered in a [`RcStr`] literal.
+	/// An invalid character was encountered in a [`RcString`] literal.
 	InvalidString {
 		/// The line whence the string started.
 		line: usize,
@@ -98,6 +99,9 @@ pub enum RuntimeError {
 
 	/// An i/o error occurred (i.e. `` ` `` or `PROMPT` failed).
 	Io(io::Error),
+
+	/// An error class that can be used to raise other, custom errors.
+	Custom(Box<dyn Error>),
 }
 
 impl From<ParseError> for RuntimeError {
@@ -156,7 +160,8 @@ impl Display for RuntimeError {
 			Self::Quit(code) => write!(f, "exit with status {}", code),
 			Self::Parse(err) => Display::fmt(err, f),
 			Self::InvalidString(err) => Display::fmt(err, f),
-			Self::Io(err) => write!(f, "i/o error: {}", err)
+			Self::Io(err) => write!(f, "i/o error: {}", err),
+			Self::Custom(err) => Display::fmt(err, f),
 		}
 	}
 }
@@ -167,6 +172,7 @@ impl std::error::Error for RuntimeError {
 			Self::Parse(err) => Some(err),
 			Self::Io(err) => Some(err),
 			Self::InvalidString(err) => Some(err),
+			Self::Custom(err) => Some(err.as_ref()),
 			_ => None
 		}
 	}

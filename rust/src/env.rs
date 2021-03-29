@@ -1,7 +1,11 @@
-use crate::Variable;
+use crate::{Variable, RuntimeError, RcString};
 use std::collections::HashSet;
 use std::fmt::{self, Debug, Formatter};
-use std::io::{self, Read, Write, BufRead, BufReader};
+use std::io::{self, Write, Read, BufReader};
+use std::convert::TryFrom;
+
+
+type RunCommand =  dyn FnMut(&str) -> Result<RcString, RuntimeError>;
 
 /// The set of [`Variable`]s within Knight.
 ///
@@ -9,13 +13,14 @@ use std::io::{self, Read, Write, BufRead, BufReader};
 /// ```rust
 /// assert!(false);
 /// ```
-pub struct Environment {
+pub struct Environment<'i, 'o, 'c> {
 	vars: HashSet<Variable>,
-	stdin: Box<dyn BufRead>,
-	stdout: Box<dyn Write>
+	stdin: &'i mut dyn Read,
+	stdout: &'o mut dyn Write,
+	run_command: &'c mut RunCommand
 }
 
-impl Debug for Environment {
+impl Debug for Environment<'_, '_, '_> {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
 		f.debug_struct("Environment")
 			.field("nvars", &self.vars.len())
@@ -23,36 +28,77 @@ impl Debug for Environment {
 	}
 }
 
-impl Default for Environment {
+impl Default for Environment<'static, 'static, 'static> {
 	fn default() -> Self {
-		Self::new(BufReader::new(io::stdin()), io::stdout())
+		#[cfg(feature = "embedded")]
+		fn run_command(_: &str) -> Result<RcString, RuntimeError> {
+			Err(RuntimeError::Custom(Box::new("cannot run command when embedded.")))
+		}
+
+		#[cfg(not(feature = "embedded"))]
+		fn run_command(cmd: &str) -> Result<RcString, RuntimeError> {
+			RcString::try_from(
+				std::process::Command::new("sh")
+					.arg("-c")
+					.arg(cmd)
+					.output()
+					.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())?
+			).map_err(From::from)
+		}
+
+		struct Stdin;
+		struct Stdout;
+
+		impl Read for Stdin {
+			#[inline]
+			fn read(&mut self, data: &mut [u8]) -> io::Result<usize> {
+				io::stdin().read(data)
+			}
+		}
+
+		impl Write for Stdout {
+			#[inline]
+			fn write(&mut self, data: &[u8]) -> io::Result<usize> {
+				io::stdout().write(data)
+			}
+
+			#[inline]
+			fn flush(&mut self) -> io::Result<()> {
+				io::stdout().flush()
+			}
+		}
+
+		static mut STDIN: Stdin = Stdin;
+		static mut STDOUT: Stdout = Stdout;
+		static mut RUNCOMMAND: fn(&str) -> Result<RcString, RuntimeError> = run_command;
+
+		Self::new(unsafe { &mut STDIN }, unsafe { &mut STDOUT }, unsafe { &mut RUNCOMMAND })
 	}
 }
 
-impl Environment {
+impl<'i, 'o, 'c> Environment<'i, 'o, 'c> {
 	/// Creates an empty [`Environment`].
-	pub fn new<I, O>(stdin: I, stdout: O) -> Self
-	where
-		I: BufRead + 'static,
-		O: Write + 'static
-	{
+	pub fn new(stdin: &'i mut dyn Read, stdout: &'o mut dyn Write, run_command: &'c mut RunCommand) -> Self {
 		Self {
 			vars: Default::default(),
-			stdin: Box::new(stdin),
-			stdout: Box::new(stdout)
+			stdin,
+			stdout,
+			run_command
 		}
 	}
 
 	/// Creates an [`Environment`] with the given starting capacity..
-	pub fn with_capacity<I, O>(capacity: usize, stdin: I, stdout: O) -> Self
-	where
-		I: BufRead + 'static,
-		O: Write + 'static
-	{
+	pub fn with_capacity(
+		capacity: usize,
+		stdin: &'i mut dyn Read,
+		stdout: &'o mut dyn Write,
+		run_command: &'c mut RunCommand
+	) -> Self {
 		Self {
 			vars: HashSet::with_capacity(capacity),
-			stdin: Box::new(stdin),
-			stdout: Box::new(stdout),
+			stdin,
+			stdout,
+			run_command
 		}
 	}
 
@@ -80,28 +126,20 @@ impl Environment {
 
 		variable
 	}
+
+	pub fn run_command(&mut self, cmd: &str) -> Result<RcString, RuntimeError> {
+		(self.run_command)(cmd)
+	}
 }
 
-impl Read for Environment {
+impl Read for Environment<'_, '_, '_> {
 	#[inline]
 	fn read(&mut self, data: &mut [u8]) -> io::Result<usize> {
 		self.stdin.read(data)
 	}
 }
 
-impl BufRead for Environment {
-	#[inline]
-	fn fill_buf(&mut self) -> io::Result<&[u8]> {
-		self.stdin.fill_buf()
-	}
-
-	#[inline]
-	fn consume(&mut self, amnt: usize) {
-		self.stdin.consume(amnt)
-	}
-}
-
-impl Write for Environment {
+impl Write for Environment<'_, '_, '_> {
 	#[inline]
 	fn write(&mut self, data: &[u8]) -> io::Result<usize> {
 		self.stdout.write(data)

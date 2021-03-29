@@ -1,4 +1,4 @@
-use crate::{Value, Number, Function, ParseError, Environment, RcStr};
+use crate::{Value, Number, Function, ParseError, Environment, RcString};
 use std::iter::Peekable;
 use std::convert::TryFrom;
 
@@ -94,7 +94,7 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 
 	while let Some(chr) = stream.next() {
 		if chr == quote {
-			return RcStr::try_from(string).map(Value::String).map_err(|err| ParseError::InvalidString { line, err });
+			return RcString::try_from(string).map(Value::String).map_err(|err| ParseError::InvalidString { line, err });
 		} else {
 			string.push(chr);
 		}

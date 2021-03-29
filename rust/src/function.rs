@@ -1,6 +1,6 @@
 //! The functions within Knight.
 
-use crate::{Value, RuntimeError, Number, Environment, RcStr};
+use crate::{Value, RuntimeError, Number, Environment, RcString};
 use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
@@ -123,7 +123,6 @@ lazy_static::lazy_static! {
 		insert!('E', 1, eval);
 		insert!('B', 1, block);
 		insert!('C', 1, call);
-		#[cfg(not(feature = "embedded"))]
 		insert!('`', 1, system);
 		insert!('Q', 1, quit);
 		insert!('!', 1, not);
@@ -160,9 +159,9 @@ use std::io::{self, Write, BufRead};
 pub fn prompt(_: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
 	let mut buf = String::new();
 
-	env.read_line(&mut buf)?;
+	std::io::BufReader::new(env).read_line(&mut buf)?;
 
-	RcStr::try_from(buf).map(From::from).map_err(From::from)
+	RcString::try_from(buf).map(From::from).map_err(From::from)
 }
 
 pub fn random(_: &[Value], _: &mut Environment) -> Result<Value, RuntimeError> {
@@ -172,7 +171,7 @@ pub fn random(_: &[Value], _: &mut Environment) -> Result<Value, RuntimeError> {
 // arity one
 
 pub fn eval(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
-	crate::run_str(&args[0].run(env)?.to_rcstr()?, env)
+	crate::run_str(&args[0].run(env)?.to_rcstring()?, env)
 }
 
 pub fn block(args: &[Value], _: &mut Environment) -> Result<Value, RuntimeError> {
@@ -183,17 +182,10 @@ pub fn call(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError
 	args[0].run(env)?.run(env)
 }
 
-#[cfg(not(feature = "embedded"))]
 pub fn system(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
-	use std::process::Command;
+	let cmd = args[0].run(env)?.to_rcstring()?;
 
-	RcStr::try_from(Command::new("sh")
-		.arg("-c")
-		.arg(&*args[0].run(env)?.to_rcstr()?)
-		.output()
-		.map(|out| String::from_utf8_lossy(&out.stdout).into_owned())?)
-		.map_err(From::from)
-		.map(From::from)
+	env.run_command(&cmd).map(From::from)
 }
 
 pub fn quit(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
@@ -205,8 +197,8 @@ pub fn not(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError>
 }
 
 pub fn length(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
-	args[0].run(env)?.to_rcstr()
-		.map(|rcstr| rcstr.len() as Number)
+	args[0].run(env)?.to_rcstring()
+		.map(|rcstring| rcstring.len() as Number)
 		.map(Value::from)
 }
 
@@ -219,7 +211,7 @@ pub fn dump(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError
 }
 
 pub fn output(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
-	let text = args[0].run(env)?.to_rcstr()?;
+	let text = args[0].run(env)?.to_rcstring()?;
 
 	if let Some(stripped) = text.strip_suffix('\\') {
 		write!(env, "{}", stripped)?;
@@ -249,10 +241,10 @@ pub fn add(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError>
 			}
 		},
 		Value::String(lhs) => {
-			let rhs = args[1].run(env)?.to_rcstr()?;
+			let rhs = args[1].run(env)?.to_rcstring()?;
 
-			// both `rcstr.to_string()` is a valid rcstr, so adding it to `to_rcstr` is valid.
-			Ok(Value::String(RcStr::try_from(lhs.to_string() + &rhs).unwrap()))
+			// both `RcString.to_string()` is a valid RcString, so adding it to `to_rcstring` is valid.
+			Ok(Value::String(RcString::try_from(lhs.to_string() + &rhs).unwrap()))
 		},
 		other => Err(RuntimeError::InvalidOperand { func: '+', operand: other.typename() })
 	}
@@ -293,7 +285,7 @@ pub fn multiply(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeE
 			}
 		}
 		Value::String(lhs) =>
-			RcStr::try_from(args[1].run(env)?
+			RcString::try_from(args[1].run(env)?
 				.to_number()
 				.map(|rhs| (0..rhs).map(|_| lhs.as_str()).collect::<String>())?)
 				.map_err(From::from)
@@ -360,7 +352,7 @@ pub fn less_than(args: &[Value], env: &mut Environment) -> Result<Value, Runtime
 	match args[0].run(env)? {
 		Value::Number(lhs) => Ok((lhs < args[1].run(env)?.to_number()?).into()),
 		Value::Boolean(lhs) => Ok((lhs < args[1].run(env)?.to_boolean()?).into()),
-		Value::String(lhs) => Ok((lhs.as_str() < args[1].run(env)?.to_rcstr()?.as_str()).into()),
+		Value::String(lhs) => Ok((lhs.as_str() < args[1].run(env)?.to_rcstring()?.as_str()).into()),
 		other => Err(RuntimeError::InvalidOperand { func: '<', operand: other.typename() })
 	}
 }
@@ -369,7 +361,7 @@ pub fn greater_than(args: &[Value], env: &mut Environment) -> Result<Value, Runt
 	match args[0].run(env)? {
 		Value::Number(lhs) => Ok((lhs > args[1].run(env)?.to_number()?).into()),
 		Value::Boolean(lhs) => Ok((lhs > args[1].run(env)?.to_boolean()?).into()),
-		Value::String(lhs) => Ok((lhs.as_str() > args[1].run(env)?.to_rcstr()?.as_str()).into()),
+		Value::String(lhs) => Ok((lhs.as_str() > args[1].run(env)?.to_rcstring()?.as_str()).into()),
 		other => Err(RuntimeError::InvalidOperand { func: '>', operand: other.typename() })
 	}
 }
@@ -436,7 +428,7 @@ pub fn get(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError>
 	let substr =
 		args[0]
 			.run(env)?
-			.to_rcstr()?
+			.to_rcstring()?
 			.chars()
 			.skip(args[1].run(env)?.to_number()? as usize)
 			.take(args[2].run(env)?.to_number()? as usize)
@@ -450,12 +442,12 @@ pub fn get(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError>
 // arity four
 
 pub fn substitute(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
-	let source = args[0].run(env)?.to_rcstr()?;
+	let source = args[0].run(env)?.to_rcstring()?;
 	let start = args[1].run(env)?.to_number()? as usize;
 	let stop = start + args[2].run(env)?.to_number()? as usize;
 
 	let mut x = source.chars().take(start).collect::<String>();
-	x.push_str(&args[3].run(env)?.to_rcstr()?);
+	x.push_str(&args[3].run(env)?.to_rcstring()?);
 	x.extend(source.chars().skip(stop));
 
 	Ok(Value::String(x.try_into().unwrap())) // we know the replacement is valid, as both sources were valid.

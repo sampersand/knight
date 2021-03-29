@@ -35,8 +35,8 @@ fn main() {
 				.conflicts_with("expr")
 				.short("f")
 				.long("file"))
-		.get_matches_from(vec!["--", "-f", "../knight.kn"]);
-		// .get_matches();
+		// .get_matches_from(vec!["--", "-f", "../knight.kn"]);
+		.get_matches();
 
 	match run(matches) {
 		Err(RuntimeError::Quit(code)) => std::process::exit(code),

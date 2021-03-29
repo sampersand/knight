@@ -4,7 +4,7 @@
 extern crate cfg_if;
 
 pub mod function;
-pub mod rcstr;
+pub mod rcstring;
 mod value;
 mod error;
 mod stream;
@@ -15,7 +15,7 @@ pub mod env;
 pub type Number = i64;
 
 #[doc(inline)]
-pub use rcstr::RcStr;
+pub use rcstring::RcString;
 
 #[doc(inline)]
 pub use function::Function;

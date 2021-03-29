@@ -18,6 +18,3 @@ lazy_static = "1.4"
 parking_lot = "0.11"
 clap = "2.33"
 cfg-if = "1.0"
-
-[profile.release]
-debug = true

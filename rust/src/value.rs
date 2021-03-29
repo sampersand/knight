@@ -1,4 +1,4 @@
-use crate::{Function, Number, RcStr, Variable, RuntimeError, Environment};
+use crate::{Function, Number, RcString, Variable, RuntimeError, Environment};
 use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
 use std::convert::TryFrom;
@@ -8,12 +8,13 @@ pub enum Value {
 	Null,
 	Boolean(bool),
 	Number(Number),
-	String(RcStr),
+	String(RcString),
 	Variable(Variable),
 	Function(Function, Rc<[Value]>)
 }
 
 impl Default for Value {
+	#[inline]
 	fn default() -> Self {
 		Self::Null
 	}
@@ -28,8 +29,7 @@ impl PartialEq for Value {
 			(Self::Number(lnum), Self::Number(rnum)) => lnum == rnum,
 			(Self::String(lstr), Self::String(rstr)) => lstr == rstr,
 			(Self::Variable(lvar), Self::Variable(rvar)) => lvar == rvar,
-			(Self::Function(lfunc, largs), Self::Function(rfunc, rargs)) =>
-				lfunc == rfunc && Rc::ptr_eq(&largs, &rargs),
+			(Self::Function(lfunc, largs), Self::Function(rfunc, rargs)) => lfunc == rfunc && Rc::ptr_eq(&largs, &rargs),
 			_ => false
 		}
 	}
@@ -43,7 +43,7 @@ impl Debug for Value {
 			Self::Boolean(boolean) => write!(f, "Boolean({})", boolean),
 			Self::Number(number) => write!(f, "Number({})", number),
 			Self::String(string) => write!(f, "String({})", string),
-			Self::Variable(variable) => write!(f, "Identifier({})", variable.name()),
+			Self::Variable(variable) => write!(f, "Variable({})", variable.name()),
 			Self::Function(function, args) => write!(f, "Function({}, {:?})", function.name(), args),
 		}
 	}
@@ -61,8 +61,8 @@ impl From<Number> for Value {
 	}
 }
 
-impl From<RcStr> for Value {
-	fn from(string: RcStr) -> Self {
+impl From<RcString> for Value {
+	fn from(string: RcString) -> Self {
 		Self::String(string)
 	}
 }
@@ -88,16 +88,27 @@ impl TryFrom<&Value> for bool {
 	}
 }
 
-impl TryFrom<&Value> for RcStr {
+impl TryFrom<&Value> for RcString {
 	type Error = RuntimeError;
 
 	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
+		use once_cell::sync::OnceCell;
+
+		static NULL: OnceCell<RcString> = OnceCell::new();
+		static TRUE: OnceCell<RcString> = OnceCell::new();
+		static FALSE: OnceCell<RcString> = OnceCell::new();
+		static ZERO: OnceCell<RcString> = OnceCell::new();
+		static ONE: OnceCell<RcString> = OnceCell::new();
+
+		
+
 		match value {
-			Value::Null => Ok(unsafe { RcStr::new_unchecked("null") }),
-			Value::Boolean(true) => Ok(unsafe { RcStr::new_unchecked("true") }),
-			Value::Boolean(false) => Ok(unsafe { RcStr::new_unchecked("false") }),
-			Value::Number(0) => Ok(unsafe { RcStr::new_unchecked("0") }),
-			Value::Number(number) => Ok(RcStr::new(number.to_string()).unwrap()),
+			Value::Null => Ok(NULL.get_or_init(|| unsafe { RcString::new_unchecked("null") }).clone()),
+			Value::Boolean(true) => Ok(TRUE.get_or_init(|| unsafe { RcString::new_unchecked("true") }).clone()),
+			Value::Boolean(false) => Ok(FALSE.get_or_init(|| unsafe { RcString::new_unchecked("false") }).clone()),
+			Value::Number(0) => Ok(ZERO.get_or_init(|| unsafe { RcString::new_unchecked("0") }).clone()),
+			Value::Number(1) => Ok(ONE.get_or_init(|| unsafe { RcString::new_unchecked("1") }).clone()),
+			Value::Number(number) => Ok(RcString::new(number.to_string()).unwrap()), // all numbers should be valid strings
 			Value::String(string) => Ok(string.clone()),
 			_ => Err(RuntimeError::UndefinedConversion { into: "bool", kind: value.typename() })
 		}
@@ -113,21 +124,25 @@ impl TryFrom<&Value> for Number {
 			Value::Boolean(false) => Ok(0),
 			Value::Boolean(true) => Ok(1),
 			Value::Number(number) => Ok(*number),
-			Value::String(string) => Ok({
-				let mut string = string.trim();
-				let is_negative = string.chars().nth(0) == Some('-');
+			Value::String(string) => {
+				let mut chars = string.trim().bytes();
+				let mut sign = 1;
+				let mut number = 0 as Number;
 
-				if is_negative || string.chars().nth(0) == Some('+') {
-					string = string.get(1..).unwrap();
+				match chars.next() {
+					Some(b'-') => sign = -1,
+					Some(b'+') => { /* do nothing */ },
+					Some(digit @ b'0'..=b'9') => number = (digit - b'0') as Number,
+					_ => return Ok(0)
+				};
+
+				while let Some(digit @ b'0'..=b'9') = chars.next() {
+					number *= number * 10;
+					number += (digit - b'0') as Number;
 				}
 
-				(if is_negative { -1 } else { 1 }) * match string.find(|c: char| !c.is_ascii_digit()) {
-					Some(0) => 0,
-					Some(idx) => string.get(..idx).unwrap().parse().unwrap(),
-					None if string.is_empty() => 0,
-					None => string.parse().unwrap()
-				}
-			}),
+				Ok(sign * number)
+			},
 			_ => Err(RuntimeError::UndefinedConversion { into: "bool", kind: value.typename() })
 		}
 	}
@@ -150,7 +165,7 @@ impl Value {
 			Self::Null => Ok(Self::Null),
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),
 			Self::Number(number) => Ok(Self::Number(*number)),
-			Self::String(rcstr) => Ok(Self::String(rcstr.clone())),
+			Self::String(rcstring) => Ok(Self::String(rcstring.clone())),
 			Self::Variable(variable) => variable.fetch()
 				.ok_or_else(|| RuntimeError::UnknownIdentifier { identifier: variable.name().into() }),
 			Self::Function(func, args) => func.run(&args, env),
@@ -165,7 +180,7 @@ impl Value {
 		TryFrom::try_from(self)
 	}
 
-	pub fn to_rcstr(&self) -> Result<RcStr, RuntimeError> {
+	pub fn to_rcstring(&self) -> Result<RcString, RuntimeError> {
 		TryFrom::try_from(self)
 	}
 }
