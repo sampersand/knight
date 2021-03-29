@@ -61,10 +61,16 @@ impl PartialEq for Variable {
 
 impl Debug for Variable {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		f.debug_struct("Variable")
-			.field("name", &self.0.name)
-			.field("value", &access!(read; self.0.value))
-			.finish()
+		if f.alternate() {
+			f.debug_struct("Variable")
+				.field("name", &self.0.name)
+				.field("value", &access!(read; self.0.value))
+				.finish()
+		} else {
+			f.debug_tuple("Variable")
+				.field(&self.0.name)
+				.finish()
+		}
 	}
 }
 
@@ -81,7 +87,7 @@ impl Variable {
 	/// # Examples
 	/// ```rust
 	/// # use knight::Environment;
-	/// let env = Environment::new();
+	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	///
 	/// assert_eq!(var.name(), "plato");
@@ -95,7 +101,7 @@ impl Variable {
 	/// # Examples
 	/// ```rust
 	/// # use knight::{Environment, Value};
-	/// let env = Environment::new();
+	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	///
 	/// assert!(!var.is_assigned());
@@ -117,7 +123,7 @@ impl Variable {
 	/// # Examples
 	/// ```rust
 	/// # use knight::{Environment, Value};
-	/// let env = Environment::new();
+	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	/// let var2 = env.get("plato");
 	/// 
@@ -137,7 +143,7 @@ impl Variable {
 	/// # Examples
 	/// ```rust
 	/// # use knight::{Environment, Value};
-	/// let env = Environment::new();
+	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	/// 
 	/// assert_eq!(var.fetch(), None);

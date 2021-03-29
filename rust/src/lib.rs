@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 #[macro_use]
 extern crate cfg_if;
 
@@ -24,11 +26,11 @@ pub use value::Value;
 pub use error::{ParseError, RuntimeError};
 
 /// Runs the given string as Knight code, returning the result of its execution.
-pub fn run_str<S: AsRef<str>>(input: S, env: &Environment) -> Result<Value, RuntimeError> {
+pub fn run_str<S: AsRef<str>>(input: S, env: &mut Environment) -> Result<Value, RuntimeError> {
 	run(input.as_ref().chars(), env)
 }
 
 /// Parses a [`Value`] from the given iterator and then runs the value.
-pub fn run<I: IntoIterator<Item=char>>(input: I, env: &Environment) -> Result<Value, RuntimeError> {
+pub fn run<I: IntoIterator<Item=char>>(input: I, env: &mut Environment) -> Result<Value, RuntimeError> {
 	Value::parse(input, env)?.run(env)
 }

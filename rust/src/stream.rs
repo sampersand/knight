@@ -70,7 +70,7 @@ fn number(stream: &mut Stream<impl Iterator<Item=char>>) -> Value {
 	Value::Number(num)
 }
 
-fn identifier(stream: &mut Stream<impl Iterator<Item=char>>, env: &Environment) -> Value {
+fn identifier(stream: &mut Stream<impl Iterator<Item=char>>, env: &mut Environment) -> Value {
 	let mut ident = String::new();
 
 	while let Some(&chr) = stream.iter.peek() {
@@ -103,7 +103,7 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 	Err(ParseError::UnterminatedQuote { line })
 }
 
-fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>, env: &Environment)
+fn function(func: Function, stream: &mut Stream<impl Iterator<Item=char>>, env: &mut Environment)
 	-> Result<Value, ParseError>
 {
 	let mut args = Vec::with_capacity(func.arity());
@@ -132,15 +132,15 @@ fn strip_word(stream: &mut Stream<impl Iterator<Item=char>>) {
 }
 
 impl Value {
-	pub fn parse_str<S: AsRef<str>>(input: S, env: &Environment) -> Result<Self, ParseError> {
+	pub fn parse_str<S: AsRef<str>>(input: S, env: &mut Environment) -> Result<Self, ParseError> {
 		Self::parse(input.as_ref().chars(), env)
 	}
 
-	pub fn parse<S: IntoIterator<Item=char>>(input: S, env: &Environment) -> Result<Self, ParseError> {
+	pub fn parse<S: IntoIterator<Item=char>>(input: S, env: &mut Environment) -> Result<Self, ParseError> {
 		Self::parse_inner(&mut Stream { iter: input.into_iter().peekable(), line: 0, cache: None }, env)
 	}
 
-	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>, env: &Environment) -> Result<Self, ParseError> {
+	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>, env: &mut Environment) -> Result<Self, ParseError> {
 		match *stream.iter.peek().ok_or(ParseError::NothingToParse)? {
 			// note that this is ascii whitespace, as non-ascii characters are invalid.
 			' ' | '\n' | '\r' | '\t' => { whitespace(stream); Self::parse_inner(stream, env) },

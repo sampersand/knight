@@ -145,7 +145,7 @@ impl Value {
 		}
 	}
 
-	pub fn run(&self, env: &Environment) -> Result<Self, RuntimeError> {
+	pub fn run(&self, env: &mut Environment) -> Result<Self, RuntimeError> {
 		match self {
 			Self::Null => Ok(Self::Null),
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),

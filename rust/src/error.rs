@@ -87,6 +87,9 @@ pub enum RuntimeError {
 		rhs: crate::Number,
 	},
 
+	/// Exit with the given status code.
+	Quit(i32),
+
 	/// An error occurred whilst parsing (i.e. `EVAL` failed).
 	Parse(ParseError),
 
@@ -94,7 +97,7 @@ pub enum RuntimeError {
 	InvalidString(InvalidChar),
 
 	/// An i/o error occurred (i.e. `` ` `` or `PROMPT` failed).
-	Io(io::Error)
+	Io(io::Error),
 }
 
 impl From<ParseError> for RuntimeError {
@@ -150,6 +153,7 @@ impl Display for RuntimeError {
 			Self::UndefinedConversion { kind, into } => write!(f, "invalid conversion into {:?} for kind {:?}.", kind, into),
 			#[cfg(feature = "checked-overflow")]
 			Self::Overflow { func, lhs, rhs } => write!(f, "Expression '{} {} {}' overflowed", lhs, func, rhs),
+			Self::Quit(code) => write!(f, "exit with status {}", code),
 			Self::Parse(err) => Display::fmt(err, f),
 			Self::InvalidString(err) => Display::fmt(err, f),
 			Self::Io(err) => write!(f, "i/o error: {}", err)
