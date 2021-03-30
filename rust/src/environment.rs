@@ -1,10 +1,7 @@
-use crate::{Value, RuntimeError, RcString};
+use crate::{RuntimeError, RcString};
 use std::collections::HashSet;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::io::{self, Write, Read, BufReader};
-use std::convert::TryFrom;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
+use std::fmt::{self, Debug, Formatter};
+use std::io::{self, Write, Read};
 
 mod builder;
 mod variable;
@@ -28,7 +25,7 @@ pub struct Environment<'i, 'o, 'c> {
 }
 
 impl Debug for Environment<'_, '_, '_> {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		f.debug_struct("Environment")
 			.field("nvars", &self.vars.len())
 			.finish()

@@ -20,13 +20,13 @@ impl Default for RcString {
 }
 
 impl Debug for RcString {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		Debug::fmt(self.as_str(), f)
 	}
 }
 
 impl Display for RcString {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		Display::fmt(self.as_str(), f)
 	}
 }
@@ -67,7 +67,7 @@ pub struct InvalidChar {
 }
 
 impl Display for InvalidChar {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		write!(f, "invalid byte {:?} found at position {}", self.chr, self.idx)
 	}
 }

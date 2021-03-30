@@ -1,8 +1,5 @@
-use crate::{Value, RuntimeError, RcString};
-use std::collections::HashSet;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::io::{self, Write, Read, BufReader};
-use std::convert::TryFrom;
+use crate::Value;
+use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
@@ -62,7 +59,7 @@ impl PartialEq for Variable {
 }
 
 impl Debug for Variable {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		if f.alternate() {
 			f.debug_struct("Variable")
 				.field("name", &self.0.name)

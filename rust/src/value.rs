@@ -37,7 +37,7 @@ impl PartialEq for Value {
 
 impl Debug for Value {
 	// note we need the custom impl becuase `Null()` and `Identifier(...)` is required by the knight spec.
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::Null => write!(f, "Null()"),
 			Self::Boolean(boolean) => write!(f, "Boolean({})", boolean),
@@ -149,7 +149,7 @@ impl TryFrom<&Value> for Number {
 }
 
 impl Value {
-	pub fn run(&self, env: &mut Environment) -> Result<Self, RuntimeError> {
+	pub fn run(&self, env: &mut Environment<'_, '_, '_>) -> Result<Self, RuntimeError> {
 		match self {
 			Self::Null => Ok(Self::Null),
 			Self::Boolean(boolean) => Ok(Self::Boolean(*boolean)),

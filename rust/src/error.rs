@@ -126,7 +126,7 @@ impl From<InvalidChar> for RuntimeError {
 }
 
 impl Display for ParseError {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::NothingToParse => write!(f, "a token was expected."),
 			Self::UnknownTokenStart { chr, line } => write!(f, "line {}: unknown token start {:?}.", line, chr),
@@ -138,8 +138,8 @@ impl Display for ParseError {
 	}
 }
 
-impl std::error::Error for ParseError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl Error for ParseError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
 			Self::InvalidString { err, .. } => Some(err),
 			_ => None
@@ -148,7 +148,7 @@ impl std::error::Error for ParseError {
 }
 
 impl Display for RuntimeError {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::DivisionByZero { modulo: false } => write!(f, "invalid divide by zero."),
 			Self::DivisionByZero { modulo: true } => write!(f, "invalid modulo by zero."),
@@ -166,8 +166,8 @@ impl Display for RuntimeError {
 	}
 }
 
-impl std::error::Error for RuntimeError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl Error for RuntimeError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
 			Self::Parse(err) => Some(err),
 			Self::Io(err) => Some(err),

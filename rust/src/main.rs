@@ -1,7 +1,7 @@
 use knightrs::{RuntimeError, Environment};
 use clap::{App, Arg, ArgMatches};
 
-fn run(matches: ArgMatches) -> Result<(), RuntimeError> {
+fn run(matches: ArgMatches<'_>) -> Result<(), RuntimeError> {
 	let mut env = Environment::default();
 
 	if let Some(expr) = matches.value_of("expr") {
