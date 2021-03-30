@@ -5,6 +5,7 @@ authors = ["Sam Westerman <sam@sampersand.me>"]
 edition = "2018"
 description = "The Knight programming language, in Rust"
 repository = "https://github.com/sampersand/knight"
+license-file = "../LICENSE"
 
 [features]
 default = []
