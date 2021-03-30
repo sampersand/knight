@@ -2,38 +2,23 @@ use crate::Value;
 use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+use std::cell::RefCell;
 
 /// A variable within Knight.
 ///
-/// All variables of with the same [`name`] from the same [`Environment`] are identical to one another: updating one
-/// (via [`assign`]) will update all the others.
+/// Note that there is no way to create [`Variable`]s directly---they must to be fetched via [`Environment::get`](
+/// crate::Environment::get).
+///
+/// All variables with the same from the same [`Environment`](crate::Environment) are identical. Updating any one of
+/// them (via [`Variable::assign`]) will update them all.
 #[derive(Clone)]
 pub struct Variable(Rc<Inner>);
 
 struct Inner {
 	name: Box<str>,
-	value: Lock<Option<Value>>
+	value: RefCell<Option<Value>>
 }
 
-cfg_if! {
-	if #[cfg(feature = "multithreaded")] {
-		use parking_lot::RwLock;
-
-		type Lock<T> = RwLock<T>;
-		macro_rules! access {
-			(read; $what:expr) => { $what.read() };
-			(write; $what:expr) => { $what.write() };
-		}
-	} else {
-		use std::cell::RefCell;
-
-		type Lock<T> = RefCell<T>;
-		macro_rules! access {
-			(read; $what:expr) => { $what.borrow() };
-			(write; $what:expr) => { $what.borrow_mut() };
-		}
-	}
-}
 
 impl std::borrow::Borrow<str> for Variable {
 	fn borrow(&self) -> &str {
@@ -51,8 +36,8 @@ impl Eq for Variable {}
 impl PartialEq for Variable {
 	/// Checks to see if two variables are the same.
 	///
-	/// This will only return `true` if they both originate from the same [`Environment`] and have the same [`name`](
-	/// Variable::name).
+	/// This will only return `true` if they both originate from the same [`Environment`](crate::Environment) and have
+	/// the same [`name`](Self::name).
 	fn eq(&self, rhs: &Self) -> bool {
 		Rc::ptr_eq(&self.0, &rhs.0)
 	}
@@ -63,7 +48,7 @@ impl Debug for Variable {
 		if f.alternate() {
 			f.debug_struct("Variable")
 				.field("name", &self.0.name)
-				.field("value", &access!(read; self.0.value))
+				.field("value", &self.0.value.borrow())
 				.finish()
 		} else {
 			f.debug_tuple("Variable")
@@ -75,44 +60,43 @@ impl Debug for Variable {
 
 impl Variable {
 	pub(super) fn _new(name: Box<str>) -> Self {
-		Self(Rc::new(Inner {
-			name: name.to_string().into_boxed_str(),
-			value: Default::default()
-		})) 
+		Self(Rc::new(Inner { name, value: RefCell::default() }))
 	}
 
 	/// Fetches the name of the variable.
 	///
 	/// # Examples
 	/// ```rust
-	/// # use knight::Environment;
+	/// # use knightrs::Environment;
 	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	///
 	/// assert_eq!(var.name(), "plato");
 	/// ```
+	#[must_use]
 	pub fn name(&self) -> &str {
 		&self.0.name
 	}
 
-	/// Checks to see if the variable has been [`assign`]ed to yet.
+	/// Checks to see if the variable has been [`assign`](Self::assign)ed to yet.
 	///
 	/// # Examples
 	/// ```rust
-	/// # use knight::{Environment, Value};
+	/// # use knightrs::{Environment, Value};
 	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	///
 	/// assert!(!var.is_assigned());
 	/// 
-	/// var.assign(Value::from(true));
+	/// var.assign(Value::Null);
 	/// assert!(var.is_assigned());
 	/// ```
+	#[must_use = "this simply checks to see if it's assigned, and doesn't do anthing on its own."]
 	pub fn is_assigned(&self) -> bool {
-		access!(read; self.0.value).is_some()
+		self.0.value.borrow().is_some()
 	}
 
-	/// Associates `value` with this variable, so that [`fetch`] will return it.
+	/// Associates `value` with this variable, so that [`fetch`](Self::fetch) will return it.
 	/// 
 	/// Any previously associated [`Value`]s are discarded.
 	///
@@ -121,17 +105,17 @@ impl Variable {
 	///
 	/// # Examples
 	/// ```rust
-	/// # use knight::{Environment, Value};
+	/// # use knightrs::{Environment, Value};
 	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	/// let var2 = env.get("plato");
 	/// 
-	/// var.assign(Value::from(true));
-	/// assert_eq!(var.fetch().unwrap(), Value::from(true));
-	/// assert_eq!(var2.fetch().unwrap(), Value::from(true));
+	/// var.assign(Value::Null);
+	/// assert_eq!(var.fetch().unwrap(), Value::Null);
+	/// assert_eq!(var2.fetch().unwrap(), Value::Null);
 	/// ```
 	pub fn assign(&self, value: Value) {
-		access!(write; self.0.value).replace(value);
+		self.0.value.borrow_mut().replace(value);
 	}
 
 	/// Returns the last value associated with this variable, or `None` if nothing's been associated.
@@ -141,7 +125,7 @@ impl Variable {
 	///
 	/// # Examples
 	/// ```rust
-	/// # use knight::{Environment, Value};
+	/// # use knightrs::{Environment, Value};
 	/// let mut env = Environment::default();
 	/// let var = env.get("plato");
 	/// 
@@ -149,7 +133,8 @@ impl Variable {
 	/// var.assign(Value::from(true));
 	/// assert_eq!(var.fetch(), Some(Value::from(true)));
 	/// ```
+	#[must_use = "simply fetching a value does nothing; the return value should be inspected."]
 	pub fn fetch(&self) -> Option<Value> {
-		access!(read; self.0.value).clone()
+		self.0.value.borrow().clone()
 	}
 }

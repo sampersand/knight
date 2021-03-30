@@ -29,7 +29,7 @@ impl PartialEq for Value {
 			(Self::Number(lnum), Self::Number(rnum)) => lnum == rnum,
 			(Self::String(lstr), Self::String(rstr)) => lstr == rstr,
 			(Self::Variable(lvar), Self::Variable(rvar)) => lvar == rvar,
-			(Self::Function(lfunc, largs), Self::Function(rfunc, rargs)) => lfunc == rfunc && Rc::ptr_eq(&largs, &rargs),
+			(Self::Function(lfunc, largs), Self::Function(rfunc, rargs)) => lfunc == rfunc && Rc::ptr_eq(largs, rargs),
 			_ => false
 		}
 	}
@@ -103,12 +103,12 @@ impl TryFrom<&Value> for RcString {
 		
 
 		match value {
-			Value::Null => Ok(NULL.get_or_init(|| unsafe { RcString::new_unchecked("null") }).clone()),
-			Value::Boolean(true) => Ok(TRUE.get_or_init(|| unsafe { RcString::new_unchecked("true") }).clone()),
-			Value::Boolean(false) => Ok(FALSE.get_or_init(|| unsafe { RcString::new_unchecked("false") }).clone()),
-			Value::Number(0) => Ok(ZERO.get_or_init(|| unsafe { RcString::new_unchecked("0") }).clone()),
-			Value::Number(1) => Ok(ONE.get_or_init(|| unsafe { RcString::new_unchecked("1") }).clone()),
-			Value::Number(number) => Ok(RcString::new(number.to_string()).unwrap()), // all numbers should be valid strings
+			Value::Null => Ok(NULL.get_or_init(|| unsafe { Self::new_unchecked("null") }).clone()),
+			Value::Boolean(true) => Ok(TRUE.get_or_init(|| unsafe { Self::new_unchecked("true") }).clone()),
+			Value::Boolean(false) => Ok(FALSE.get_or_init(|| unsafe { Self::new_unchecked("false") }).clone()),
+			Value::Number(0) => Ok(ZERO.get_or_init(|| unsafe { Self::new_unchecked("0") }).clone()),
+			Value::Number(1) => Ok(ONE.get_or_init(|| unsafe { Self::new_unchecked("1") }).clone()),
+			Value::Number(number) => Ok(Self::try_from(number.to_string()).unwrap()), // all numbers should be valid strings
 			Value::String(string) => Ok(string.clone()),
 			_ => Err(RuntimeError::UndefinedConversion { into: "bool", kind: value.typename() })
 		}
@@ -120,25 +120,24 @@ impl TryFrom<&Value> for Number {
 
 	fn try_from(value: &Value) -> Result<Self, RuntimeError> {
 		match value {
-			Value::Null => Ok(0),
-			Value::Boolean(false) => Ok(0),
+			Value::Null | Value::Boolean(false) => Ok(0),
 			Value::Boolean(true) => Ok(1),
 			Value::Number(number) => Ok(*number),
 			Value::String(string) => {
 				let mut chars = string.trim().bytes();
 				let mut sign = 1;
-				let mut number = 0 as Number;
+				let mut number: Self = 0;
 
 				match chars.next() {
 					Some(b'-') => sign = -1,
 					Some(b'+') => { /* do nothing */ },
-					Some(digit @ b'0'..=b'9') => number = (digit - b'0') as Number,
+					Some(digit @ b'0'..=b'9') => number = (digit - b'0') as Self,
 					_ => return Ok(0)
 				};
 
 				while let Some(digit @ b'0'..=b'9') = chars.next() {
 					number *= 10;
-					number += (digit - b'0') as Number;
+					number += (digit - b'0') as Self;
 				}
 
 				Ok(sign * number)
@@ -157,10 +156,11 @@ impl Value {
 			Self::String(rcstring) => Ok(Self::String(rcstring.clone())),
 			Self::Variable(variable) => variable.fetch()
 				.ok_or_else(|| RuntimeError::UnknownIdentifier { identifier: variable.name().into() }),
-			Self::Function(func, args) => func.run(&args, env),
+			Self::Function(func, args) => func.run(args, env),
 		}
 	}
 
+	#[must_use = "getting the type name by itself does nothing."]
 	pub const fn typename(&self) -> &'static str {
 		match self {
 			Self::Null => "Null",

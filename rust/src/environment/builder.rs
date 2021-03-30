@@ -45,7 +45,7 @@ struct NotEnabled;
 
 impl Display for NotEnabled {
 	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-		write!(f, "cannot run '`' when embedded.")
+		write!(f, "cannot run '`' when as it is disabled.")
 	}
 }
 
@@ -71,13 +71,15 @@ static mut RUNCOMMAND_SYSTEM: fn(&str) -> Result<RcString, RuntimeError> = run_c
 
 impl<'i, 'o, 'c> Builder<'i, 'o, 'c> {
 	/// Creates a new, default [`Builder`].
+	#[must_use = "creating a builder does nothing by itself."]
 	pub fn new() -> Self {
 		Self::default()
 	}
 
-	/// Sets the initial starting capacity for the set of [`Variable`]s.
+	/// Sets the initial starting capacity for the set of [`Variable`](crate::Variable)s.
 	///
 	/// If not set, an (unspecified) default capacity is used.
+	#[must_use = "assigning a capacity does nothing without calling 'build'."]
 	pub fn capacity(mut self, capacity: usize) -> Self {
 		self.capacity = Some(capacity);
 		self
@@ -86,6 +88,7 @@ impl<'i, 'o, 'c> Builder<'i, 'o, 'c> {
 	/// Sets the stdin for the [`Environment`].
 	///
 	/// This defaults to the [stdin](io::stdin) of the process.
+	#[must_use = "assigning to stdin does nothing without calling 'build'."]
 	pub fn stdin(mut self, stdin: &'i mut dyn Read) -> Self {
 		self.stdin = Some(stdin);
 		self
@@ -94,6 +97,7 @@ impl<'i, 'o, 'c> Builder<'i, 'o, 'c> {
 	/// Sets the stdout for the [`Environment`].
 	///
 	/// This defaults to the [stdout](io::stdout) of the process.
+	#[must_use = "assigning to stdout does nothing without calling 'build'."]
 	pub fn stdout(mut self, stdout: &'o mut dyn Write) -> Self {
 		self.stdout = Some(stdout);
 		self
@@ -102,15 +106,17 @@ impl<'i, 'o, 'c> Builder<'i, 'o, 'c> {
 	/// Explicitly sets what should happen when the ["system" (`` ` ``)](crate::function::system) function is called.
 	///
 	/// The default value is to simply send the command to `sh` (ie `"sh", "-c", "command"`)
+	#[must_use = "assigning a 'run_command' does nothing without calling 'build'."]
 	pub fn run_command(mut self, run_command: &'c mut RunCommand) -> Self {
 		self.run_command = Some(run_command);
 		self
 	}
 
-	/// Disables the default [`run_command`].
+	/// Disables the ["system" (`` ` ``)](crate::function::system) command entirely.
 	///
-	/// When this is enabled, all calls to the [`` ` ``](crate::function::system) function will return errors.
-	pub fn embedded(self) -> Self {
+	/// When this is enabled, all calls to [`` ` ``](crate::function::system) will return errors.
+	#[must_use = "disabling the system command to does nothing without calling 'build'."]
+	pub fn disable_system(self) -> Self {
 		// SAFETY: We're getting a mutable reference to a ZST, so this is always safe.
 		self.run_command(unsafe { &mut RUNCOMMAND_ERR })
 	}
@@ -118,6 +124,7 @@ impl<'i, 'o, 'c> Builder<'i, 'o, 'c> {
 	/// Creates a new [`Environment`] with all the supplied options.
 	///
 	/// Any options that have not been explicitly set will have their default values used.
+	#[must_use = "Simply calling `build` does nothing on its own."]
 	pub fn build(self) -> Environment<'i, 'o, 'c> {
 		// SAFETY: All of these `unsafe` blocks are simply mutable references to ZSTs, which is always safe.
 		Environment {

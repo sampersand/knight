@@ -36,7 +36,7 @@ pub enum ParseError {
 		line: usize
 	},
 
-	/// An invalid character was encountered in a [`RcString`] literal.
+	/// An invalid character was encountered in a [`RcString`](crate::RcString) literal.
 	InvalidString {
 		/// The line whence the string started.
 		line: usize,

@@ -34,7 +34,7 @@ fn whitespace(stream: &mut Stream<impl Iterator<Item=char>>) {
 }
 
 fn comment(stream: &mut Stream<impl Iterator<Item=char>>) {
-	while let Some(chr) = stream.next() {
+	for chr in stream {
 		if chr == '\n' {
 			break;
 		}
@@ -82,7 +82,7 @@ fn identifier(stream: &mut Stream<impl Iterator<Item=char>>, env: &mut Environme
 		}
 	}
 
-	Value::Variable(env.get(ident))
+	Value::Variable(env.get(&ident))
 }
 
 fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseError> {
@@ -92,12 +92,12 @@ fn string(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Value, ParseE
 	let mut string = String::new();
 	debug_assert!(quote == '\'' || quote == '\"');
 
-	while let Some(chr) = stream.next() {
+	for chr in stream {
 		if chr == quote {
 			return RcString::try_from(string).map(Value::String).map_err(|err| ParseError::InvalidString { line, err });
-		} else {
-			string.push(chr);
 		}
+
+		string.push(chr);
 	}
 
 	Err(ParseError::UnterminatedQuote { line })
@@ -132,10 +132,28 @@ fn strip_word(stream: &mut Stream<impl Iterator<Item=char>>) {
 }
 
 impl Value {
+	/// Parses out a stream from the given `input` within the context of `env`.
+	///
+	/// This function simply calls [`parse`] with a char iterator over `input`; see it for more details.
+	///
+	/// # Errors
+	/// This function returns any errors that [`parse`] returns.
 	pub fn parse_str<S: AsRef<str>>(input: S, env: &mut Environment<'_, '_, '_>) -> Result<Self, ParseError> {
 		Self::parse(input.as_ref().chars(), env)
 	}
 
+	/// Parses out a stream from the given `input` within the context of `env`.
+	///
+	/// Note: Yes, technically this could be an iterator over `u8`, as the Knight specs clearly state that all source
+	/// bytes are a subset of ASCII. However, we may want to support fun stuff like non-ASCII identifiers as an optional
+	/// extension in the future. As such, `char` is required.
+	///
+	/// # Errors
+	/// This function returns any errors that occur whilst parsing; See [`ParseError`]'s variants for what conditions can
+	/// cause errors.
+	///
+	/// # See Also
+	/// Section 1. within the Knight specs for parsing.
 	pub fn parse<S: IntoIterator<Item=char>>(input: S, env: &mut Environment<'_, '_, '_>) -> Result<Self, ParseError> {
 		let mut stream =
 			Stream {
@@ -147,7 +165,10 @@ impl Value {
 		Self::parse_inner(&mut stream, env)
 	}
 
-	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>, env: &mut Environment<'_, '_, '_>) -> Result<Self, ParseError> {
+	fn parse_inner(
+		stream: &mut Stream<impl Iterator<Item=char>>,
+		env: &mut Environment<'_, '_, '_>
+	) -> Result<Self, ParseError> {
 		match *stream.iter.peek().ok_or(ParseError::NothingToParse)? {
 			// note that this is ascii whitespace, as non-ascii characters are invalid.
 			' ' | '\n' | '\r' | '\t' => { whitespace(stream); Self::parse_inner(stream, env) },
@@ -164,14 +185,14 @@ impl Value {
 			// identifiers start only with lower-case digits or `_`.
 			'a'..='z' | '_' => Ok(identifier(stream, env)),
 
-			chr @ 'T' | chr @ 'F' => { strip_word(stream); Ok(Value::Boolean(chr == 'T')) },
+			chr @ 'T' | chr @ 'F' => { strip_word(stream); Ok(Self::Boolean(chr == 'T')) },
 
-			'N' => { strip_word(stream); Ok(Value::Null) },
+			'N' => { strip_word(stream); Ok(Self::Null) },
 			
 			// strings start with a single or double quote (and not `` ` ``).
 			'\'' | '\"' => string(stream),
 
-			chr =>
+			chr => 
 				if let Some(func) = Function::fetch(chr) {
 					function(func, stream, env)
 				} else {

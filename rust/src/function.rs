@@ -54,7 +54,7 @@ impl PartialEq for Function {
 			debug_assert_eq!(self.name, rhs.name, "`name` and `func` mismatch\nself={:#?}\nrhs={:#?}", self, rhs);
 		}
 
-		return self.name == rhs.name;
+		self.name == rhs.name
 	}
 }
 
@@ -69,13 +69,17 @@ impl Function {
 	///
 	/// # Examples
 	/// ```rust
-	/// # use knight::{Function, Value, RuntimeError, Environment};
-	/// fn foo(var: &[Value], _: &mut Environment) -> Result<Value, RuntimeError> { Ok(args[0].clone()) }
-	/// Function::register('F', 1, foo);
+	/// # use knightrs::{Function, Value, RuntimeError, Environment};
+	/// fn is_null(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
+	/// 	Ok(Value::from(args[0].run(env)? == Value::Null))
+	/// }
+	//
+	/// Function::register('Z', 1, is_null);
 	/// 
-	/// assert_eq!(Function::fetch('F').unwrap().func(), foo);
+	/// // assert_eq!(Function::fetch('Z').unwrap().func(), is_null);
 	/// ```
 	#[inline]
+	#[must_use]
 	pub fn func(&self) -> FuncPtr {
 		self.func
 	}
@@ -86,24 +90,27 @@ impl Function {
 
 	/// Gets the arity of this function.
 	#[inline]
+	#[must_use]
 	pub fn arity(&self) -> usize {
 		self.arity
 	}
 
 	/// Gets the name of the function.
 	#[inline]
+	#[must_use]
 	pub fn name(&self) -> char {
 		self.name
 	}
 
 	/// Gets the function associate dwith the given `name`, returning `None` if no such function exists.
+	#[must_use = "fetching a function does nothing by itself"]
 	pub fn fetch(name: char) -> Option<Self> {
 		FUNCTIONS.lock().get(&name).cloned()
 	}
 
 	/// Registers a new function with the given name, discarding any previous value associated with it.
 	pub fn register(name: char, arity: usize, func: FuncPtr) {
-		FUNCTIONS.lock().insert(name, Function { name, arity, func });
+		FUNCTIONS.lock().insert(name, Self { name, arity, func });
 	}
 }
 
@@ -230,15 +237,11 @@ pub fn add(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Value, R
 		Value::Number(lhs) => {
 			let rhs = args[1].run(env)?.to_number()?;
 
-			cfg_if! {
-				if #[cfg(feature = "checked-overflow")] {
-					lhs.checked_add(rhs)
-						.map(Value::Number)
-						.ok_or_else(|| RuntimeError::Overflow { func: '+', lhs, rhs })
-				} else {
-					Ok(Value::Number(lhs + rhs))
-				}
-			}
+			#[cfg(feature = "checked-overflow")]
+			{ lhs.checked_add(rhs).map(Value::Number).ok_or_else(|| RuntimeError::Overflow { func: '+', lhs, rhs }) }
+
+			#[cfg(not(feature = "checked-overflow"))]
+			{ Ok(Value::Number(lhs + rhs)) }
 		},
 		Value::String(lhs) => {
 			let rhs = args[1].run(env)?.to_rcstring()?;
@@ -254,16 +257,12 @@ pub fn subtract(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Val
 	match args[0].run(env)? {
 		Value::Number(lhs) => {
 			let rhs = args[1].run(env)?.to_number()?;
+			
+			#[cfg(feature = "checked-overflow")]
+			{ lhs.checked_add(rhs).map(Value::Number).ok_or_else(|| RuntimeError::Overflow { func: '-', lhs, rhs }) }
 
-			cfg_if! {
-				if #[cfg(feature = "checked-overflow")] {
-					lhs.checked_sub(rhs)
-						.map(Value::Number)
-						.ok_or_else(|| RuntimeError::Overflow { func: '-', lhs, rhs })
-				} else {
-					Ok(Value::Number(lhs - rhs))
-				}
-			}
+			#[cfg(not(feature = "checked-overflow"))]
+			{ Ok(Value::Number(lhs - rhs)) }
 		},
 		other => Err(RuntimeError::InvalidOperand { func: '-', operand: other.typename() })
 	}
@@ -273,16 +272,12 @@ pub fn multiply(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Val
 	match args[0].run(env)? {
 		Value::Number(lhs) => {
 			let rhs = args[1].run(env)?.to_number()?;
+			
+			#[cfg(feature = "checked-overflow")]
+			{ lhs.checked_add(rhs).map(Value::Number).ok_or_else(|| RuntimeError::Overflow { func: '*', lhs, rhs }) }
 
-			cfg_if! {
-				if #[cfg(feature = "checked-overflow")] {
-					lhs.checked_mul(rhs)
-						.map(Value::Number)
-						.ok_or_else(|| RuntimeError::Overflow { func: '*', lhs, rhs })
-				} else {
-					Ok(Value::Number(lhs * rhs))
-				}
-			}
+			#[cfg(not(feature = "checked-overflow"))]
+			{ Ok(Value::Number(lhs * rhs)) }
 		}
 		Value::String(lhs) =>
 			RcString::try_from(args[1].run(env)?
@@ -345,7 +340,7 @@ pub fn power(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Value,
 }
 
 pub fn equals(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Value, RuntimeError> {
-	return Ok((args[0].run(env)? == args[1].run(env)?).into())
+	Ok((args[0].run(env)? == args[1].run(env)?).into())
 }
 
 pub fn less_than(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Value, RuntimeError> {
@@ -411,7 +406,7 @@ pub fn r#while(args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Valu
 		let _ = args[1].run(env)?;
 	}
 
-	Ok(Default::default())
+	Ok(Value::default())
 }
 
 // arity three

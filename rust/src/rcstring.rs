@@ -75,7 +75,8 @@ impl Display for InvalidChar {
 impl std::error::Error for InvalidChar {}
 
 /// Checks to see if `chr` is a valid knight character.
-pub fn is_valid_char(chr: char) -> bool {
+#[must_use]
+pub const fn is_valid_char(chr: char) -> bool {
 	return matches!(chr, '\r' | '\n' | '\t' | ' '..='~');
 }
 
@@ -97,21 +98,17 @@ impl RcString {
 	///
 	/// # See Also
 	/// - [`RcString::new_unchecked`] For a version which doesn't verify `string`.
-	pub fn new<T: ToString>(string: T) -> Result<Self, InvalidChar> {
-		let string = string.to_string();
-		validate_string(&string)?;
-
-		// SAFETY: we just validated the string.
-		unsafe {
-			Ok(Self::new_unchecked(string))
-		}
+	#[must_use = "Creating an RcString does nothing on its own"]
+	pub fn new<T: ToString + ?Sized>(string: &T) -> Result<Self, InvalidChar> {
+		Self::try_from(string.to_string())
 	}
 
 	/// Creates a new `RcString`, without verifying that the string is valid.
 	///
 	/// # Safety
 	/// All characters within the string must be valid for Knight strings. See the specs for what exactly this entails.
-	pub unsafe fn new_unchecked<T: ToString>(string: T) -> Self {
+	#[must_use = "Creating an RcString does nothing on its own"]
+	pub unsafe fn new_unchecked<T: ToString + ?Sized>(string: &T) -> Self {
 		let string = string.to_string();
 
 		debug_assert_eq!(validate_string(&string), Ok(()), "invalid string encountered: {:?}", &string);
@@ -121,6 +118,7 @@ impl RcString {
 
 	/// Gets a reference to the contained string.
 	#[inline]
+	#[must_use]
 	pub fn as_str(&self) -> &str {
 		self.0.as_ref()
 	}
@@ -140,7 +138,9 @@ impl TryFrom<String> for RcString {
 
 	#[inline]
 	fn try_from(string: String) -> Result<Self, Self::Error> {
-		Self::new(string)
+		validate_string(&string)?;
+
+		Ok(Self(string.into()))
 	}
 }
 
