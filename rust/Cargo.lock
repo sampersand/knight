@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "knightrs"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "clap",
  "lazy_static",

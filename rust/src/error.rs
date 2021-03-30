@@ -70,8 +70,15 @@ pub enum RuntimeError {
 		operand: &'static str
 	},
 
+	/// A conversion was attempted for a type which doesn't implement it.
+	///
+	/// This is only used for [`Value::Variable`](crate::Value::Variable) and [`Value::Function`](
+	/// crate::Value::Function), as all other types have well-defined conversion semantics.
 	UndefinedConversion {
+		/// The resulting type, had the conversion been defined.
 		into: &'static str,
+
+		/// The kind that didnt implement the conversion.
 		kind: &'static str
 	},
 
