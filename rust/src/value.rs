@@ -137,7 +137,7 @@ impl TryFrom<&Value> for Number {
 				};
 
 				while let Some(digit @ b'0'..=b'9') = chars.next() {
-					number *= number * 10;
+					number *= 10;
 					number += (digit - b'0') as Number;
 				}
 
@@ -149,17 +149,6 @@ impl TryFrom<&Value> for Number {
 }
 
 impl Value {
-	pub const fn typename(&self) -> &'static str {
-		match self {
-			Self::Null => "Null",
-			Self::Boolean(_) => "Boolean",
-			Self::Number(_) => "Number",
-			Self::String(_) => "String",
-			Self::Variable(_) => "Variable",
-			Self::Function(_, _) => "Function",
-		}
-	}
-
 	pub fn run(&self, env: &mut Environment) -> Result<Self, RuntimeError> {
 		match self {
 			Self::Null => Ok(Self::Null),
@@ -169,6 +158,17 @@ impl Value {
 			Self::Variable(variable) => variable.fetch()
 				.ok_or_else(|| RuntimeError::UnknownIdentifier { identifier: variable.name().into() }),
 			Self::Function(func, args) => func.run(&args, env),
+		}
+	}
+
+	pub const fn typename(&self) -> &'static str {
+		match self {
+			Self::Null => "Null",
+			Self::Boolean(_) => "Boolean",
+			Self::Number(_) => "Number",
+			Self::String(_) => "String",
+			Self::Variable(_) => "Variable",
+			Self::Function(_, _) => "Function",
 		}
 	}
 

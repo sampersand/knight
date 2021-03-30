@@ -83,7 +83,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "knight"
+name = "knightrs"
 version = "0.1.5"
 dependencies = [
  "cfg-if 1.0.0",

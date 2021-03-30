@@ -137,7 +137,14 @@ impl Value {
 	}
 
 	pub fn parse<S: IntoIterator<Item=char>>(input: S, env: &mut Environment) -> Result<Self, ParseError> {
-		Self::parse_inner(&mut Stream { iter: input.into_iter().peekable(), line: 0, cache: None }, env)
+		let mut stream =
+			Stream {
+				iter: input.into_iter().peekable(),
+				line: 1,
+				cache: None
+			};
+
+		Self::parse_inner(&mut stream, env)
 	}
 
 	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>, env: &mut Environment) -> Result<Self, ParseError> {

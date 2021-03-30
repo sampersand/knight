@@ -185,7 +185,7 @@ pub fn call(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError
 pub fn system(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
 	let cmd = args[0].run(env)?.to_rcstring()?;
 
-	env.run_command(&cmd).map(From::from)
+	env.run_command(&cmd).map(Value::from)
 }
 
 pub fn quit(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
@@ -220,7 +220,7 @@ pub fn output(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeErr
 		writeln!(env, "{}", text)?;
 	}
 
-	Ok(Default::default())
+	Ok(Value::default())
 }
 
 // arity two

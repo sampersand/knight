@@ -8,8 +8,7 @@ pub mod rcstring;
 mod value;
 mod error;
 mod stream;
-mod variable;
-pub mod env;
+pub mod environment;
 
 /// The number type within Knight.
 pub type Number = i64;
@@ -20,8 +19,7 @@ pub use rcstring::RcString;
 #[doc(inline)]
 pub use function::Function;
 
-pub use env::Environment;
-pub use variable::Variable;
+pub use environment::{Environment, Variable};
 pub use value::Value;
 pub use error::{ParseError, RuntimeError};
 
@@ -31,6 +29,9 @@ pub fn run_str<S: AsRef<str>>(input: S, env: &mut Environment) -> Result<Value, 
 }
 
 /// Parses a [`Value`] from the given iterator and then runs the value.
-pub fn run<I: IntoIterator<Item=char>>(input: I, env: &mut Environment) -> Result<Value, RuntimeError> {
+pub fn run<I>(input: I, env: &mut Environment) -> Result<Value, RuntimeError>
+where
+	I: IntoIterator<Item=char>
+{
 	Value::parse(input, env)?.run(env)
 }

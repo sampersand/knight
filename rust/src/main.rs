@@ -1,13 +1,13 @@
-use knight::{RuntimeError, Environment};
+use knightrs::{RuntimeError, Environment};
 use clap::{App, Arg, ArgMatches};
 
 fn run(matches: ArgMatches) -> Result<(), RuntimeError> {
 	let mut env = Environment::default();
 
 	if let Some(expr) = matches.value_of("expr") {
-		knight::run_str(&expr, &mut env)?;
+		knightrs::run_str(&expr, &mut env)?;
 	} else if let Some(filename) = matches.value_of("file") {
-		knight::run_str(std::fs::read_to_string(filename)?, &mut env)?;
+		knightrs::run_str(std::fs::read_to_string(filename)?, &mut env)?;
 	} else {
 		eprintln!("{}", matches.usage());
 		std::process::exit(1);
