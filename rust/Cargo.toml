@@ -1,9 +1,10 @@
 [package]
 name = "knightrs"
-version = "0.1.5"
+version = "0.8.5"
 authors = ["Sam Westerman <sam@sampersand.me>"]
 edition = "2018"
 description = "The Knight programming language, in Rust"
+repository = "https://github.com/sampersand/knight"
 
 [features]
 default = []
@@ -12,8 +13,8 @@ embedded = [] # remove functions that need to access the file system.
 checked-overflow = []
 
 [dependencies]
-rand = "0.8.0"
-once_cell = "1.7.2"
+rand = "0.8"
+once_cell = "1.7"
 lazy_static = "1.4"
 parking_lot = "0.11"
 clap = "2.33"
