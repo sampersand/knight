@@ -4,8 +4,8 @@ use crate::{Value, RuntimeError, Number, Environment, RcString};
 use std::fmt::{self, Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
-use parking_lot::Mutex;
 use std::convert::{TryInto, TryFrom};
+use std::sync::Mutex;
 
 // An alias to make life easier.
 type FuncPtr = fn(&[Value], &mut Environment<'_, '_, '_>) -> Result<Value, RuntimeError>;
@@ -47,14 +47,13 @@ impl Debug for Function {
 
 impl Eq for Function {}
 impl PartialEq for Function {
+	/// Checks to see if two functions are identical.
+	///
+	/// Two functions are considered the same if their names, arities, and function pointers are identical.
 	fn eq(&self, rhs: &Self) -> bool {
-		let func_eql = (self.func as usize) == (rhs.func as usize);
-
-		if cfg!(debug_assertions) && func_eql {
-			debug_assert_eq!(self.name, rhs.name, "`name` and `func` mismatch\nself={:#?}\nrhs={:#?}", self, rhs);
-		}
-
 		self.name == rhs.name
+			&& (self.func as usize) == (rhs.func as usize)
+			&& self.arity == rhs.arity
 	}
 }
 
@@ -66,24 +65,13 @@ impl Hash for Function {
 
 impl Function {
 	/// Gets the function pointer associated with `self`.
-	///
-	/// # Examples
-	/// ```rust
-	/// # use knightrs::{Function, Value, RuntimeError, Environment};
-	/// fn is_null(args: &[Value], env: &mut Environment) -> Result<Value, RuntimeError> {
-	/// 	Ok(Value::from(args[0].run(env)? == Value::Null))
-	/// }
-	//
-	/// Function::register('Z', 1, is_null);
-	/// 
-	/// // assert_eq!(Function::fetch('Z').unwrap().func(), is_null);
-	/// ```
 	#[inline]
 	#[must_use]
 	pub fn func(&self) -> FuncPtr {
 		self.func
 	}
 
+	/// Executes this function with the given arguments
 	pub fn run(&self, args: &[Value], env: &mut Environment<'_, '_, '_>) -> Result<Value, RuntimeError> {
 		(self.func)(args, env)
 	}
@@ -105,12 +93,12 @@ impl Function {
 	/// Gets the function associate dwith the given `name`, returning `None` if no such function exists.
 	#[must_use = "fetching a function does nothing by itself"]
 	pub fn fetch(name: char) -> Option<Self> {
-		FUNCTIONS.lock().get(&name).cloned()
+		FUNCTIONS.lock().unwrap().get(&name).cloned()
 	}
 
 	/// Registers a new function with the given name, discarding any previous value associated with it.
 	pub fn register(name: char, arity: usize, func: FuncPtr) {
-		FUNCTIONS.lock().insert(name, Self { name, arity, func });
+		FUNCTIONS.lock().unwrap().insert(name, Self { name, arity, func });
 	}
 }
 
