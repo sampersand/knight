@@ -1,3 +1,5 @@
+ishead(P, [H|_]) :- call(P, H).
+
 %% Whitespace is any of `\t\n\v\f\r`.
 whitespace(C) :- member(C, " \t\n\v\f\r").
 
