@@ -11,37 +11,38 @@ describe 'Block' do
 
 	describe 'parsing' do
 		it 'takes any argument type' do
-			assert_runs { eval 'BLOCK 1' }
-			assert_runs { eval 'BLOCK "a"' }
-			assert_runs { eval 'BLOCK TRUE' }
-			assert_runs { eval 'BLOCK FALSE' }
-			assert_runs { eval 'BLOCK NULL' }
-			assert_runs { eval 'BLOCK B 3' }
-			assert_runs { eval 'BLOCK ident' }
+			assert_runs { execute 'BLOCK 1' }
+			assert_runs { execute 'BLOCK "a"' }
+			assert_runs { execute 'BLOCK TRUE' }
+			assert_runs { execute 'BLOCK FALSE' }
+			assert_runs { execute 'BLOCK NULL' }
+			assert_runs { execute 'BLOCK B 3' }
+			assert_runs { execute 'BLOCK ident' }
 		end
 
 		it 'requires an argument' do
-			assert_fails { eval 'BLOCK' }
-			assert_fails { eval 'BLOCK BLOCK' }
+			return pass if $all_ub
+			assert_fails { execute 'BLOCK' }
+			assert_fails { execute 'BLOCK BLOCK' }
 		end
 
 		it 'strips trailing keywords properly' do
-			assert_runs { eval 'B1' }
-			assert_runs { eval 'BL!1' }
-			assert_runs { eval 'BLO!1' }
-			assert_runs { eval 'BLO RANDOM' }
-			assert_runs { eval 'BLO RANDOM' }
-			assert_runs { eval 'BLO RANDOM' }
-			assert_runs { eval 'BLOa' }
-			assert_runs { eval 'BLa' }
-			assert_runs { eval 'Ba' }
+			assert_runs { execute 'B1' }
+			assert_runs { execute 'BL!1' }
+			assert_runs { execute 'BLO!1' }
+			assert_runs { execute 'BLO RANDOM' }
+			assert_runs { execute 'BLO RANDOM' }
+			assert_runs { execute 'BLO RANDOM' }
+			assert_runs { execute 'BLOa' }
+			assert_runs { execute 'BLa' }
+			assert_runs { execute 'Ba' }
 		end
 	end
 
 	it 'wont execute its body until called' do
-		assert_runs { eval 'BLOCK QUIT 1' }
-		assert_runs { eval 'BLOCK missing' }
-		assert_runs { eval 'BLOCK EVAL "nope"' }
+		assert_runs { execute 'BLOCK QUIT 1' }
+		assert_runs { execute 'BLOCK missing' }
+		assert_runs { execute 'BLOCK EVAL "nope"' }
 	end
 
 	# note that `BLOCK` simply returns its argument, unevaluated. But in the case of 
@@ -50,7 +51,7 @@ describe 'Block' do
 		describe 'CALL' do
 			it 'executes its body' do
 				assert_equal 12, eval('CALL BLOCK + 5 7')
-				assert_equal 13, eval('; = foo BLOCK bar ; = bar 13 : CALL bar')
+				assert_equal 18, eval('; = foo BLOCK + bar 5 ; = bar 13 : CALL foo')
 			end
 
 
@@ -62,6 +63,7 @@ describe 'Block' do
 				assert_equal false, eval('CALL BLOCK FALSE')
 				assert_equal :null, eval('CALL BLOCK NULL')
 				assert_equal 1, eval('; = ident 1 : CALL BLOCK ident')
+				assert_equal 3, eval('CALL BLOCK + 1 2')
 			end
 		end
 =begin

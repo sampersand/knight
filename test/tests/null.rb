@@ -2,24 +2,24 @@ require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
 
-describe 'Null' do
+describe '2.4.1 Null' do
 	include Kn::Test::Shared
 
-	describe 'conversions' do
-		it 'is falsey' do
+	describe '2.4.1 Contexts' do
+		it '(boolean) is falsey' do
 			assert_equal false, to_boolean('NULL')
 		end
 
-		it 'is zero' do
+		it '(numeric) is zero' do
 			assert_equal 0, to_number('NULL')
 		end
 
-		it 'is "null"' do
+		it '(string) is "null"' do
 			assert_equal 'null', to_string('NULL')
 		end
 	end
 
-	describe 'parsing' do
+	describe 'Parsing' do
 		it 'parses a simple `N` properly' do
 			assert_equal :null, eval('N')
 		end
@@ -41,7 +41,7 @@ describe 'Null' do
 	end
 
 	describe 'operators' do
-		describe '?' do
+		describe '4.3.9 ?' do
 			it 'equals itself' do
 				assert_equal true, eval('? NULL NULL')
 			end

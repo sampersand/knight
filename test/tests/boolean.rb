@@ -2,21 +2,21 @@ require 'minitest'
 require 'minitest/spec'
 require_relative 'shared'
 
-describe 'Boolean' do
+describe '2.3 Boolean' do
 	include Kn::Test::Shared
 
-	describe 'conversions' do
-		it 'is true when TRUE and false when FALSE' do
+	describe '2.3.1 Contexts' do
+		it '(boolean) is true when TRUE and false when FALSE' do
 			assert_equal true, to_boolean('TRUE')
 			assert_equal false, to_boolean('FALSE')
 		end
 
-		it 'is 1 when TRUE and 0 when FALSE' do
+		it '(numeric) is 1 when TRUE and 0 when FALSE' do
 			assert_equal 1, to_number('TRUE')
 			assert_equal 0, to_number('FALSE')
 		end
 
-		it 'is "true" when TRUE and "false" when FALSE' do
+		it '(string) is "true" when TRUE and "false" when FALSE' do
 			assert_equal 'true', to_string('TRUE')
 			assert_equal 'false', to_string('FALSE')
 		end
@@ -52,7 +52,7 @@ describe 'Boolean' do
 	end
 
 	describe 'operators' do
-		describe '?' do
+		describe '4.3.9 ?' do
 			it 'only is equal to itself' do
 				assert_equal true, eval('? TRUE TRUE')
 				assert_equal true, eval('? FALSE FALSE')
@@ -72,7 +72,7 @@ describe 'Boolean' do
 			end
 		end
 
-		describe '<' do
+		describe '4.3.7 <' do
 			it 'is only true when FALSE and the rhs is truthy' do
 				assert_equal true, eval('< FALSE TRUE')
 				assert_equal true, eval('< FALSE 1')
@@ -96,7 +96,7 @@ describe 'Boolean' do
 			end
 		end
 
-		describe '>' do
+		describe '4.3.8 >' do
 			it 'is only true when TRUTHY and the rhs is falsey' do
 				assert_equal true, eval('> TRUE FALSE')
 				assert_equal true, eval('> TRUE 0')

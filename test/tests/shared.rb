@@ -1,6 +1,6 @@
 module Kn
 	module Test
-		Identifier = Struct.new :ident
+		Variable = Struct.new :ident
 		Function = Struct.new :ast
 	end
 end
@@ -18,22 +18,24 @@ module Kn::Test::Shared
 
 	def parse(expr)
 		case expr
-		when /\ANull\(\)\z/ then :null
-		when /\AString\((.*?)\)\z/m then $1
-		when /\ABoolean\((true|false)\)\z/ then $1 == 'true'
-		when /\ANumber\(((?:-(?!0\)))?\d+)\)\z/ then $1.to_i # `-0` is invalid.
-		when /\AFunction\((.*?)\)\z/m then Kn::Test::Function.new $1
-		when /\AIdentifier\(([_a-z][_a-z0-9]*)\)\z/ then Kn::Test::Identifier.new $1
+		when /\ANull\(\)\Z/ then :null
+		when /\AString\((.*?)\)\Z/m then $1
+		when /\ABoolean\((true|false)\)\Z/ then $1 == 'true'
+		when /\ANumber\(((?:-(?!0\)))?\d+)\)\Z/ then $1.to_i # `-0` is invalid.
+		when /\AFunction\((.*?)\)\Z/m then Kn::Test::Function.new $1
+		when /\AIdentifier\(([_a-z][_a-z0-9]*)\)\Z/ then Kn::Test::Variable.new $1
 		else fail "bad expression: #{expr.inspect}"
 		end
 	end
 
-	def execute(expr, chomp=true)
+	def execute(expr, raise_on_failure: true)
 		IO.pipe do |r, w|
-			system(*Array($executable_to_test), '-e', expr, out: w, err: :close) or raise InvalidExpression, expr
+			unless system(*Array($executable_to_test), '-e', expr, out: w, err: :close)
+				raise InvalidExpression, expr if raise_on_failure
+			end
 
 			w.close
-			r.read.tap { |x| x.chomp! if chomp }
+			r.read
 		end
 	end
 
@@ -45,8 +47,12 @@ module Kn::Test::Shared
 		yield
 	end
 
-	def dump(expr, *rest)
-		execute("D #{expr}", *rest)
+	def dump(expr)
+		execute("D #{expr}")
+	end
+
+	def check_ub?
+		$check_ub
 	end
 
 	def eval(expr)
@@ -66,7 +72,7 @@ module Kn::Test::Shared
 	end
 
 	def to_boolean(expr)
-		val = eval "I #{expr} TRUE FALSE"
+		val = eval "! ! #{expr}"
 		raise "not a boolean: #{val.inspect}" unless val == true || val == false
 		val
 	end
