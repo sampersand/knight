@@ -5,21 +5,21 @@
 #include "shared.h"   /* die, assert_reckless, xmalloc, xrealloc */
 #include "string.h"   /* kn_string, kn_string_new, kn_string_alloc,
                          kn_string_free, kn_string_empty, kn_string_deref,
-                         kn_string_length, kn_string_clone_static */
+                         kn_string_length, kn_string_clone_static, */
 #include "value.h"    /* kn_value, kn_number, KN_TRUE, KN_FALSE, KN_NULL,
                          KN_UNDEFINED, kn_value_new_number, kn_value_new_string,
                          kn_value_new_boolean, kn_value_clone, kn_value_free,
                          kn_value_dump, kn_value_is_number, kn_value_is_boolean,
                          kn_value_is_string, kn_value_is_variable,
                          kn_value_as_number, kn_value_as_string,
-                         kn_value_as_variable, kn_value_to_boolean,
-                         kn_value_to_number, kn_value_to_string, kn_value_run */
+                         kn_value_as_variable, kn_value_to_boolean, 
+                         kn_value_to_number, kn_value_to_string */
 
 #include <string.h>  /* memcpy, strcmp, strndup */
 #include <assert.h>  /* assert */
 #include <stdlib.h>  /* rand, srand, free, exit, size_t, NULL */
-#include <stdbool.h> /* bool, false */
-#include <stdio.h>   /* fflush, fputs, putc, puts, feof, ferror, perror, getline,
+#include <stdbool.h> /* bool, true, false */
+#include <stdio.h>   /* fflush, fputs, fgets, putc, puts, feof, ferror, perror,
                         clearerr, stdout, stdin, popen, fread, pclose, FILE */
 #include <time.h>    /* time */
 
@@ -32,7 +32,7 @@ KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 	(void) args;
 
 	size_t cap = 0;
-	ssize_t len; // todo: remove the ssize_t
+	ssize_t len;
 	char *line = NULL;
 
 	// TODO: use fgets instead
@@ -44,7 +44,7 @@ KN_FUNCTION_DECLARE(prompt, 0, 'P') {
 
 #ifndef KN_RECKLESS
 		// if we're not at eof, abort.
-		if (!feof(stdin))
+		if (!feof(stdin)) 
 			perror("unable to read line");
 #endif /* !KN_RECKLESS */
 
@@ -211,7 +211,7 @@ KN_FUNCTION_DECLARE(negate, 1, '~') {
 static kn_value add_string(struct kn_string *lhs, struct kn_string *rhs) {
 	size_t lhslen, rhslen;
 
-	// return early if either
+	// return early if either 
 	if ((lhslen = kn_string_length(lhs)) == 0) {
 		assert(lhs == &kn_string_empty);
 
@@ -271,8 +271,8 @@ static kn_value mul_string(struct kn_string *lhs, size_t times) {
 
 		// if the string is not empty, free it.
 		if (lhslen != 0)
-			kn_string_free(lhs);
-		else
+			kn_string_free(lhs); 
+		else 
 			assert(lhs == &kn_string_empty);
 
 		return kn_value_new_string(&kn_string_empty);
@@ -304,7 +304,7 @@ KN_FUNCTION_DECLARE(mul, 2, '*') {
 		size_t amnt = (size_t) kn_value_to_number(args[1]);
 		return mul_string(kn_value_as_string(lhs), amnt);
 	}
-
+	
 	assert_reckless(kn_value_is_number(lhs));
 
 	kn_number lhs_num = kn_value_as_number(lhs);
@@ -382,7 +382,7 @@ KN_FUNCTION_DECLARE(eql, 2, '?') {
 	struct kn_string *lstr = kn_value_as_string(lhs);
 	struct kn_string *rstr = kn_value_as_string(rhs);
 
-	eql = kn_string_length(lstr) == kn_string_length(rstr) &&
+	eql = kn_string_length(lstr) == kn_string_length(rstr) && 
 		!strcmp(kn_string_deref(lstr), kn_string_deref(rstr));
 
 free_and_return:
@@ -462,9 +462,24 @@ KN_FUNCTION_DECLARE(or, 2, '|') {
 }
 
 KN_FUNCTION_DECLARE(then, 2, ';') {
+#ifndef KN_DYNMAIC_ARGC
 	kn_value_free(kn_value_run(args[0]));
 
 	return kn_value_run(args[1]);
+#else
+	kn_value ret;
+	unsigned i = 0;
+
+	goto inner;
+
+	do {
+		kn_value_free(ret);
+	inner:
+		ret = kn_value_run(args[i]);
+	} while (args[++i] != KN_UNDEFINED);
+
+	return ret;
+#endif /* !KN_DYNMAIC_ARGC */
 }
 
 KN_FUNCTION_DECLARE(assign, 2, '=') {
@@ -555,7 +570,8 @@ KN_FUNCTION_DECLARE(substitute, 4, 'S') {
 #ifndef KN_RECKLESS
 	// if it's out of bounds, die.
 	if (stringlength < start)
-		die("index '%zu' out of bounds (length=%zu)", start, stringlength);
+		die("index '%zu' out of bounds (length=%zu)", start,
+			stringlength);
 #endif /* !KN_RECKLESS */
 
 	if (stringlength <= start + amnt)

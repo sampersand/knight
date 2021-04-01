@@ -2,6 +2,7 @@
 #define KN_ENV_H
 
 #include "value.h"   /* kn_value */
+#include <stddef.h>  /* size_t */
 #include <stdbool.h> /* bool */
 
 /*
@@ -27,7 +28,7 @@ struct kn_variable {
 };
 
 /*
- * Initializes the global Knight environment.
+ * Initializes the global Knight environment with the given starting capacity.
  *
  * This _must_ be called before `kn_env_fetch` is called.
  */
@@ -63,5 +64,10 @@ void kn_variable_assign(struct kn_variable *variable, kn_value);
  * If the variable has not been assigned to yet, this will abort the program.
  */
 kn_value kn_variable_run(struct kn_variable *variable);
+
+/*
+ * Fetches the name of the variable.
+ */
+const char *kn_variable_name(const struct kn_variable *variable);
 
 #endif /* !KN_ENV_H */

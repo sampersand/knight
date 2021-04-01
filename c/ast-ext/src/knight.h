@@ -1,12 +1,16 @@
 #ifndef KN_KNIGHT_H
 #define KN_KNIGHT_H
 
+#include <stddef.h> /* size_t */
 #include "value.h"  /* kn_value */
 
 /*
  * Begins the Knight interpreter.
  *
  * This function should be called before any other Knight function.
+ *
+ * Note that if the capacity is zero, the default capacity (defined by 
+ * `KN_ENV_DEFAULT_CAPACITY`, which can be overwritten).
  */
 void kn_startup(void);
 

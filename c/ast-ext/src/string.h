@@ -4,7 +4,7 @@
 #include <stddef.h> /* size_t */
 
 /*
- * These flags are used to record information about how the memory of a
+ * These flags are used to record information about how the memory of a 
  * `kn_string` should be managed.
  */
 enum kn_string_flags {
@@ -42,16 +42,14 @@ enum kn_string_flags {
  * The length of the embedded segment of the string.
  */
 #define KN_STRING_EMBEDDED_LENGTH \
-	(sizeof(size_t) \
-		+ sizeof(char *) \
-		+ sizeof(char [KN_STRING_PADDING_LENGTH]) \
-		- 1)
+	(sizeof(size_t) + sizeof(char *) - 1 + \
+		sizeof(char [KN_STRING_PADDING_LENGTH]))
 
 /*
  * The string type in Knight.
  *
- * This struct is generally allocated by a `kn_string_alloc`, which can then be
- * populated via the `kn_string_deref` function.
+ * This struct is generally allocated by a `kn_string_alloc`, which can then
+ * be populated via the `kn_string_deref` function.
  *
  * As an optimization, strings can either be `embed`ded (where the `chars` are
  * actually a part of the struct), or `alloc`ated (where the data is stored
@@ -111,6 +109,21 @@ struct kn_string {
 extern struct kn_string kn_string_empty;
 
 /*
+ * Initializes the string allocations.
+ *
+ * This should be called before `kn_string_alloc` or `kn_string_new` is run.
+ */
+void kn_string_startup(void);
+
+/*
+ * Unmaps all string allocations.
+ *
+ * After calling this, all strings pointers are invalidated, and
+ * `kn_string_startup` must be called again allocating new strings.
+ */
+void kn_string_shutdown(void);
+
+/*
  * A macro to create a new embedded struct.
  *
  * It's up to the caller to ensure that `data_` can fit within an embedded
@@ -167,7 +180,7 @@ struct kn_string *kn_string_clone(struct kn_string *string);
  */
 struct kn_string *kn_string_clone_static(struct kn_string *string);
 
-/*
+/* 
  * Indicates that the caller is done using this string.
  *
  * For structs without the `KN_STRING_FL_EMBED` flag (ie with the `alloc` field

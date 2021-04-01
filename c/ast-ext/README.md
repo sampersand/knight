@@ -14,6 +14,8 @@ This is the AST-walker implementation of Knight in C. It's (as of April 2021), t
 
 ## Experiments
 These are experiments I tried out out see if I could make this implementation faster. They may improve performance depending on what you're using knight for, but they don't improve the `timeit` times.
+- `KN_DYNMAIC_ARGC`: Collapses consecutive functions into the same struct. That is, instead of `; a ; b ; c` being represented as `; (a) (; (b) (; (c)))`, it's represented as `; (a) (b) (c)`. This is only implemented for `;`.
+- `KN_ARENA_ALLOCATE`: Allocates string _structs_ in arenas. This is only usable on systems with `mmap`. Since a decent amount of strings are embedded, this can be used to improve performance. However, I didn't see any significant changes, so this was not further explored really. (The `KN_NUM_PAGES` macro can be used to override the amount of pages.)
 - `KN_STRING_CACHE`: Enable this to cache larger strings, so that their structs don't have to be allocated. Since I started using embedded strings, this has become less relevant. (The `KN_STRING_CACHE_MAXLEN` macro can be used to control the maximum length string that will be cached, and `KN_STRING_CACHE_LINESIZE` is the amount of strings per cache.)
 
 ## Extensions

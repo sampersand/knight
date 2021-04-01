@@ -1,9 +1,95 @@
-#include "string.h" /* prototypes, kn_string, kn_string_flags variants, size_t,
-                       KN_STRING_NEW_EMBED  */
-#include "shared.h" /* xmalloc, kn_hash */
-#include <stdlib.h> /* free, NULL */
+#include "string.h" /* prototypes, flags, size_t */
+#include "shared.h" /* xmalloc, die, kn_hash */
+#include <stdlib.h> /* fre, NULLe */
 #include <string.h> /* strlen, strcmp, memcpy */
 #include <assert.h> /* assert */
+
+#ifdef KN_ARENA_ALLOCATE
+
+/* The following two imports import these collectively:
+
+getpagesize, mmap, munmap, MAP_FAILED, PROT_READ, PROT_WRITE, MAP_PRIVATE,
+MAP_ANONYMOUS, perror
+*/
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdio.h>
+
+#ifndef KN_NUM_PAGES
+# define KN_NUM_PAGES (4096*4)
+#endif /* !KN_NUM_PAGES */
+
+static struct kn_string *string_arena_start, *string_arena_next;
+const struct kn_string *string_arena_end;
+
+#define ARENASIZE (KN_NUM_PAGES * getpagesize())
+
+void kn_string_startup() {
+	string_arena_next = string_arena_start = mmap(
+		NULL, ARENASIZE,
+		PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+		-1, 0
+	);
+
+	if (string_arena_start == MAP_FAILED)
+		perror("cant allocate memory");
+
+	string_arena_end = &string_arena_start[ARENASIZE];
+}
+
+void kn_string_shutdown() {
+	if (munmap(string_arena_start, ARENASIZE) == -1)
+		perror("cant unmap memory");
+}
+
+static void free_strings() {
+	struct kn_string *curr;
+	string_arena_next = NULL;
+
+	for (curr = string_arena_start; curr != string_arena_end; ++curr) {
+		assert(!(curr->flags & KN_STRING_FL_EMBED));
+		assert(curr->refcount >= 0);
+
+		if (curr->refcount)
+			continue;
+
+		if (!(curr->flags & (KN_STRING_FL_EMBED | KN_STRING_FL_STATIC)))
+			free(curr->alloc.str);
+
+		if (string_arena_next == NULL)
+			string_arena_next = curr;
+	}
+
+	if (string_arena_next == NULL)
+		die("Memory error: not enough strings left.");
+}
+
+static inline struct kn_string *allocate_string() {
+	struct kn_string *string;
+
+	do {
+		if (string_arena_next == string_arena_end)
+			free_strings();
+
+		string = string_arena_next++;
+	} while (string->refcount != 0); // mmap anon guarantees they will be zero.
+
+	return string;
+}
+
+#else
+
+/* Do nothing at startup for non-arena-allocated strings. */
+void kn_string_startup() { }
+
+/* Do nothing at shutdown for non-arena-allocated strings. */
+void kn_string_shutdown() { }
+
+/* Simply `xmalloc` non-arena-allocated strings. */
+static inline struct kn_string *allocate_string() {
+	return xmalloc(sizeof(struct kn_string));
+}
+#endif /* KN_ARENA_ALLOCATE */
 
 #ifdef KN_STRING_CACHE
 # ifndef KN_STRING_CACHE_MAXLEN
@@ -41,10 +127,10 @@ char *kn_string_deref(struct kn_string *string) {
 }
 
 struct kn_string *kn_string_alloc(size_t length) {
-	if (length == 0)
+	if (length == 0) 
 		return &kn_string_empty;
 
-	struct kn_string *string = xmalloc(sizeof(struct kn_string));
+	struct kn_string *string = allocate_string();
 	string->flags = KN_STRING_FL_STRUCT_ALLOC;
 	string->refcount = 1;
 
@@ -64,7 +150,7 @@ static struct kn_string *create_string(char *str, size_t length) {
 	assert(strlen(str) == length);
 	assert(length != 0); // should have already been checked before.
 
-	struct kn_string *string = xmalloc(sizeof(struct kn_string));
+	struct kn_string *string = allocate_string();
 
 	string->flags = KN_STRING_FL_STRUCT_ALLOC;
 	string->refcount = 1;
@@ -113,7 +199,7 @@ void kn_string_free(struct kn_string *string) {
 	assert(string != NULL);
 
 	// if we didn't allocate the struct, simply return.
-	if (!(string->flags & KN_STRING_FL_STRUCT_ALLOC)) {
+	if (!(string->flags & KN_STRING_FL_STRUCT_ALLOC)) {	
 		assert(string->flags & (KN_STRING_FL_EMBED | KN_STRING_FL_STATIC));
 
 		return;
@@ -130,11 +216,14 @@ void kn_string_free(struct kn_string *string) {
 		*get_cache_slot(string->alloc.str, string->alloc.length) = 0;
 #endif /* KN_STRING_CACHE */
 
+#ifndef KN_ARENA_ALLOCATE
 	// if we aren't embedded, free the allocated string.
 	if (!(string->flags & KN_STRING_FL_EMBED))
 		free(string->alloc.str);
 
 	free(string);
+#endif /* !KN_ARENA_ALLOCATE */
+
 }
 
 struct kn_string *kn_string_clone(struct kn_string *string) {

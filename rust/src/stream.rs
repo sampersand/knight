@@ -133,42 +133,40 @@ impl Value {
 		Self::parse(input.as_ref().chars())
 	}
 
-	pub fn parse<S: Iterator<Item=char>>(input: S) -> Result<Self, ParseError> {
-		Self::parse_inner(&mut Stream { iter: input.peekable(), lineno: 0, cache: None })
+	pub fn parse<S: IntoIterator<Item=char>>(input: S) -> Result<Self, ParseError> {
+		Self::parse_inner(&mut Stream { iter: input.into_iter().peekable(), lineno: 0, cache: None })
 	}
 
 	fn parse_inner(stream: &mut Stream<impl Iterator<Item=char>>) -> Result<Self, ParseError> {
-		loop {
-			match *stream.iter.peek().ok_or(ParseError::NothingToParse)? {
-				// note that this is ascii whitespace, as non-ascii characters are invalid.
-				chr if chr.is_ascii_whitespace() => whitespace(stream),
+		match *stream.iter.peek().ok_or(ParseError::NothingToParse)? {
+			// note that this is ascii whitespace, as non-ascii characters are invalid.
+			chr if chr.is_ascii_whitespace() => { whitespace(stream); Self::parse_inner(stream) },
 
-				// strip comments until eol.
-				'#' => comment(stream),
+			// strip comments until eol.
+			'#' => { comment(stream); Self::parse_inner(stream) },
 
-				// ignore parens; consecutive ones aren't common, so dont deserve a function.
-				'(' | ')' | '[' | ']' | '{' | '}' | ':' => { stream.iter.next(); },
+			// ignore parens; consecutive ones aren't common, so dont deserve a function.
+			'(' | ')' | '[' | ']' | '{' | '}' | ':' => { stream.iter.next(); Self::parse_inner(stream) },
 
-				// only ascii digits and `~` may start number, where `~` is unary minus for literals
-				'0'..='9' | '~' => return Ok(number(stream)),
+			// only ascii digits and `~` may start number, where `~` is unary minus for literals
+			'0'..='9' | '~' => Ok(number(stream)),
 
-				// identifiers start only with lower-case digits or `_`.
-				'a'..='z' | '_' => return Ok(identifier(stream)),
+			// identifiers start only with lower-case digits or `_`.
+			'a'..='z' | '_' => Ok(identifier(stream)),
 
-				chr @ 'T' | chr @ 'F' => { strip_word(stream); return Ok(Value::Boolean(chr == 'T')); },
+			chr @ 'T' | chr @ 'F' => { strip_word(stream); Ok(Value::Boolean(chr == 'T')) },
 
-				'N' => { strip_word(stream); return Ok(Value::Null); },
-				
-				// strings start with a single or double quote (and not `` ` ``).
-				'\'' | '\"' => return string(stream),
+			'N' => { strip_word(stream); Ok(Value::Null) },
+			
+			// strings start with a single or double quote (and not `` ` ``).
+			'\'' | '\"' => string(stream),
 
-				chr =>
-					if let Some(func) = Function::fetch(chr) {
-						return function(func, stream);
-					} else {
-						return Err(ParseError::UnknownTokenStart { chr, lineno: stream.lineno });
-					}
-			}
+			chr =>
+				if let Some(func) = Function::fetch(chr) {
+					function(func, stream)
+				} else {
+					Err(ParseError::UnknownTokenStart { chr, lineno: stream.lineno })
+				}
 		}
 	}
 }
