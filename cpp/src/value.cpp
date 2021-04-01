@@ -6,9 +6,7 @@ using namespace kn;
 using std::make_shared;
 using std::shared_ptr;
 
-Value::Value() noexcept : data(null {}) {
-	std::cout << "here" << std::endl;
-}
+Value::Value() noexcept : data(null {}) {}
 Value::Value(bool boolean) noexcept : data(boolean) {}
 Value::Value(number num) noexcept : data(num) {}
 Value::Value(string str) noexcept : Value(make_shared<string>(str)) {}

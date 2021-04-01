@@ -1,16 +1,17 @@
 #include <assert.h> /* assert */
 #include <stddef.h> /* size_t */
 #include <ctype.h>  /* isspace, isdigit, islower, isupper */
-#include <string.h> /* strndup */
+#include <string.h> /* strndup, memcpy */
 
-#include "parse.h"    /* prototypes, kn_value_t, kn_number_t, kn_ast_t,
-                         kn_value_new_number, kn_value_new_variable, 
-                         kn_value_new_string, kn_value_new_ast, kn_string_empty,
-                         kn_string_new, KN_UNDEFINED, KN_TRUE, KN_FALSE, KN_NULL
-                         */
-#include "shared.h"   /* xmalloc, xrealloc, die */
-#include "function.h" /* kn_function_t, <all the function definitions> */
-#include "env.h"      /* kn_env_fetch */
+#include "parse.h"    /* prototypes, kn_value, kn_number, kn_value_new_number,
+                         kn_value_new_variable, kn_value_new_string,
+                         kn_value_new_ast, kn_string_alloc, KN_UNDEFINED,
+                         KN_TRUE, KN_FALSE, KN_NULL */
+#include "string.h"   /* kn_string, kn_string_empty, kn_string_deref */
+#include "ast.h"      /* kn_ast, kn_ast_alloc */
+#include "shared.h"   /* die */
+#include "function.h" /* kn_function, <all the function definitions> */
+#include "env.h"      /* kn_variable, kn_env_fetch */
 
 // Check to see if the character is considered whitespace to Knight.
 static int iswhitespace(char c) {
@@ -39,30 +40,30 @@ static int isident(char c) {
 // Macros used either for computed gotos or switch statements (the switch
 // statement is only used when `KN_COMPUTED_GOTOS` is not defined.)
 #ifdef KN_COMPUTED_GOTOS
-#define LABEL(x) x:
-#define CASES10(a, ...)
-#define CASES9(a, ...)
-#define CASES8(a, ...)
-#define CASES7(a, ...)
-#define CASES6(a, ...)
-#define CASES5(a, ...)
-#define CASES4(a, ...)
-#define CASES3(a, ...)
-#define CASES2(a, ...)
-#define CASES1(a)
+# define LABEL(x) x:
+# define CASES10(a, ...)
+# define CASES9(a, ...)
+# define CASES8(a, ...)
+# define CASES7(a, ...)
+# define CASES6(a, ...)
+# define CASES5(a, ...)
+# define CASES4(a, ...)
+# define CASES3(a, ...)
+# define CASES2(a, ...)
+# define CASES1(a)
 #else
-#define LABEL(x)
-#define CASES10(a, ...)case a: CASES9(__VA_ARGS__)
-#define CASES9(a, ...) case a: CASES8(__VA_ARGS__)
-#define CASES8(a, ...) case a: CASES7(__VA_ARGS__)
-#define CASES7(a, ...) case a: CASES6(__VA_ARGS__)
-#define CASES6(a, ...) case a: CASES5(__VA_ARGS__)
-#define CASES5(a, ...) case a: CASES4(__VA_ARGS__)
-#define CASES4(a, ...) case a: CASES3(__VA_ARGS__)
-#define CASES3(a, ...) case a: CASES2(__VA_ARGS__)
-#define CASES2(a, ...) case a: CASES1(__VA_ARGS__)
-#define CASES1(a) case a:
-#endif
+# define LABEL(x)
+# define CASES10(a, ...)case a: CASES9(__VA_ARGS__)
+# define CASES9(a, ...) case a: CASES8(__VA_ARGS__)
+# define CASES8(a, ...) case a: CASES7(__VA_ARGS__)
+# define CASES7(a, ...) case a: CASES6(__VA_ARGS__)
+# define CASES6(a, ...) case a: CASES5(__VA_ARGS__)
+# define CASES5(a, ...) case a: CASES4(__VA_ARGS__)
+# define CASES4(a, ...) case a: CASES3(__VA_ARGS__)
+# define CASES3(a, ...) case a: CASES2(__VA_ARGS__)
+# define CASES2(a, ...) case a: CASES1(__VA_ARGS__)
+# define CASES1(a) case a:
+#endif /* KN_COMPUTED_GOTOS */
 
 // Used for functions which are only a single character, eg `+`.
 #define SYMBOL_FUNC(name, sym) \
@@ -77,7 +78,7 @@ static int isident(char c) {
 	function = &kn_fn_##name; \
 	goto parse_kw_function
 
-kn_value_t kn_parse(register const char **stream) {
+kn_value kn_parse(register const char **stream) {
 
 // the global lookup table, which is used for the slightly-more-efficient, ut
 // mnon-standard computed gotos version of the parser.
@@ -132,13 +133,14 @@ kn_value_t kn_parse(register const char **stream) {
 		['S']  = &&function_substitute,
 		['T']  = &&literal_true,
 		['U']  = &&invalid,
-#ifdef KN_EXT_VALUE
+
+# ifdef KN_EXT_VALUE
 		['V']  = &&function_value,
-#else
+# else
 		['V']  = &&invalid,
-#endif /* KN_EXT_VALUE */
+# endif /* KN_EXT_VALUE */
+
 		['W']  = &&function_while,
-		['X']  = &&invalid,
 		['Y']  = &&invalid,
 		['Z']  = &&invalid,
 		['[']  = &&whitespace,
@@ -151,13 +153,19 @@ kn_value_t kn_parse(register const char **stream) {
 		['{']  = &&whitespace,
 		['|']  = &&function_or,
 		['}']  = &&whitespace,
+
+#ifdef KN_EXT_NEGATE
+		['~']  = &&function_negate,
+#else
 		['~']  = &&invalid,
+#endif /* KN_EXT_NEGATE */
+
 		[0x7f ... 0xff] = &&invalid
 	};
 #endif /* KN_COMPUTED_GOTOS */
 
 	char c;
-	const struct kn_function_t *function;
+	const struct kn_function *function;
 
 	assert(stream != NULL);
 	assert(*stream != NULL);
@@ -171,7 +179,6 @@ start:
 	switch (c) {
 #endif /* KN_COMPUTED_GOTOS */
 
-
 LABEL(comment)
 CASES1('#')
 	while ((c = ADVANCE_PEEK()) != '\n') {
@@ -181,7 +188,7 @@ CASES1('#')
 		// otherwise we wouldn't be parsing values).
 		if (c == '\0')
 			goto expected_token;
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	}
 
@@ -197,7 +204,7 @@ CASES7('(', ')', '[', ']', '{', '}', ':')
 LABEL(number)
 CASES10('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 {
-	kn_number_t number = (c - '0');
+	kn_number number = (c - '0');
 
 	while (isdigit(c = ADVANCE_PEEK()))
 		number = number * 10 + (c - '0');
@@ -215,9 +222,8 @@ CASES7( 'u', 'v', 'w', 'x', 'y', 'z', '_')
 	while (isident(ADVANCE_PEEK()));
 
 	char *identifier = strndup(start, *stream - start);
-	struct kn_variable_t *variable = kn_env_fetch(identifier, true);
-	kn_value_t v = kn_value_new_variable(variable);
-	return v;
+	struct kn_variable *variable = kn_env_fetch(identifier, true);
+	return kn_value_new_variable(variable);
 }
 
 LABEL(string)
@@ -232,7 +238,7 @@ CASES2('\'', '\"')
 #ifndef KN_RECKLESS
 		if (c == '\0')
 			die("unterminated quote encountered: '%s'", start);
-#endif /* KN_RECKLESS */ 
+#endif /* !KN_RECKLESS */
 
 	}
 
@@ -242,7 +248,7 @@ CASES2('\'', '\"')
 	if (!length)
 		return kn_value_new_string(&kn_string_empty);
 
-	struct kn_string_t *string = kn_string_alloc(length);
+	struct kn_string *string = kn_string_alloc(length);
 	memcpy(kn_string_deref(string), start, length);
 
 	kn_string_deref(string)[length] = '\0';
@@ -279,6 +285,11 @@ SYMBOL_FUNC(or, '|');
 SYMBOL_FUNC(then, ';');
 SYMBOL_FUNC(assign, '=');
 SYMBOL_FUNC(system, '`');
+
+#ifdef KN_EXT_NEGATE
+SYMBOL_FUNC(negate, '~');
+#endif /* KN_EXT_NEGATE */
+
 WORD_FUNC(block, 'B');
 WORD_FUNC(call, 'C');
 WORD_FUNC(dump, 'D');
@@ -305,98 +316,37 @@ parse_kw_function:
 parse_function:
 {
 	size_t arity = function->arity;
-	struct kn_ast_t *ast =
-		xmalloc(sizeof(struct kn_ast_t) + sizeof(kn_value_t [arity]));
+	struct kn_ast *ast = kn_ast_alloc(arity);
 
 	ast->func = function;
 	ast->refcount = 1;
 
-#ifdef KN_DYNMAIC_ARGC
-	if (function != &kn_fn_then && 0) {
-
-	ast->argc = arity;
-#endif /* KN_DYNMAIC_ARGC */
 
 	for (size_t i = 0; i < arity; ++i) {
-		if ((ast->args[i] = kn_parse(stream)) == KN_UNDEFINED) {
+		ast->args[i] = kn_parse(stream);
+
+#ifndef KN_RECKLESS
+		if (ast->args[i] == KN_UNDEFINED)
 			die("unable to parse argument %d for function '%c'",
 				i, function->name);
-		}
+#endif /* !KN_RECKLESS */
 	}
-
-#ifdef KN_DYNMAIC_ARGC
-	goto parse_function_end;
-	}
-
-	ast->argc = 0;
-
-	if (arity == 0)
-		goto parse_function_end;
-
-	if ((ast->args[ast->argc++] = kn_parse(stream)) == KN_UNDEFINED)
-		die("unable to parse argument 0 for function '%c'", function->name);
-
-	unsigned cap = arity;
-	do {
-		c = PEEK();
-
-		// strip comments
-		if (c == '#') {
-			while ((c = ADVANCE_PEEK()) != '\n')
-				if (c == '\0')
-					break;
-			continue;
-		}
-
-		// strip whitespace
-		if (isspace(c)) {
-			while (iswhitespace(ADVANCE_PEEK()));
-			continue;
-		}
-
-		if (PEEK() != function->name) {
-			ast->args[ast->argc] = kn_parse(stream);
-
-			if (ast->args[ast->argc++] == KN_UNDEFINED) {
-				die("unable to parse arg %d for function '%c'",
-					ast->argc - 1, function->name);
-			}
-
-			break;
-		}
-
-		ADVANCE();
-		ast->args[ast->argc++] = kn_parse(stream);
-
-		if (ast->argc == cap)  {
-			ast = xrealloc(ast,
-				sizeof(struct kn_ast_t) + sizeof(kn_value_t [cap *= 2]));
-		}
-	} while (1);
-
-	ast = xrealloc(ast,
-		sizeof(struct kn_ast_t) + sizeof(kn_value_t [ast->argc + 1]));
-
-	ast->args[ast->argc] = KN_UNDEFINED;
-
-parse_function_end:
-#endif /* KN_DYNMAIC_ARGC */
 
 	return kn_value_new_ast(ast);
 }
 
-LABEL(expected_token)
+expected_token:
 CASES1('\0')
 	return KN_UNDEFINED;
 
 LABEL(invalid)
 #ifndef KN_COMPUTED_GOTOS
 	default:
-#endif /* KN_COMPUTED_GOTOS */
+#endif /* !KN_COMPUTED_GOTOS */
 
 	die("unknown token start '%c'", c);
 
 #ifndef KN_COMPUTED_GOTOS
 	}
-#endif /* KN_COMPUTED_GOTOS */
+#endif /* !KN_COMPUTED_GOTOS */
 }

@@ -1,8 +1,8 @@
-#include <stdio.h>  /* vfprintf, fprintf */
+#include <stdio.h>  /* vfprintf, fprintf, stderr */
 #include <stdarg.h> /* va_list, va_start, va_end */
 #include <stdlib.h> /* exit, malloc, realloc */
 #include <assert.h> /* assert */
-#include "shared.h" /* prototypes, size_t, ssize_t */
+#include "shared.h" /* prototypes, size_t, ssize_t, NULL */
 
 void die(const char *fmt, ...) {
 	va_list args;
@@ -18,7 +18,7 @@ void die(const char *fmt, ...) {
 
 unsigned long kn_hash(const char *str) {
 	unsigned long hash;
-	
+
 	assert(str != NULL);
 
 	// This is the MurmurHash.
@@ -41,7 +41,7 @@ void *xmalloc(size_t size) {
 #ifndef KN_RECKLESS
 	if (ptr == NULL)
 		die("malloc failure for size %zd", size);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return ptr;
 }
@@ -54,7 +54,7 @@ void *xrealloc(void *ptr, size_t size) {
 #ifndef KN_RECKLESS
 	if (ptr == NULL)
 		die("realloc failure for size %zd", size);
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	return ptr;
 }

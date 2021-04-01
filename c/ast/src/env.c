@@ -16,8 +16,9 @@
 #include <assert.h>  /* assert */
 #include <stdlib.h>  /* free */
 #include <stdbool.h> /* bool, true, false */
-#include "env.h"     /* prototypes, size_t, kn_variable_t, kn_value_free */
-#include "shared.h"  /* xmalloc, xrealloc, die */
+#include "env.h"     /* prototypes, size_t, kn_variable, kn_value, KN_UNDEFINED,
+                        kn_value_free, kn_value_clone */
+#include "shared.h"  /* die, xmalloc, xrealloc, kn_hash */
 
 /*
  * The amount of buckets that the `kn_env_map` will have.
@@ -25,8 +26,8 @@
  * The greater the number, the fewer cache collisions, but the more memory used.
  */
 #ifndef KN_ENV_NBUCKETS
-#define KN_ENV_NBUCKETS 65536
-#endif /* KN_ENV_NBUCKETS */
+# define KN_ENV_NBUCKETS 65536
+#endif /* !KN_ENV_NBUCKETS */
 
 /*
  * The capacity of each bucket.
@@ -35,8 +36,8 @@
  * reallocate those buckets.
  */
 #ifndef KN_ENV_CAPACITY
-#define KN_ENV_CAPACITY 256
-#endif /* KN_ENV_CAPACITY */
+# define KN_ENV_CAPACITY 256
+#endif /* !KN_ENV_CAPACITY */
 
 /*
  * The buckets of the environment hashmap.
@@ -44,18 +45,18 @@
  * Each bucket keeps track of its own individual capacity and length, so they
  * can be resized separately.
  */
-struct kn_env_bucket_t {
+struct kn_env_bucket {
 	size_t capacity, length;
-	struct kn_variable_t *variables;
+	struct kn_variable *variables;
 };
 
 /* The mapping of all variables within Knight. */
-static struct kn_env_bucket_t kn_env_map[KN_ENV_NBUCKETS];
+static struct kn_env_bucket kn_env_map[KN_ENV_NBUCKETS];
 
 #ifndef NDEBUG
 /* A sanity check to ensure the environment has been setup. */
 static bool kn_env_has_been_started = false;
-#endif /* NDEBUG */
+#endif /* !NDEBUG */
 
 void kn_env_startup() {
 	// make sure we haven't started, and then set started to true.
@@ -63,12 +64,12 @@ void kn_env_startup() {
 	assert(KN_ENV_CAPACITY != 0);
 
 	for (size_t i = 0; i < KN_ENV_NBUCKETS; ++i) {
-		kn_env_map[i] = (struct kn_env_bucket_t) {
-			// technically redundant, b/c it's set to 0 in `kn_env_shutdown`.
-			.length = 0,
-			.capacity = KN_ENV_CAPACITY,
-			.variables = xmalloc(sizeof(struct kn_variable_t [KN_ENV_CAPACITY]))
-		};
+		// since it's static, `length` starts off at `0`, and `kn_env_shutdown`
+		// should reset it back to zero.
+		assert(kn_env_map[i]->length == 0);
+		kn_env_map[i].capacity = KN_ENV_CAPACITY;
+		kn_env_map[i].variables =
+			xmalloc(sizeof(struct kn_variable [KN_ENV_CAPACITY]));
 	}
 }
 
@@ -77,11 +78,16 @@ void kn_env_shutdown() {
 	assert(kn_env_has_been_started && !(kn_env_has_been_started = false));
 
 	for (size_t i = 0; i < KN_ENV_NBUCKETS; ++i) {
-		struct kn_env_bucket_t *bucket = &kn_env_map[i];
+		struct kn_env_bucket *bucket = &kn_env_map[i];
 
 		for (size_t len = 0; len < bucket->length; ++len) {
+			// all identifiers are owned, and only marked `const` so that users
+			// dont modify them (as it'd break the hash function).
 			free((char *) bucket->variables[len].name);
 
+			// if the variable was defined in the source code, but never
+			// evaluated, it'll have a value of `KN_UNDEFINED`. We shouldn't
+			// free those.
 			if (bucket->variables[len].value != KN_UNDEFINED)
 				kn_value_free(bucket->variables[len].value);
 		}
@@ -92,9 +98,9 @@ void kn_env_shutdown() {
 	}
 }
 
-struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
-	struct kn_env_bucket_t *bucket;
-	struct kn_variable_t *variable;
+struct kn_variable *kn_env_fetch(const char *identifier, bool owned) {
+	struct kn_env_bucket *bucket;
+	struct kn_variable *variable;
 
 	assert(identifier != NULL);
 
@@ -112,15 +118,13 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 		}
 	}
 
-	// now we don't own it.
-
 	// if the bucket is full, then we need to reallocate it.
 	if (bucket->length == bucket->capacity) {
 		// NOTE: that this actually causes UB, as all previous variable
 		// references are then invalidated. There's a somewhat easy fix to this
 		// via allocating contiguous kn_env_map, but ive never gotten to th
 		// point where this is actually necessary.
-		die("reallocating fails");
+		die("too many variables encountered!");
 
 /*
 		assert(bucket->capacity != 0);
@@ -129,7 +133,7 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 
 		bucket->variables = xrealloc(
 			bucket->variables,
-			sizeof(struct kn_variable_t [bucket->capacity])
+			sizeof(struct kn_variable [bucket->capacity])
 		);
 */
 	}
@@ -142,9 +146,25 @@ struct kn_variable_t *kn_env_fetch(const char *identifier, bool owned) {
 	variable = &bucket->variables[bucket->length++];
 	variable->name = identifier;
 
-	// Create the new variable with an undefined starting value, so that any
+	// Uninitialized variables start with an undefined starting value. the new variable with an undefined starting value, so that any
 	// attempt to access it will be invalid.
 	variable->value = KN_UNDEFINED;
 
 	return variable;
+}
+
+void kn_variable_assign(struct kn_variable *variable, kn_value value) {
+	if (variable->value != KN_UNDEFINED)
+		kn_value_free(variable->value);
+
+	variable->value = value;
+}
+
+kn_value kn_variable_run(struct kn_variable *variable) {
+#ifndef KN_RECKLESS
+	if (variable->value == KN_UNDEFINED)
+		die("undefined variable '%s'", variable->name);
+#endif /*! KN_RECKLESS */
+
+	return kn_value_clone(variable->value);
 }

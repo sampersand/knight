@@ -1,27 +1,37 @@
-#![deny(unsafe_code)]
+// #![warn(missing_docs, missing_doc_code_examples)]
+#![allow(clippy::tabs_in_doc_comments, unused)]
+#![warn(/*, missing_doc_code_examples, missing_docs*/)]
 
-#[cfg(all(feature="pretty-errors", any(feature="reckless", feature="fatal-errors")))]
-compile_error!("'pretty-errors' cannot be enabled with either 'reckless' or 'fatal-errors'!");
-
-
+pub mod function;
+pub mod rcstring;
 mod value;
 mod error;
-mod function;
-mod rcstr;
 mod stream;
-pub mod env;
+pub mod environment;
 
-
+/// The number type within Knight.
 pub type Number = i64;
-pub use rcstr::RcStr;
-pub use value::Value;
+
+#[doc(inline)]
+pub use rcstring::RcString;
+
+#[doc(inline)]
 pub use function::Function;
+
+pub use stream::Stream;
+pub use environment::{Environment, Variable};
+pub use value::Value;
 pub use error::{ParseError, RuntimeError};
 
-pub fn run_str<S: AsRef<str>>(input: S) -> Result<Value, RuntimeError> {
-	Value::parse_str(input)?.run()
+/// Runs the given string as Knight code, returning the result of its execution.
+pub fn run_str<S: AsRef<str>>(input: S, env: &mut Environment<'_, '_, '_>) -> Result<Value, RuntimeError> {
+	run(input.as_ref().chars(), env)
 }
 
-pub fn run<I: Iterator<Item=char>>(input: I) -> Result<Value, RuntimeError> {
-	Value::parse(input)?.run()
+/// Parses a [`Value`] from the given iterator and then runs the value.
+pub fn run<I>(input: I, env: &mut Environment<'_, '_, '_>) -> Result<Value, RuntimeError>
+where
+	I: IntoIterator<Item=char>
+{
+	Value::parse(input, env)?.run(env)
 }

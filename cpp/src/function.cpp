@@ -2,15 +2,15 @@
 #include "value.hpp"
 #include "variable.hpp"
 #include "knight.hpp"
+#include "robin_hood_map.hpp"
 
-#include <unordered_map>
 #include <iostream>
 #include <cstdio>
 
 using namespace kn;
 
 // The list of all _functions_
-static std::unordered_map<char, std::pair<funcptr_t, size_t>> FUNCTIONS;
+static robin_hood::unordered_map<char, std::pair<funcptr_t, size_t>> FUNCTIONS;
 
 Function::Function(funcptr_t func, char name, args_t args) : func(func), name(name), args(args) { }
 
@@ -60,7 +60,7 @@ std::ostream& Function::dump(std::ostream& out) const {
 }
 
 void Function::register_function(char name, size_t arity, funcptr_t func) {
-	FUNCTIONS.insert(std::make_pair(name, std::make_pair(func, arity)));
+	FUNCTIONS.insert({ name, std::make_pair(func, arity) });
 }
 
 // Prompts for a single line from stdin.

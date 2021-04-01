@@ -13,7 +13,7 @@ override	CXXFLAGS+=-O2
 endif
 
 ifdef OPTIMIZED
-override CXXFLAGS+=-O3 -DNDEBUG -flto -march=native
+override CXXFLAGS+=-O3 -DNDEBUG -flto -march=native -fno-stack-protector
 endif
 
 objects=$(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(wildcard $(SRCDIR)/*.cpp))

@@ -10,7 +10,7 @@ The following is the list of all languages that I've written it in. All in-progr
 
 | Language | 100% Spec Conformance | Documented | Mostly Functional | Begun | Notes |
 | -------- |:---------------------:|:----------:|:-----------------:|:-----:| ----- |
-| [AWK](shell/knight.awk) | ? | X | X | X | My AWK interpreter segfaults randomly, so full spec compliance cant be tested... |
+| [AWK](shell/knight.awk) | X | X | X | X | My AWK interpreter segfaults randomly, but after running each test 100x, they all passed. |
 | [Assembly (x86)](../asm/asm) |   |   |   | X | The parser is completed.|
 | [C](c) | X | X | X | X | Fully functional; Probably the best documented code. |
 | [C++](cpp) | X | X | X | X | Works with C++17; It could use a facelift though, as I used a bit too much dynamic dispatch. |
@@ -40,7 +40,7 @@ Note that these are simply benchmarks of _my_ implementations of Knight, and not
 
 |  Language  |  Time   | `<implementation>` | Notes |
 | ---------- |--------:|--------------------|-------|
-| C          |   7.01s | `c/ast/knight`        | Compiled using `COMPUTED_GOTOS=1 make optimized`; See [c/ast/README.md](c/ast/README.md) for details. |
+| C          |   7.01s | `c/ast/knight`        | Compiled using `COMPUTED_GOTOS=1 CFLAGS=-DKN_RECKLESS make optimized`; See [c/ast/README.md](c/ast/README.md) for details. |
 | C#         |  13.75s | `csharp/bin/Release/netcoreapp2.1/<impl>/Knight` | |
 | C++        |  21.48s | `cpp/knight`       | Copiled using `make optimized` |
 | Rust       |  28.99s | `rust/target/release/knight` | Built with `cargo build --release` and the `reckless` flag. |

@@ -1,232 +1,117 @@
+/*
+
+*/
 #include<stdio.h>
 #include<stdlib.h>
 #include<ctype.h>
 #include<string.h>
-#include<time.h>
 #define ll long long
 
-#define TNUM 1
-#define TSTR 2
-#define TVAR 4
-#define TFNC 8
-#define TRU 12
-#define FLS 4
-#define NUL 8
-#define UNMASK(s) ((s) & ~15)
-#define ASSTR(s) ((char *) UNMASK(s))
+#define U(s) ((s) & ~15)
+#define ASSTR(s) ((char *) U(s))
 #define ASNUM(s) ((s) >> 4)
-#define NEWNUM(n) (TNUM | (n) << 4)
-#define NEWSTR(n) (TSTR | (ll) (n))
-#define NEWBOOL(n) ((n) ? TRU : FLS)
-#define ARG(n) (((ll *) UNMASK(value))[n])
+#define NN(n) (1 | (n) << 4)
+#define NS(n) (2 | (ll) (n))
+#define NB(n) ((n) ? 12 : 4)
+#define A(n) (((ll *) U(v))[n])
+#define L strlen
+#define P printf
+#define W while
+#define K strcat
+#define I if
+#define R return
+#define C case
+#define Q strcmp
+#define N strspn
+#define Z strndup
+#define A1 A(1)
+#define A2 A(2)
+int MN, i;
+char*S,*MI[1000],BF[24];
+ll M[1000];
+size_t z,tmp,cap,len;
 
-char *stream;
+ll p() {
+	ll*f,v;char*t,c,n[2]={0,0};i=v=0;
+	W(N(S,"\t\n\f\r {}[]():#"))I(*S-35)++S;else W(*S++!=10);
+	W(isdigit(*S))v=v*10+*S++-(i=48);I(i)R 1|v<<4;
+	W(islower(*n=c=*S)||isdigit(c)||c==95)i?++S:(i=1,t=S);I(i)R 4|(ll)Z(t,S-t);
+	I(c==34||c==39){t=++S;W(*S++-c){}R 2|(ll)Z(t,S-t-1);}
 
-ll parse() {
-	int i;
-	ll value, *func;
-	char c, *tmp,spn[2]={0,0};
+	++S;
+	I(isupper(c))W(isupper(*S)||*S==95)++S;
+	I(N(n,"TFN"))R c-85?c-78?8:4:12;
+	v=8|(ll)(f=calloc(40,1));
+	*f=c;I (c==82||c==80)R v;
+	f[1]=p();I(N(n,"EBC`Q!LDO"))R v;
+	f[2]=p();I(!N(n,"GIS"))R v;
+	f[3]=p();I(c-71&&c-73)f[4]=p();R v;
+}
 
-	i = value = 0;
+ll r(ll);
 
-	// strip whitespace
-	while(strspn(stream, "\t\n\f\r {}[]():#")) {
-		if (*stream == '#') while(*stream != '\n') ++stream;
-		else ++stream;
+char*tos(ll v){R v&1?sprintf(BF,"%lld",v>>4),BF:v&2?ASSTR(v):v<13?v-4?v-8?
+"true":"null":"false":tos(r(v));}
+_Bool tob(ll v){R v&1?v>>4:v&2?*ASSTR(v):v<13?v==12:tob(r(v));}
+ll ton(ll v){R v&1?v>>4:v&2?strtoll(ASSTR(v),0,10):v<13?v==12:ton(r(v));}
+
+ll r(ll v){ll t,t2,t3=1;char*s,*ts,*ts2;FILE*f;
+	I(v&3||v<13)R v;
+	I(v&4)for(i=MN;i--;)I(!Q(ASSTR(v),MI[i]))R M[i];
+	I(i=MN,v&4)W(i--)I(!Q(ASSTR(v),MI[i]))R M[i];
+
+	switch(*(ll*)U(v)){
+	C'R':R NN(rand());
+	C'P':s=0;getline(&s,&z,stdin);R NS(strdup(s));
+	C'E':S=tos(A1);R r(p());
+	C'B':R A1;
+	C'C':R r(r(A1));
+	C'`':f=popen(tos(A1),"r"); s=malloc(cap=2048);
+		W((tmp=fread(s+len,1,cap-len,f)))I((len+=tmp)==cap)s=realloc(s,cap*=2);
+		R NS(s);
+	C'Q':exit(ton(A1));
+	C'!':R NB(!tob(A1));
+	C'L':R NN(L(tos(A1)));
+	C'D':I((v=r(A1))&1)R P("Number(%lld)",v>>4),v;I(v&2)R P("String(%s)",ASSTR(v)),v;
+		I(v-8)R P("Boolean(%s)",v-12?"false":"true"),v;R P("Null()"),v;
+	C'O':I((z=L(s=tos(A1)))&&s[z]=='\\')s[z]='\0',P("%s", s),s[z]='\\';
+		else puts(s);R 8;
+	C'+':I(1&(t=r(A1)))R NN(ASNUM(t)+ton(A2));
+		s=ASSTR(t);ts=tos(A2);R NS(K(K(calloc(1+L(s)+L(ts),1),s),ts));
+	C'-':R NN(ton(A1)-ton(A2));
+	C'*':I((t=r(A1))&1)R NN(ASNUM(t)*ton(A2));
+		s=ASSTR(t);ts=malloc(1+L(s)*(t=ton(A2)));
+		for(*ts=0;t;--t)K(ts,s);
+		R NS(ts);
+	C'/':R NN(ton(A1)/ton(A2));
+	C'%':R NN(ton(A1)%ton(A2));
+	C'^':t=ton(A1);t2=ton(A2);
+		I(t==-1)R t2&1?-1:1;
+		// I (t2 == -1) R t2 & 1 ? -1 : 1;
+		I(t2<2)R t2==1?t:t2==0;
+		for(;t2>0;--t2)t3*=t;
+		R NN(t3);
+	C'<':R NB((1&(t=r(A1)))?ASNUM(t)<ton(A2):2&t?Q(ASSTR(t),tos(A2))<0:tob(A2)&&t!=12);
+	C'>':R NB((1&(t=r(A1)))?ASNUM(t)>ton(A2):2&t?Q(ASSTR(t),tos(A2))>0:!tob(A2)&&t==12);
+	C'?':R NB((2&(t=r(A1)))?2&(t2=r(A2))&&!Q(ASSTR(t),ASSTR(t2)):t==r(A2));
+	C'&':R tob(t=r(A1))?r(A2):t;
+	C'|':R tob(t=r(A1))?t:r(A2);
+	C';':R r(A1),r(A2);
+	C'=':t=r(A2);for(i=0;i<MN;++i)I(!Q(ASSTR(A1),MI[i]))R M[i]=t;
+		R MI[MN]=ASSTR(A1),M[MN++]=t;
+	C'W':W(tob(A1))r(A2);R 8;
+	C'I':R r(A(tob(A1)?2:3));
+	C'G':s=tos(A1)+ton(A2);R NS(Z(s,ton(A(3))));
+	C'S':ts=tos(A1);t=ton(A2);t2=ton(A(3));ts2=tos(A(4));
+		R NS(K(K(strncat(calloc(L(ts)+L(ts2)+t2+1,1),ts,t),ts2),ts+t2));
 	}
-
-	// check for numbers
-	while (isdigit(*stream)) i = 1, value = value * 10 + *(stream++) - '0';
-	if (i) return TNUM | (value << 4);
-
-	// check for variables
-	while(islower(c = *stream) || isdigit(c) || c == '_')
-		if (i) ++stream;
-		else i=1,tmp=stream;
-	if (i) return TVAR | (ll) strndup(tmp, stream - tmp);
-
-	// check for strings
-	if (c == '\'' || c == '"') {
-		tmp = ++stream; // increase past the start
-		while (*stream++ != c);
-		return TSTR | (ll) strndup(tmp, stream - tmp - 1);
-	}
-	++stream;
-
-	// functions
-	spn[0] = c;
-	if (isupper(c)) while(isupper(*stream) || *stream == '_')++stream;
-	if (strspn(spn, "TFN")) return c == 'T' ? TRU : c == 'F' ? FLS : NUL;
-
-	value = TFNC | (ll)(func = calloc(40,1));
-	func[0] = c;
-
-	// nullary functions
-	if (c == 'R' || c == 'P') return value;
-
-	// unary functions
-	func[1] = parse();
-	if (strspn(spn, "EBC`Q!LDO")) return value;
-
-	// binary functions
-	func[2] = parse();
-	if (!strspn(spn, "GIS")) return value;
-
-	// ternary and quaternary funcvtions
-	func[3] = parse();
-	if (c == 'G'|| c == 'I') return value;
-
-	func[4] = parse();
-	return value;
+	R 1;
 }
 
-ll run(ll);
-
-char *tos(ll value) {
-	static char buf[24];
-	if (value & TNUM) return sprintf(buf, "%lld", value >> 4), buf;
-	if (value & TSTR) return ASSTR(value);
-	if (value < 13) return value == TRU ? "true" : value == FLS ? "false" : "null";
-	return tos(run(value));
-}
-
-_Bool tob(ll value) {
-	if (value & TNUM) return value >> 4;
-	if (value & TSTR) return *ASSTR(value);
-	if (value < 13) return value == TRU;
-	return tob(run(value));
-}
-
-ll ton(ll value) {
-	if (value & TNUM) return value >> 4;
-	if (value & TSTR) return strtoll(ASSTR(value), 0, 10);
-	if (value < 13) return value == TRU;
-	return ton(run(value));
-}
-
-int MAPN, i;
-char *MAPI[1000];
-ll MAP[1000];
-
-ll run(ll value) {
-	ll tval,tval2;
-	char *str, *tstr,*tstr2;
-	size_t size;
-	FILE* file;
-	static size_t tmp,cap,len;
-
-	if (value & (TNUM | TSTR) || value < 13) return value;
-
-	if (value & TVAR)
-		for (i = 0; i < MAPN; ++i)
-			if (!strcmp(ASSTR(value), MAPI[i])) return MAP[i];
-
-	switch(*(ll*) UNMASK(value)) {
-		case 'R': return NEWNUM(rand());
-		case 'P': str = 0; getline(&str, &size, stdin); return NEWSTR(strdup(str));
-
-		case 'E': stream = tos(ARG(1)); return run(parse());
-		case 'B': return ARG(1);
-		case 'C': return run(run(ARG(1)));
-		case '`': 
-			file=popen(tos(ARG(1)),"r");
-			str=malloc(cap=2048);
-			while ((tmp = fread(str + len, 1, cap - len, file)))
-				if ((len += tmp) == cap) str = realloc(str, cap *= 2);
-			return NEWSTR(str);
-		case 'Q': exit(ton(ARG(1)));
-		case '!': return NEWBOOL(!tob(ARG(1)));
-		case 'L': return NEWNUM(strlen(tos(ARG(1))));
-		case 'D':
-			if ((value=run(ARG(1))) & TNUM) printf("Number(%lld)", value>>4);
-			else if (value & TSTR) printf("String(%s)", ASSTR(value));
-			else if (value == NUL) printf("Null()");
-			else printf("Boolean(%s)", value == TRU ? "true" : "false");
-			return value;
-		case 'O':
-			if ((size = strlen(str = tos(ARG(1)))) && str[size] == '\\') {
-				str[size]='\0';
-				printf("%s", str);
-				str[size]='\\';
-			} else puts(str);
-			return NUL;
-
-		case '+':
-			if (!(tval = run(ARG(1)) & TSTR))
-				return NEWNUM(ASNUM(tval) + ton(ARG(2)));
-			str=ASSTR(tval);
-			tstr=tos(ARG(2));
-			return NEWSTR(strcat(strcat(calloc(1+strlen(str)+strlen(tstr),1),str),tstr));
-		case '-': return NEWNUM(ton(ARG(1)) - ton(ARG(2)));
-		case '*':
-			if ((tval = run(ARG(1))) & TNUM) return NEWNUM(ASNUM(tval) * ton(ARG(2)));
-			str = ASSTR(tval);
-			tstr=malloc(1+strlen(str)*(tval=ton(ARG(2))));
-			for(*tstr='\0';tval;--tval)strcat(tstr,str);
-			return NEWSTR(tstr);
-		case '/': return NEWNUM(ton(ARG(1)) / ton(ARG(2)));
-		case '%': return NEWNUM(ton(ARG(1)) % ton(ARG(2)));
-		case '^':
-
-			exit(1);
-	// // there's no builtin way to do integer exponentiation, so we have to
-	// // do it manually.
-	// if (base == 1) result = 1;
-	// else if (base == -1) result = exponent & 1 ? -1 : 1;
-	// else if (exponent == 1) result = base;
-	// else if (exponent == 0) result = 1;
-	// else if (exponent < 0) result = 0; // already handled `base == -1`
-	// else {
-	// 	for (result = 1; exponent > 0; --exponent)
-	// 		result *= base;
-	// }
-
-		case '<':
-			return NEWBOOL(
-				(TNUM & (tval=run(ARG(1)))) ? tval < ton(ARG(2))
-				: (TSTR & (tval=run(ARG(1)))) ? strcmp(ASSTR(tval),tos(ARG(2))) < 0
-				: tob(ARG(1)) && tval!=TRU);
-
-		case '>': // todo: memcp then >`?
-			return NEWBOOL(
-				(TNUM & (tval=run(ARG(1)))) ? tval > ton(ARG(2))
-				: (TSTR & (tval=run(ARG(1)))) ? strcmp(ASSTR(tval),tos(ARG(2))) > 0
-				: !tob(ARG(1)) && tval==FLS);
-		case '?':
-			return NEWBOOL(
-				(TSTR & (tval=run(ARG(1))))
-				? !strcmp(ASSTR(tval),tos(ARG(2)))
-				: tval == run(ARG(2)));
-		case '&': return tob(tval = run(ARG(1))) ? run(ARG(2)) : tval;
-		case '|': return tob(tval = run(ARG(1))) ? tval : run(ARG(2));
-		case ';': run(ARG(1)); return run(ARG(2));
-		case '=':
-			tval=run(ARG(2));
-			for (i = 0; i < MAPN; ++i)
-				if (!strcmp(ASSTR(ARG(1)), MAPI[i]))
-					return MAP[i]=tval;
-			MAPI[MAPN]=ASSTR(ARG(1));
-			return MAP[MAPN++]=tval;
-		case 'W': while(tob(ARG(1))) run(ARG(2)); return NUL;
-		case 'I': return ARG(tob(ARG(1))?2:3);
-		case 'G': str=tos(ARG(1))+ton(ARG(2)); return NEWSTR(strndup(str, ton(ARG(3))));
-		case 'S':
-			tstr=tos(ARG(1));
-			tval=ton(ARG(2));
-			tval2=ton(ARG(3));
-			tstr2=tos(ARG(4));
-			return NEWSTR(strcat(strcat(strncat(calloc(
-				strlen(tstr)+strlen(tstr2)+tval2+1,1),tstr,tval),tstr2),tstr+tval2));
-		default:
-		printf("'%c'", (char) (*(ll*) UNMASK(value)) );
-		exit(1);
-	}
-}
-
-int main(int argc, char**argv){
-	srand(time(0));
-	if(!argc)fprintf(stderr,"usage: %s (-e 'program' | -f file)\n",*argv),exit(1);
-	if(argv[1][1]-'f')stream=argv[2]; // ie if it's `-e`
-	else /* todo*/;
-	run(parse());
+int main(int c,char**v){
+	srand((int)v);
+	I(!c)R fprintf(stderr,"usage: %s (-e 'program' | -f file)\n",*v),1;
+	I('f'-v[1][1])S=v[2];
+	else getdelim(&S,&z,0,fopen(v[2],"r"));
+	r(p());
 }
