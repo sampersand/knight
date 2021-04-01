@@ -4,94 +4,57 @@
 #include <string>
 #include <string_view>
 #include <memory>
+#include <variant>
+#include <ostream>
+#include <optional>
 
 namespace kn {
-	// The type used by numbers within Knight.
 	using number = long long;
-
-	// The type used by strings within Knight.
 	using string = std::string;
+	struct null {};
 
-	// Note that Knight's booleans are represented via `bool`.
 
-	// Declare the `SharedValue` alias because we use it so often.
-	class Value;
-	using SharedValue = std::shared_ptr<Value const>;
+	class Variable;
+	class Function;
 
-	// The class that all entities within Knight must subclass from.
-	class Value : public std::enable_shared_from_this<Value> {
+class Value {
+	std::variant<
+		null,
+		bool,
+		number,
+		std::shared_ptr<string>,
+		std::shared_ptr<Variable>,
+		std::shared_ptr<Function>
+	> data;
+
 	public:
 
-		// Required so we don't leak memory when dropping types.
-		virtual ~Value() = default;
+		explicit Value() noexcept;
+		explicit Value(bool boolean) noexcept;
+		explicit Value(number num) noexcept;
+		explicit Value(string str) noexcept;
+		explicit Value(std::shared_ptr<string> str) noexcept;
+		explicit Value(std::shared_ptr<Variable> var) noexcept;
+		explicit Value(std::shared_ptr<Function> func) noexcept;
+		static std::optional<Value> parse(std::string_view& view);
 
-		// All implementing types must provide a `run` function.
-		virtual SharedValue run() const= 0;
+		Value run();
+		std::ostream& dump(std::ostream& out) const;
 
-		// The dump function is used for debugging.
-		virtual std::string dump() const = 0;
+		bool to_boolean();
+		number to_number();
+		std::shared_ptr<string> to_string();
+		std::shared_ptr<Variable> as_variable() const;
 
-		// Parses a value from the given view. Implementing types should provide their own logic.
-		static SharedValue parse(std::string_view& view);
+		Value operator+(Value&& rhs);
+		Value operator-(Value&& rhs);
+		Value operator*(Value&& rhs);
+		Value operator/(Value&& rhs);
+		Value operator%(Value&& rhs);
+		Value pow(Value&& rhs);
 
-		// Converts this class to a boolean.
-		//
-		// The default implementation calls `to_boolean` on the result of `run`ning `this`.
-		virtual bool to_boolean() const;
-
-		// Converts this class to a number.
-		//
-		// The default implementation calls `number` on the result of `run`ning `this`.
-		virtual number to_number() const;
-
-		// Converts this class to a string.
-		//
-		// The default implementation calls `to_string` on the result of `run`ning `this`.
-		virtual string to_string() const;
-
-		// Adds `rhs` to `this`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator+` again.
-		virtual SharedValue operator+(Value const& rhs) const;
-
-		// Subtracts `rhs` from `this`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator-` again.
-		virtual SharedValue operator-(Value const& rhs) const;
-
-		// Multiplies `this` by `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator*` again.
-		virtual SharedValue operator*(Value const& rhs) const;
-
-		// Divides `this` by `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator/` again.
-		virtual SharedValue operator/(Value const& rhs) const;
-
-		// Modulos `this` by `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator%` again.
-		virtual SharedValue operator%(Value const& rhs) const;
-
-		// Raises `this` to the power of `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `pow` again.
-		virtual SharedValue pow(Value const& rhs) const;
-
-		// Checks to see if `this` to equal to `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator==` again.
-		virtual bool operator==(Value const& rhs) const;
-
-		// Checks to see if `this` is less than `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator<` again.
-		virtual bool operator<(Value const& rhs) const;
-
-		// Checks to see if `this` is greater than `rhs`.
-		//
-		// The default implementation simply `run`s both sides and calls `operator>` again.
-		virtual bool operator>(Value const& rhs) const;
+		bool operator==(Value&& rhs);
+		bool operator<(Value&& rhs);
+		bool operator>(Value&& rhs);
 	};
 }

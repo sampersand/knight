@@ -3,12 +3,16 @@ OBJDIR?=obj
 EXE?=knight
 CXX=g++
 
-CXXFLAGS+=-Wall -Wextra -Wpedantic  -Werror -std=c++17 -Wno-infinite-recursion
+CXXFLAGS+=-Wall -Wextra -Wpedantic -std=c++17
 override CXXFLAGS+=-F$(SRCDIR)
 
 ifdef DEBUG
 override CXXFLAGS+=-g -fsanitize=address,undefined
 else
+override	CXXFLAGS+=-O2
+endif
+
+ifdef OPTIMIZED
 override CXXFLAGS+=-O3 -DNDEBUG -flto -march=native
 endif
 

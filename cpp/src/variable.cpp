@@ -1,22 +1,20 @@
 #include "variable.hpp"
-#include "literal.hpp"
 #include <unordered_map>
 #include <iostream>
 #include <memory>
 
 using namespace kn;
 
-Variable::Variable(std::string name) noexcept : name(name), assigned(false) {}
+Variable::Variable(std::string name) noexcept : name(name) {}
 
 // The set of all known variables.
 static std::unordered_map<std::string_view, std::shared_ptr<Variable>> ENVIRONMENT;
 
-SharedValue Variable::parse(std::string_view& view) {
+std::optional<Value> Variable::parse(std::string_view& view) {
 	char front = view.front();
 
-	if (!std::islower(front) && front != '_') {
-		return nullptr;
-	}
+	if (!std::islower(front) && front != '_')
+		return std::nullopt;
 
 	auto start = view.cbegin();
 
@@ -27,28 +25,26 @@ SharedValue Variable::parse(std::string_view& view) {
 
 	auto identifier = std::string_view(start, view.cbegin() - start);
 
-	if (auto match = ENVIRONMENT.find(identifier); match != ENVIRONMENT.cend()) {
-		return match->second;
-	}
+	if (auto match = ENVIRONMENT.find(identifier); match != ENVIRONMENT.cend())
+		return std::make_optional<Value>(match->second);
 
 	auto variable = std::make_shared<Variable>(std::string(identifier));
+	auto result = ENVIRONMENT.emplace(std::string_view(variable->name), std::move(variable));
 
-	return ENVIRONMENT.emplace(std::string_view(variable->name), std::move(variable)).first->second;
+	return std::make_optional<Value>(result.first->second);
 }
 
-std::string Variable::dump() const {
-	return "Identifier(" + name + ")";
+std::ostream& Variable::dump(std::ostream& out) const noexcept {
+	return out << "Variable(" << name << ")";
 }
 
-SharedValue Variable::run() const {
-	if (assigned) {
-		return value;
-	} else {
+Value Variable::run() {
+	if (!value)
 		throw Error("unknown variable encountered: " + name);
-	}
+
+	return *value;
 }
 
-void Variable::assign(SharedValue newvalue) const noexcept {
-	value = newvalue;
-	assigned = true;
+void Variable::assign(Value newvalue) noexcept {
+	value = std::move(newvalue);
 }
