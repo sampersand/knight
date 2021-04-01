@@ -64,7 +64,7 @@ extern const struct kn_function kn_fn_random;
 /**
  * 4.2 Arity 1
  *
- * Note that the 4.2.1 (`:`) is treated as whitespace, and as such has no 
+ * Note that the 4.2.1 (`:`) is treated as whitespace, and as such has no
  * associated function.
  **/
 
@@ -185,5 +185,21 @@ extern const struct kn_function kn_fn_get;
 
 /* 4.5.1 SUBSTITUTE */
 extern const struct kn_function kn_fn_substitute;
+
+#ifdef KN_EXT_CUSTOM_FUNCTIONS
+/*
+ * An extension function that converts its argument to a string, and then uses
+ * the string's value as an identifier to look it up.
+ *
+ * `VALUE(+ "a" 23)` is simply equivalent to `EVAL(+ "a" 23)`, except the
+ * parsing step of `EVAL` is skipped.
+ *
+ * Any lookups of non-variable-names (eg `VALUE(0)`) will simply terminate the
+ * program like any unknown variable lookup would.
+ */
+extern const struct kn_function kn_fn_extension;
+#endif /* KN_EXT_CUSTOM_FUNCTIONS */
+
+
 
 #endif /* !KN_FUNCTION_H */

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "value.hpp"
+#include <iostream>
 
 namespace kn {
 	// Initializes the Knight interpreter. This must be run before all other types are.
@@ -8,9 +9,13 @@ namespace kn {
 
 	// Runs the input as Knight source code, returning its result.
 	template<typename T>
-	SharedValue run(T input) {
+	Value run(T input) {
 		std::string_view view(input);
+		auto value = Value::parse(view);
 
-		return Value::parse(view)->run();
+		if (!value)
+			throw Error("cannot parse a value");
+
+		return value->run();
 	}
 }

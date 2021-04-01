@@ -1,17 +1,17 @@
 #pragma once
 
 #include "value.hpp"
-#include "small_vector.hpp"
+#include <vector>
 
 namespace kn {
 	// The argument type that functions must accept.
-	using args_t = itlib::small_vector<SharedValue, 4, 4>;
+	using args_t = std::vector<Value>;
 
 	// The pointer type that all functions must fulfill.
-	using funcptr_t = SharedValue(*)(args_t const&);
+	using funcptr_t = Value(*)(args_t&);
 
 	// The class that represents a function and its arguments within Knight.
-	class Function : public Value {
+	class Function {
 		// A pointer to the function associated with this class.
 		funcptr_t const func;
 
@@ -19,7 +19,7 @@ namespace kn {
 		char const name;
 
 		// The unevaluated arguments associated with this function.
-		args_t const args;
+		args_t args;
 
 		// Creates a function with the given function and arguments.
 		//
@@ -32,15 +32,15 @@ namespace kn {
 		Function() = delete;
 
 		// Executes this function, returning the result of the execution.
-		SharedValue run() const override;
+		Value run();
 
 		// Returns debugging information about this type.
-		std::string dump() const override;
+		std::ostream& dump(std::ostream& out) const;
 
 		// Attempts to parse a `Function` instance from the `string_view`.
 		//
 		// If the first character of `view` isn't a known `Function` name, `nullptr` is returned.
-		static SharedValue parse(std::string_view& view);
+		static std::optional<Value> parse(std::string_view& view);
 
 		// Registers a new funciton with the given name, arity, and function pointer.
 		//
