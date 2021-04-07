@@ -1,10 +1,13 @@
 #include "knight.h" /* kn_startup, kn_run, kn_value_free, kn_shutdown */
 #include "shared.h" /* die, xmalloc, xrealloc */
 
-#include <string.h> /* strlen */
-#include <stdlib.h> /* free */
-#include <stdio.h>  /* FILE, fopen, sterror, feof, fread, fclose */
-#include <errno.h>  /* errno */
+#include <stdlib.h> /* free, NULL, size_t */
+#include <stdio.h>  /* FILE, fopen, feof, fread, fclose, perror, stdin EOF, */
+#include <string.h> /* strcmp, strerror */
+
+#ifndef KN_RECKLESS
+# include <errno.h> /* errno */
+#endif /* !KN_RECKLESS */
 
 static char *read_file(const char *filename) {
 	FILE *file = fopen(filename, "r");
@@ -12,7 +15,7 @@ static char *read_file(const char *filename) {
 #ifndef KN_RECKLESS
 	if (file == NULL)
 		die("unable to read file '%s': %s", filename, strerror(errno));
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	size_t length = 0;
 	size_t capacity = 2048;
@@ -26,7 +29,7 @@ static char *read_file(const char *filename) {
 #ifndef KN_RECKLESS
 		if (!feof(stdin))
 			die("unable to line in file '%s': %s'", filename, strerror(errno));
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 			break;
 		}
@@ -43,13 +46,12 @@ static char *read_file(const char *filename) {
 
 #ifndef KN_RECKLESS
 		perror("couldn't close input file");
-#endif /* KN_RECKLESS */
+#endif /* !KN_RECKLESS */
 
 	}
 
 	return xrealloc(contents, length);
 }
-
 
 static void usage(char *program) {
 	die("usage: %s (-e 'expr' | -f file)", program);
@@ -58,8 +60,11 @@ static void usage(char *program) {
 int main(int argc, char **argv) {
 	char *str;
 
-	if (argc != 3 || strlen(argv[1]) != 2 || argv[1][0] != '-')
+	if (KN_UNLIKELY(
+		argc != 3 || (!strcmp(argv[1], "-e") && !strcmp(argv[1], "-f"))
+	)) {
 		usage(argv[0]);
+	}
 
 	switch (argv[1][1]) {
 	case 'e':

@@ -3,7 +3,7 @@ OBJDIR?=obj
 EXE?=knight
 
 CC?=gcc
-CFLAGS+=-Wall -Wextra -Wpedantic
+CFLAGS+=-Wall -Wextra -Wpedantic -std=c11
 override CFLAGS+=-F$(SRCDIR)
 
 ifdef DEBUG
@@ -11,7 +11,6 @@ override CFLAGS+=-g -fsanitize=address,undefined
 else
 override CFLAGS+=-O3 -flto -march=native -DNDEBUG
 endif
-
 
 ifdef COMPUTED_GOTOS
 override CFLAGS+=-DKN_COMPUTED_GOTOS -Wno-gnu-label-as-value -Wno-gnu-designator
